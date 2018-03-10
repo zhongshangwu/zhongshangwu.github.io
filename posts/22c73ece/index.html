@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>网络I/O模型 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="网络,并发," />
+  
+
+  <meta name="keywords" content="网络,并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络I&#x2F;O模型">
+<meta property="og:url" content="http://shawnz.me/posts/22c73ece/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:image" content="http://shawnz.me/images/blocking-io.png">
+<meta property="og:image" content="http://shawnz.me/images/non-blocking-io.png">
+<meta property="og:image" content="http://shawnz.me/images/io-multiplexing.png">
+<meta property="og:image" content="http://shawnz.me/images/select.png">
+<meta property="og:image" content="http://shawnz.me/images/signal-io.jpg">
+<meta property="og:image" content="http://shawnz.me/images/asynchronous-io.png">
+<meta property="og:image" content="http://shawnz.me/images/io模型比较.png">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="网络I&#x2F;O模型">
+<meta name="twitter:image" content="http://shawnz.me/images/blocking-io.png">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#异步和同步-阻塞和非阻塞"><span class="toc-text">异步和同步/阻塞和非阻塞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#文件描述符"><span class="toc-text">文件描述符</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#用户空间和内核空间，用户态和内核态"><span class="toc-text">用户空间和内核空间，用户态和内核态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#I-O模型"><span class="toc-text">I/O模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-阻塞IO：Blocking-I-O"><span class="toc-text">1. 阻塞IO：Blocking I/O</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-非阻塞IO-non-blocking-IO"><span class="toc-text">2. 非阻塞IO: non-blocking IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-IO多路复用：IO-multiplexing"><span class="toc-text">3. IO多路复用：IO multiplexing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-信号驱动I-O：signal-driven-IO"><span class="toc-text">4. 信号驱动I/O：signal driven IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-异步I-O：asynchronous-IO"><span class="toc-text">5. 异步I/O：asynchronous IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#五种IO模型比较"><span class="toc-text">五种IO模型比较</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Socket"><span class="toc-text">Socket</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考链接"><span class="toc-text">参考链接</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-网络IO模型" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">网络I/O模型</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.12.02</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/网络/">网络</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <!-- ... -->
+<a id="more"></a>
+<h2 id="异步和同步-阻塞和非阻塞"><a href="#异步和同步-阻塞和非阻塞" class="headerlink" title="异步和同步/阻塞和非阻塞"></a>异步和同步/阻塞和非阻塞</h2><ul>
+<li>同步和异步：关注的是<code>消息通知机制</code>。<ul>
+<li>同步：发出一个功能调用时，在没有得到结果之前，该调用就不返回。</li>
+<li>异步：当一个调用发出返回后，调用者不能立刻得到结果。</li>
+</ul>
+</li>
+<li>阻塞和非阻塞：关注的是<code>等待消息通知期间的状态</code>。<ul>
+<li>阻塞：调用结果返回之前，当前线程会被挂起，一直处于等待消息通知，不能够执行其他业务。</li>
+<li>非阻塞:在不能立刻得到结果之前，该调用不会阻塞当前线程。</li>
+</ul>
+</li>
+</ul>
+<h2 id="文件描述符"><a href="#文件描述符" class="headerlink" title="文件描述符"></a>文件描述符</h2><p>文件描述符（file descriptor，简称 fd）在形式上是一个非负整数。实际上，它是一个索引值，指向内核为每一个进程所维护的该进程打开文件的记录表。当程序打开一个现有文件或者创建一个新文件时，内核向进程返回一个文件描述符。在程序设计中，一些涉及底层的程序编写往往会围绕着文件描述符展开。但是文件描述符这一概念往往只适用于UNIX、Linux这样的操作系统。</p>
+<p>在 Linux 中，内核将所有的外部设备都当做一个文件来进行操作，而对一个文件的读写操作会调用内核提供的系统命令，返回一个 fd，对一个 socket 的读写也会有相应的描述符，称为 socketfd（socket 描述符），实际上描述符就是一个数字，它指向内核中的一个结构体（文件路径、数据区等一些属性）。</p>
+<h2 id="用户空间和内核空间，用户态和内核态"><a href="#用户空间和内核空间，用户态和内核态" class="headerlink" title="用户空间和内核空间，用户态和内核态"></a>用户空间和内核空间，用户态和内核态</h2><p>现在操作系统都是采用虚拟存储器，那么对32位操作系统而言，它的寻址空间（虚拟存储空间）为4G（2的32次方）。<br>操心系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空间，也有访问底层硬件设备的所有权限。<br>为了保证用户进程不能直接操作内核，保证内核的安全，操心系统将虚拟空间划分为两部分：</p>
+<ul>
+<li>内核空间</li>
+<li>用户空间</li>
+</ul>
+<p>针对 linux 操作系统而言（以32位操作系统为例）：</p>
+<ul>
+<li>将最高的 1G 字节（从虚拟地址 0xC0000000 到 0xFFFFFFFF），供内核使用，称为内核空间；</li>
+<li>将较低的 3G 字节（从虚拟地址 0x00000000 到 0xBFFFFFFF），供各个进程使用，称为用户空间。</li>
+</ul>
+<p>每个进程可以通过系统调用进入内核，因此，Linux 内核由系统内的所有进程共享。于是，从具体进程的角度来看，每个进程可以拥有 4G 字节的虚拟空间。</p>
+<p>当一个任务（进程）执行系统调用而陷入内核代码中执行时，称进程处于内核运行态（内核态）。此时处理器处于特权级最高的（0级）内核代码中执行。当进程处于内核态时，执行的内核代码会使用当前进程的内核栈，每个进程都有自己的内核栈；</p>
+<p>当进程在执行用户自己的代码时，则称其处于用户运行态（用户态）。此时处理器在特权级最低的（3级）用户代码中运行。当正在执行用户程序而突然被中断程序中断时，此时用户程序也可以象征性地称为处于进程的内核态。因为中断处理程序将使用当前进程的内核栈。</p>
+<h2 id="I-O模型"><a href="#I-O模型" class="headerlink" title="I/O模型"></a>I/O模型</h2><p>Linux I/O模型有以下五种：</p>
+<ul>
+<li>阻塞IO(blocking IO)</li>
+<li>非阻塞(non-blocking IO)</li>
+<li>IO多路复用(IO multiplexing)</li>
+<li>信号驱动IO(signal driven IO)</li>
+<li>异步IO(asynchronous IO)</li>
+</ul>
+<p>这几种模式的区别主要体现在对socket对象的read或write操作所经过的两个阶段各有所不同：</p>
+<ul>
+<li>等待操作系统内核数据准备好</li>
+<li>从内核拷贝数据到应用进程</li>
+</ul>
+<h3 id="1-阻塞IO：Blocking-I-O"><a href="#1-阻塞IO：Blocking-I-O" class="headerlink" title="1. 阻塞IO：Blocking I/O"></a>1. 阻塞IO：Blocking I/O</h3><p>大多数操作系统下的socket默认都是阻塞的， 除非单独设置为非阻塞。<br><img src="/images/blocking-io.png" alt=""></p>
+<p>默认情况下，socket所有accept()、read()、write()等操作均阻塞当前线程。</p>
+<h3 id="2-非阻塞IO-non-blocking-IO"><a href="#2-非阻塞IO-non-blocking-IO" class="headerlink" title="2. 非阻塞IO: non-blocking IO"></a>2. 非阻塞IO: non-blocking IO</h3><p>非阻塞IO需要对socket单独设置non-blocking属性</p>
+<p><img src="/images/non-blocking-io.png" alt=""></p>
+<h3 id="3-IO多路复用：IO-multiplexing"><a href="#3-IO多路复用：IO-multiplexing" class="headerlink" title="3. IO多路复用：IO multiplexing"></a>3. IO多路复用：IO multiplexing</h3><p>IO多路复用：通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作。</p>
+<p>目前操作系统实现IO多路复主要有select、poll、epoll等几种方式。</p>
+<p>这些模块都能够同时监听一组socket，内核负责不断轮询或检测所负责的所有socket，当其中某一个socket满足可读或者可写了就唤醒用户进程进行处理。</p>
+<p>但select，pselect，poll，epoll本质上都是同步I/O，因为他们都需要在读写事件就绪后自己负责进行读写，也就是说这个读写过程是阻塞的，而异步I/O则无需自己负责进行读写，异步I/O的实现会负责把数据从内核拷贝到用户空间。<br><img src="/images/io-multiplexing.png" alt=""></p>
+<p><strong>select</strong></p>
+<p>select 函数监视的文件描述符分3类，分别是writefds、readfds、和exceptfds。调用后select函数会阻塞，直到有描述符就绪（有数据 可读、可写、或者有except），或者超时（timeout指定等待时间，如果立即返回设为null即可），函数返回。当select函数返回后，可以通过遍历fdset，来找到就绪的描述符。</p>
+<p>select的调用过程：</p>
+<p><img src="/images/select.png" alt=""></p>
+<p>select本质是通过设置或者检查存放fd标志位的数据结构来进行下一步处理，这样存在几大缺点：</p>
+<ul>
+<li>每次调用<code>select</code>，都需要把fd集合从用户态拷贝到内核态，这个开销在fd很多时会很大；</li>
+<li>同时每次调用<code>select</code>都需要在内核遍历(线性扫描，即轮询)传递进来的所有fd，这个开销在fd很多时也很大；<br>(ps：如果能给套接字注册某个回调函数，当他们活跃时，自动完成相关操作，那就避免了轮询，这正是epoll与kqueue做的)</li>
+<li><code>select</code>支持的文件描述符数量太小了，默认是<code>1024</code>。</li>
+</ul>
+<p><strong>poll</strong></p>
+<p>poll本质上和select没有区别，只是描述fd集合的方式不同，poll使用pollfd结构（基于链表），而不是select的fd_set结构，它没有描述符限制。</p>
+<p><strong>epoll</strong></p>
+<p>epoll使用一个文件描述符管理多个描述符，将用户关系的文件描述符的事件存放到内核的一个事件表中，这样在用户空间和内核空间的copy只需一次。epoll提供了三个函数：</p>
+<ul>
+<li><code>epoll_create</code>，创建一个epoll句柄；</li>
+<li><code>epoll_ctl</code>，注册要监听的事件类型；</li>
+<li><code>epoll_wait</code>，等待事件的产生。</li>
+</ul>
+<p><code>epoll</code>的特点：</p>
+<ul>
+<li><code>epoll_ctl</code>函数。每次注册新的事件到epoll句柄中时（在 epoll_ctl 中指定 EPOLL_CTL_ADD ），会把所有的 fd 拷贝进内核，而不是在 epoll_wait 的时候重复拷贝。epoll 保证了每个 fd 在整个过程中只会拷贝一次。</li>
+<li><code>epoll</code>不像<code>select</code>或<code>poll</code>一样每次都把 current 轮流加入 fd 对应的设备等待队列中，而只在<code>epoll_ctl</code>时把 current 挂一遍（这一遍必不可少）并为每个 fd 指定一个回调函数，当设备就绪，唤醒等待队列上的等待者时，就会调用这个回调函数，而这个回调函数会把就绪的fd加入一个就绪链表）。<code>epoll_wait</code>的工作实际上就是在这个就绪链表中查看有没有就绪的fd（利用<code>schedule_timeout()</code>实现睡一会，判断一会的效果，和<code>select</code>实现中的是类似的）</li>
+<li>和<code>poll</code>一样，epoll没有 fd 数量限制，它所支持的FD上限是最大可以打开文件的数目，这个数字一般远大于2048,举个例子,在1GB内存的机器上大约是10万左右，具体数目可以cat /proc/sys/fs/file-max察看, 一般来说这个数目和系统内存关系很大。</li>
+<li>使用<code>mmap</code>加速内核与用户空间的消息传递, 减少复制开销.</li>
+<li>在连接数少并且连接都十分活跃的情况下，select和poll的性能可能比epoll好，毕竟epoll的通知机制需要很多函数回调。</li>
+</ul>
+<p><code>epoll</code>同时支持水平触发(Level Trigger, LT)和边缘触发(Edge Trigger, ET):</p>
+<ul>
+<li>LT: 当<code>epoll</code>检测到描述符准备就绪事件时通知应用程序, 应用程序可以不立即处理, <code>epoll</code>会在下一次调用<code>epoll_wait</code>时, 再次通知应用程序;</li>
+<li>ET: 当<code>epoll</code>检测到描述符准备就绪事件时通知应用程序, 应用程序必须立即处理. 如果不处理, 下次调用<code>epoll_wait</code>, 不会再响应应用程序并通知此事件. 边缘触发只支持非阻塞I/O, 以避免处理多个描述符的应用程序阻塞读写, 造成其他描述符饿死.</li>
+</ul>
+<p>显然, <code>ET</code>模式比<code>LT</code>模式更加高效, 因为它减少了重复<code>epoll</code>事件触发次数.</p>
+<p><strong>三种模型的比较</strong></p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>select</th>
+<th>poll</th>
+<th>epoll</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>支持的最大连接数</td>
+<td>由 FD_SETSIZE 限制</td>
+<td>基于链表存储，没有限制</td>
+<td>受系统最大句柄数限制</td>
+<td></td>
+</tr>
+<tr>
+<td>fd 剧增的影响</td>
+<td>线性扫描 fd 导致性能很低</td>
+<td>同 select</td>
+<td>基于 fd 上的 callback 实现，没有性能下降的问题</td>
+<td></td>
+</tr>
+<tr>
+<td>消息传递机制</td>
+<td>内核需要将消息传递到用户空间，需要内核拷贝</td>
+<td>同 select</td>
+<td>epoll 通过 mmap 内核与用户空间共享内存来实现</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-信号驱动I-O：signal-driven-IO"><a href="#4-信号驱动I-O：signal-driven-IO" class="headerlink" title="4. 信号驱动I/O：signal driven IO"></a>4. 信号驱动I/O：signal driven IO</h3><p>需要先开启 socket 信号驱动 IO 功能，并通过系统调用<code>sigaction</code>执行一个信号处理函数（非阻塞，立即返回）。当数据就绪时，会为该进程生成一个 <code>SIGIO</code> 信号，通过信号回调通知应用程序调用 <code>recvfrom</code> 来读取数据，并通知主循环处理数据，流程如下图所示</p>
+<p><img src="/images/signal-io.jpg" alt=""></p>
+<h3 id="5-异步I-O：asynchronous-IO"><a href="#5-异步I-O：asynchronous-IO" class="headerlink" title="5. 异步I/O：asynchronous IO"></a>5. 异步I/O：asynchronous IO</h3><p>用户进程进行aio_read系统调用之后，无论内核数据是否准备好，都会直接返回给用户进程，然后用户态进程可以去做别的事情。等到socket数据准备好了，内核直接复制数据给进程，然后从内核向进程发送通知。IO两个阶段，进程都是非阻塞的。</p>
+<p><img src="/images/asynchronous-io.png" alt=""></p>
+<p>与信号驱动模式的主要区别是：</p>
+<ul>
+<li>信号驱动IO由内核通知我们何时可以开始一个IO操作；</li>
+<li>异步IO操作由内核通知我们IO何时完成</li>
+</ul>
+<h3 id="五种IO模型比较"><a href="#五种IO模型比较" class="headerlink" title="五种IO模型比较"></a>五种IO模型比较</h3><p><img src="/images/io模型比较.png" alt=""></p>
+<ol>
+<li><p>blocking IO和non-blocking IO：<br> 调用blocking IO会一直block住对应的进程直到操作完成，而non-blocking IO会立刻返回。</p>
+</li>
+<li><p>synchronous IO和asynchronous IO：<br> 在说明synchronous IO和asynchronous IO的区别之前，需要先给出两者的定义。Stevens给出的定义（其实是POSIX的定义）是这样子的：</p>
+<ul>
+<li>A synchronous I/O operation causes the requesting process to be blocked until that I/O operation completes;</li>
+<li><p>An asynchronous I/O operation does not cause the requesting process to be blocked;</p>
+<p>两者的区别就在于synchronous IO做“IO operation”的时候会将process阻塞。按照这个定义，之前所述的blocking IO，non-blocking IO，IO multiplexing都属于synchronous IO。有人可能会说，non-blocking IO并没有被block啊。这里有个非常“狡猾”的地方，定义中所指的“IO operation”是指真实的IO操作，就是例子中的recvfrom这个系统调用。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="Socket"><a href="#Socket" class="headerlink" title="Socket"></a>Socket</h2><h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a href="http://blog.csdn.net/tennysonsky/article/details/45745887" target="_blank" rel="noopener">Linux系统编程——I/O多路复用select、poll、epoll的区别使用</a></li>
+<li><a href="http://billowkiller.com/blog/2014/07/15/linux-epoll-module/" target="_blank" rel="noopener">Linux Epoll Module</a></li>
+<li><a href="http://www.cnblogs.com/maociping/p/5121788.html" target="_blank" rel="noopener">python网络编程——网络IO模型</a></li>
+<li><a href="http://www.jianshu.com/p/486b0965c296" target="_blank" rel="noopener">聊聊Linux 五种IO模型</a></li>
+</ul>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/d317e8c4/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/de8de911/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

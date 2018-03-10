@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>新浪登录流程 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Piper,Blog,Python,Web,系统设计，编程,博客,后端开发" />
+  
+
+  <meta name="description" content="登录流程Step1:客户端预登录响应参数：  servertime nonce rsakey">
+<meta property="og:type" content="article">
+<meta property="og:title" content="新浪登录流程">
+<meta property="og:url" content="http://shawnz.me/posts/b9e0b33e/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="登录流程Step1:客户端预登录响应参数：  servertime nonce rsakey">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="新浪登录流程">
+<meta name="twitter:description" content="登录流程Step1:客户端预登录响应参数：  servertime nonce rsakey">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#登录流程"><span class="toc-text">登录流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Step1-客户端预登录"><span class="toc-text">Step1:客户端预登录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Step2-客户端登录"><span class="toc-text">Step2:客户端登录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Step3-服务端登录校验过程"><span class="toc-text">Step3:服务端登录校验过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Note-安全问题及解决方案"><span class="toc-text">Note:安全问题及解决方案</span></a></li></ol></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-新浪登录流程" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">新浪登录流程</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.10.27</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h1 id="登录流程"><a href="#登录流程" class="headerlink" title="登录流程"></a>登录流程</h1><h2 id="Step1-客户端预登录"><a href="#Step1-客户端预登录" class="headerlink" title="Step1:客户端预登录"></a>Step1:客户端预登录</h2><p><strong>响应参数：</strong></p>
+<ul>
+<li>servertime</li>
+<li>nonce</li>
+<li>rsakey<a id="more"></a>
+<strong>加密用户名和密码：</strong></li>
+</ul>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> makeRequest = <span class="function"><span class="keyword">function</span>(<span class="params">username, password, savestate</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> request = &#123;</span><br><span class="line">      entry: me.getEntry(),</span><br><span class="line">      gateway: <span class="number">1</span>,</span><br><span class="line">      <span class="keyword">from</span>: me.from,</span><br><span class="line">      savestate: savestate,</span><br><span class="line">      useticket: me.useTicket ? <span class="number">1</span> : <span class="number">0</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">if</span> (me.failRedirect) &#123;</span><br><span class="line">      me.loginExtraQuery.frd = <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">    request = objMerge(request, &#123;</span><br><span class="line">      pagerefer: <span class="built_in">document</span>.referrer || <span class="string">""</span></span><br><span class="line">    &#125;);</span><br><span class="line">    request = objMerge(request, me.loginExtraFlag);</span><br><span class="line">    request = objMerge(request, me.loginExtraQuery);</span><br><span class="line">    <span class="comment">// 用户名加密，可以base64解码</span></span><br><span class="line">    request.su = sinaSSOEncoder.base64.encode(urlencode(username));</span><br><span class="line">    <span class="keyword">if</span> (me.service) &#123;</span><br><span class="line">      request.service = me.service</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ((me.loginType &amp; rsa) &amp;&amp; me.servertime &amp;&amp; sinaSSOEncoder &amp;&amp; sinaSSOEncoder.RSAKey) &#123;</span><br><span class="line">      request.servertime = me.servertime;</span><br><span class="line">      request.nonce = me.nonce;</span><br><span class="line">      request.pwencode = <span class="string">"rsa2"</span>;</span><br><span class="line">      request.rsakv = me.rsakv;</span><br><span class="line">      <span class="keyword">var</span> RSAKey = <span class="keyword">new</span> sinaSSOEncoder.RSAKey();</span><br><span class="line">      RSAKey.setPublic(me.rsaPubkey, <span class="string">"10001"</span>);</span><br><span class="line">      <span class="comment">//公钥加密，服务器端私钥解密 可以得到原始密码</span></span><br><span class="line">      password = RSAKey.encrypt([me.servertime, me.nonce].join(<span class="string">"\t"</span>) + <span class="string">"\n"</span> + password)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> ((me.loginType &amp; wsse) &amp;&amp; me.servertime &amp;&amp; sinaSSOEncoder &amp;&amp; sinaSSOEncoder.hex_sha1) &#123;</span><br><span class="line">        request.servertime = me.servertime;</span><br><span class="line">        request.nonce = me.nonce;</span><br><span class="line">        request.pwencode = <span class="string">"wsse"</span>;</span><br><span class="line">        password = sinaSSOEncoder.hex_sha1(<span class="string">""</span> + sinaSSOEncoder.hex_sha1(sinaSSOEncoder.hex_sha1(password)) + me.servertime + me.nonce)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    request.sp = password;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      request.sr = <span class="built_in">window</span>.screen.width + <span class="string">"*"</span> + <span class="built_in">window</span>.screen.height</span><br><span class="line">    &#125; <span class="keyword">catch</span> (e) &#123;&#125;</span><br><span class="line">    <span class="keyword">return</span> request</span><br><span class="line">  &#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="Step2-客户端登录"><a href="#Step2-客户端登录" class="headerlink" title="Step2:客户端登录"></a>Step2:客户端登录</h2><p><strong>请求参数：</strong></p>
+<ul>
+<li>cdult: 3</li>
+<li>domain: sina.com.cn</li>
+<li>encoding: UTF-8</li>
+<li>entry: account</li>
+<li>from:</li>
+<li>gateway: 1</li>
+<li><code>nonce</code>: AFE3O9 //随机值</li>
+<li>pagerefer: <a href="http://login.sina.com.cn/sso/logout.php" target="_blank" rel="noopener">http://login.sina.com.cn/sso/logout.php</a></li>
+<li>prelt: 41</li>
+<li><code>pwencode</code>: rsa2  //加密算法</li>
+<li>returntype: TEXT</li>
+<li><code>rsakv</code>: 1330428213  //密钥</li>
+<li>savestate: 30</li>
+<li><code>servertime</code>: 1478568922 //服务器时间</li>
+<li>service: sso</li>
+<li><code>sp</code>: password //密码</li>
+<li>sr: 1366*768</li>
+<li><code>su</code>: username  //用户名</li>
+<li>useticket: 0</li>
+<li>vsnf: 1</li>
+</ul>
+<h2 id="Step3-服务端登录校验过程"><a href="#Step3-服务端登录校验过程" class="headerlink" title="Step3:服务端登录校验过程"></a>Step3:服务端登录校验过程</h2><ol>
+<li>服务端使用RSA私钥对客户端传递的sp进行解密，得到原始密码。</li>
+<li>然后通过MD5生成摘要和数据库保存的密码进行对比</li>
+<li>缓存Token-Username，返回Token/Cookie</li>
+</ol>
+<h2 id="Note-安全问题及解决方案"><a href="#Note-安全问题及解决方案" class="headerlink" title="Note:安全问题及解决方案"></a>Note:安全问题及解决方案</h2><ol>
+<li><p>加密算法泄漏</p>
+<blockquote>
+<p>客户端加密算法打包/混淆</p>
+</blockquote>
+</li>
+<li><p>用户名、密码泄漏</p>
+<blockquote>
+<p>检测异地登录/登录异常，提示修改密码</p>
+</blockquote>
+</li>
+<li><p>登录报文(用户名/密码)截获</p>
+<blockquote>
+<p>包含servertime,nonce无法在下一次登录使用</p>
+</blockquote>
+</li>
+<li><p>响应报文(Cookie/Token)截获</p>
+<blockquote>
+<p>设置过期时间，每次或者短时间内过期</p>
+</blockquote>
+</li>
+<li><p>帐号异常锁定</p>
+<blockquote>
+<p>登录检查帐号异常</p>
+</blockquote>
+</li>
+<li><p>密码、用户名等信息的修改/Token过期，需要重新登录</p>
+<blockquote>
+<p>移除/过期服务端的Token-Username缓存</p>
+</blockquote>
+</li>
+<li><p>登录过程中间人攻击</p>
+<blockquote>
+<p>攻击者伪造成服务器，返回客户端错误的密钥等参数，客户端在登录时将参数发送给攻击者，攻击者破译用户名和密码</p>
+</blockquote>
+</li>
+<li><p>服务端需要保存状态</p>
+<blockquote>
+<p>在登录过程中产生的中间参数，诸如验证码/nonce需要服务器保存，在下一步登录中进行校验</p>
+</blockquote>
+</li>
+</ol>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/653170c4/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/4fc2401b/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

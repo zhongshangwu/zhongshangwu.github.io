@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Django源码阅读:整体流程 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,源码,Django," />
+  
+
+  <meta name="description" content="服务器启动在上一节中，我们知道了runserver命令的实现在django.core.management.commands下，这里面的Command类重写了handle()方法：">
+<meta name="keywords" content="Python,源码,Django">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Django源码阅读:整体流程">
+<meta property="og:url" content="http://shawnz.me/posts/1470b96d/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="服务器启动在上一节中，我们知道了runserver命令的实现在django.core.management.commands下，这里面的Command类重写了handle()方法：">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.082Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Django源码阅读:整体流程">
+<meta name="twitter:description" content="服务器启动在上一节中，我们知道了runserver命令的实现在django.core.management.commands下，这里面的Command类重写了handle()方法：">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#服务器启动"><span class="toc-text">服务器启动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#一个新的请求"><span class="toc-text">一个新的请求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#URL路由"><span class="toc-text">URL路由</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Django源码阅读二" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Django源码阅读:整体流程</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.12.31</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="服务器启动"><a href="#服务器启动" class="headerlink" title="服务器启动"></a>服务器启动</h2><p>在上一节中，我们知道了<code>runserver</code>命令的实现在<code>django.core.management.commands</code>下，这里面的<code>Command</code>类重写了<code>handle()</code>方法：<br><a id="more"></a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle</span><span class="params">(self, *args, **options)</span>:</span></span><br><span class="line">    <span class="keyword">from</span> django.conf <span class="keyword">import</span> settings</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> settings.DEBUG <span class="keyword">and</span> <span class="keyword">not</span> settings.ALLOWED_HOSTS:</span><br><span class="line">        <span class="keyword">raise</span> CommandError(<span class="string">'You must set settings.ALLOWED_HOSTS if DEBUG is False.'</span>)</span><br><span class="line"></span><br><span class="line">    self.use_ipv6 = options[<span class="string">'use_ipv6'</span>]</span><br><span class="line">    <span class="keyword">if</span> self.use_ipv6 <span class="keyword">and</span> <span class="keyword">not</span> socket.has_ipv6:</span><br><span class="line">        <span class="keyword">raise</span> CommandError(<span class="string">'Your Python does not support IPv6.'</span>)</span><br><span class="line">    self._raw_ipv6 = <span class="keyword">False</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> options[<span class="string">'addrport'</span>]:</span><br><span class="line">        self.addr = <span class="string">''</span></span><br><span class="line">        self.port = self.default_port</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        m = re.match(naiveip_re, options[<span class="string">'addrport'</span>])</span><br><span class="line">        <span class="keyword">if</span> m <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> CommandError(<span class="string">'"%s" is not a valid port number '</span></span><br><span class="line">                                <span class="string">'or address:port pair.'</span> % options[<span class="string">'addrport'</span>])</span><br><span class="line">        self.addr, _ipv4, _ipv6, _fqdn, self.port = m.groups()</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.port.isdigit():</span><br><span class="line">            <span class="keyword">raise</span> CommandError(<span class="string">"%r is not a valid port number."</span> % self.port)</span><br><span class="line">        <span class="keyword">if</span> self.addr:</span><br><span class="line">            <span class="keyword">if</span> _ipv6:</span><br><span class="line">                self.addr = self.addr[<span class="number">1</span>:<span class="number">-1</span>]</span><br><span class="line">                self.use_ipv6 = <span class="keyword">True</span></span><br><span class="line">                self._raw_ipv6 = <span class="keyword">True</span></span><br><span class="line">            <span class="keyword">elif</span> self.use_ipv6 <span class="keyword">and</span> <span class="keyword">not</span> _fqdn:</span><br><span class="line">                <span class="keyword">raise</span> CommandError(<span class="string">'"%s" is not a valid IPv6 address.'</span> % self.addr)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> self.addr:</span><br><span class="line">        self.addr = self.default_addr_ipv6 <span class="keyword">if</span> self.use_ipv6 <span class="keyword">else</span> self.default_addr</span><br><span class="line">        self._raw_ipv6 = self.use_ipv6</span><br><span class="line">    self.run(**options)</span><br></pre></td></tr></table></figure></p>
+<p>这里面很简单，获取一些参数和配置信息直接调用<code>self.run(**options)</code>方法，<code>run()</code>方法也十分简洁，除了调用<code>inner_run()</code>之外，还检查配置判断是否启用<code>auto reload</code>机制。这一点可<code>werkzeug</code>相似，都是单独开一个线程检查代码修改。在<code>inner_run()</code>里：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">inner_run</span><span class="params">(self, *args, **options)</span>:</span></span><br><span class="line">    <span class="comment"># 省略掉了部分代码</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        handler = self.get_handler(*args, **options)</span><br><span class="line">        run(self.addr, int(self.port), handler,</span><br><span class="line">            ipv6=self.use_ipv6, threading=threading, server_cls=self.server_cls)</span><br><span class="line">    <span class="keyword">except</span> socket.error <span class="keyword">as</span> e:</span><br><span class="line">        <span class="comment"># 省略掉部分异常打印</span></span><br><span class="line">        <span class="comment"># Need to use an OS exit because sys.exit doesn't work in a thread</span></span><br><span class="line">        os._exit(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">        <span class="keyword">if</span> shutdown_message:</span><br><span class="line">            self.stdout.write(shutdown_message)</span><br><span class="line">        sys.exit(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_handler</span><span class="params">(self, *args, **options)</span>:</span></span><br><span class="line">    <span class="string">"""Return the default WSGI handler for the runner."""</span></span><br><span class="line">    <span class="keyword">return</span> get_internal_wsgi_application()</span><br></pre></td></tr></table></figure>
+<p>首先<code>inner_run</code>尝试获取一个<code>handler</code>，通过查看内部的实现，发现在里层是通过<code>django.core.server.basehttp</code>模块的<code>get_wsgi_application</code>返回一个<code>WSGIHandler</code>实例。这一步工作和我们在<code>settings</code>文件配置<code>wsgi</code>模块路径，调用<code>get_wsgi_application</code>创建WSGI应用程序<code>app</code>效果是一样的。</p>
+<p>我们先跳过<code>WSGIRequest</code>来看<code>run</code>是怎么启动应用服务器的。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(addr, port, wsgi_handler, ipv6=False, threading=False, server_cls=WSGIServer)</span>:</span></span><br><span class="line">    server_address = (addr, port)</span><br><span class="line">    <span class="keyword">if</span> threading:</span><br><span class="line">        httpd_cls = type(<span class="string">'WSGIServer'</span>, (socketserver.ThreadingMixIn, server_cls), &#123;&#125;)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        httpd_cls = server_cls</span><br><span class="line">    httpd = httpd_cls(server_address, WSGIRequestHandler, ipv6=ipv6)</span><br><span class="line">    <span class="keyword">if</span> threading:</span><br><span class="line">        httpd.daemon_threads = <span class="keyword">True</span></span><br><span class="line">    <span class="comment"># 启动WSGI服务器，并设置app</span></span><br><span class="line">    httpd.set_app(wsgi_handler)</span><br><span class="line">    httpd.serve_forever()</span><br></pre></td></tr></table></figure>
+<p><code>run()</code>方法有几个参数：</p>
+<ul>
+<li><code>addr</code>和<code>port</code>：服务器启动监听的地址和端口</li>
+<li><code>wsgi_handler</code>：应用程序，处理请求</li>
+<li><code>ipv6</code>和<code>threading</code>：是否使用ipv6和是否使用多线程处理请求</li>
+<li><code>server_cls</code>：服务器类，这个类的基类是<code>http.server.HTTPServer</code></li>
+</ul>
+<p>用<code>http_cls</code>创建了服务器<code>httpd</code>后，调用<code>serve_forever</code>一直运行，等待请求的带来。当请求到来的时候，会调用<code>wsgi_handler</code>也就是我们的<code>app</code>处理请求。具体<code>http.server</code>底层是怎么实现的，这里就不做深入了。</p>
+<p>到目前为止，Django服务器已经运行起来了。。。</p>
+<h2 id="一个新的请求"><a href="#一个新的请求" class="headerlink" title="一个新的请求"></a>一个新的请求</h2><p>现在，假设一条新的请求进来了，Django是怎么从请求地址解析到正确的处理函数的呢？</p>
+<p>我们来看看Django是怎么接收请求并生成响应的。</p>
+<p>来到<code>django.core.handlers.wsgi</code>模块的<code>WSGIHandler</code>，这里是服务器调用我们应用程序的入口：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WSGIHandler</span><span class="params">(base.BaseHandler)</span>:</span></span><br><span class="line">    <span class="comment"># 请求类</span></span><br><span class="line">    request_class = WSGIRequest</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, *args, **kwargs)</span>:</span></span><br><span class="line">        super().__init__(*args, **kwargs)</span><br><span class="line">        <span class="comment"># 加载中间件</span></span><br><span class="line">        self.load_middleware()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, environ, start_response)</span>:</span></span><br><span class="line">        set_script_prefix(get_script_name(environ))</span><br><span class="line">        signals.request_started.send(sender=self.__class__, environ=environ)</span><br><span class="line">        <span class="comment"># 构建WSGIRequest对象</span></span><br><span class="line">        request = self.request_class(environ)</span><br><span class="line">        <span class="comment"># 生成响应</span></span><br><span class="line">        response = self.get_response(request)</span><br><span class="line"></span><br><span class="line">        response._handler_class = self.__class__</span><br><span class="line"></span><br><span class="line">        status = <span class="string">'%d %s'</span> % (response.status_code, response.reason_phrase)</span><br><span class="line">        response_headers = list(response.items())</span><br><span class="line">        <span class="keyword">for</span> c <span class="keyword">in</span> response.cookies.values():</span><br><span class="line">            response_headers.append((<span class="string">'Set-Cookie'</span>, c.output(header=<span class="string">''</span>)))</span><br><span class="line">        <span class="comment"># 发送状态码和响应头</span></span><br><span class="line">        start_response(status, response_headers)</span><br><span class="line">        <span class="comment"># 生成响应</span></span><br><span class="line">        <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
+<p>可以看到这个类是一个可调用对象，调用参数为<code>environ</code>和<code>start_response</code>，显然这是一个标准的WSGI应用程序。</p>
+<p>在它的<code>__init__()</code>方法中有个<code>load_middleware()</code>方法，它继承自<code>django.core.handlers.base.BaseHandler</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseHandler</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_middleware</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="comment"># 省略掉了异常处理部分</span></span><br><span class="line">        self._request_middleware = []</span><br><span class="line">        self._view_middleware = []</span><br><span class="line">        self._template_response_middleware = []</span><br><span class="line">        self._response_middleware = []</span><br><span class="line">        self._exception_middleware = []</span><br><span class="line">        <span class="comment"># _get_response进行请求处理，先包装一层处于“洋葱”结构最里层</span></span><br><span class="line">        handler = convert_exception_to_response(self._get_response)</span><br><span class="line">        <span class="comment"># 这里使用reversed：settings中最低层定义的中间件处于“洋葱”结构的里层</span></span><br><span class="line">        <span class="comment"># 即请求阶段从外至里，中间件从顶至下，响应阶段从里到外，中间件从下至上</span></span><br><span class="line">        <span class="keyword">for</span> middleware_path <span class="keyword">in</span> reversed(settings.MIDDLEWARE):</span><br><span class="line">            middleware = import_string(middleware_path)</span><br><span class="line">            <span class="comment"># 中间件对于请求和响应的处理在调用它的时候</span></span><br><span class="line">            mw_instance = middleware(handler)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 而这几个钩子函数是添加到相应队列，在其他地方调用</span></span><br><span class="line">            <span class="keyword">if</span> hasattr(mw_instance, <span class="string">'process_view'</span>):</span><br><span class="line">                self._view_middleware.insert(<span class="number">0</span>, mw_instance.process_view)</span><br><span class="line">            <span class="keyword">if</span> hasattr(mw_instance, <span class="string">'process_template_response'</span>):</span><br><span class="line">                self._template_response_middleware.append(mw_instance.process_template_response)</span><br><span class="line">            <span class="keyword">if</span> hasattr(mw_instance, <span class="string">'process_exception'</span>):</span><br><span class="line">                self._exception_middleware.append(mw_instance.process_exception)</span><br><span class="line">            </span><br><span class="line">            handler = convert_exception_to_response(mw_instance)</span><br><span class="line">            </span><br><span class="line">        self._middleware_chain = handler</span><br></pre></td></tr></table></figure>
+<p><code>convert_exception_to_response</code>是一个装饰器，它以“洋葱”的结构将<code>WSGIHandler</code>处理请求和中间件一层一层的包裹起来，并对里层的异常进行了捕获和转换。</p>
+<p>中间件需要遵循一定的协议，必须具有指定的方法：</p>
+<ul>
+<li><code>process_view</code>：视图中间件</li>
+<li><code>process_template_response</code>：模板中间件</li>
+<li><code>process_exception</code>：异常中间件</li>
+<li><code>__init__(get_response)</code>：接受一个参数的初始化方法</li>
+<li><code>__call__(request)</code>：可调用对象，接收请求对象</li>
+</ul>
+<p>中间件的加载工作发生在应用启动的时候，只会发生一次。</p>
+<p>继续回到<code>WSGIHandler.__call__(environ, start_response)</code>中。首先Django会通过<code>environ</code>构建<code>WSGIRequest</code>对象<code>request</code>，其中包含了从请求中解析出来的各种信息。</p>
+<p>请求对象有了，接下来就是怎么生成响应了，<code>get_response()</code>继承自<code>BaseHandler</code>：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_response</span><span class="params">(self, request)</span>:</span></span><br><span class="line">    <span class="comment"># 设置URL解析器</span></span><br><span class="line">    set_urlconf(settings.ROOT_URLCONF)</span><br><span class="line">    response = self._middleware_chain(request)</span><br><span class="line">    response._closable_objects.append(request)</span><br><span class="line">    <span class="comment"># If the exception handler returns a TemplateResponse that has not</span></span><br><span class="line">    <span class="comment"># been rendered, force it to be rendered.</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> getattr(response, <span class="string">'is_rendered'</span>, <span class="keyword">True</span>) <span class="keyword">and</span> callable(getattr(response, <span class="string">'render'</span>, <span class="keyword">None</span>)):</span><br><span class="line">        response = response.render()</span><br><span class="line">    <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure></p>
+<p>可以看到生成响应的第一步，就是设置URL解析器，关于URL路由部分，我们先跳过。</p>
+<p>在配置好URL解析器号，Django以中间件链的形式传入<code>request</code>对象，生成响应。在刚刚中间件介绍的时候，我们知道中间件链的最里层是<code>_get_response</code>，这个方法也是继承自<code>BaseHandler</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_get_response</span><span class="params">(self, request)</span>:</span></span><br><span class="line">    response = <span class="keyword">None</span></span><br><span class="line">    <span class="comment"># 这一部分是有关于路由的，先不管</span></span><br><span class="line">    <span class="keyword">if</span> hasattr(request, <span class="string">'urlconf'</span>):</span><br><span class="line">        urlconf = request.urlconf</span><br><span class="line">        set_urlconf(urlconf)</span><br><span class="line">        resolver = get_resolver(urlconf)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        resolver = get_resolver()</span><br><span class="line"></span><br><span class="line">    resolver_match = resolver.resolve(request.path_info)</span><br><span class="line">    <span class="comment"># 可以先简单的认为，callback为视图函数，后面两个为函数参数</span></span><br><span class="line">    callback, callback_args, callback_kwargs = resolver_match</span><br><span class="line">    request.resolver_match = resolver_match</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 应用视图中间件</span></span><br><span class="line">    <span class="keyword">for</span> middleware_method <span class="keyword">in</span> self._view_middleware:</span><br><span class="line">        response = middleware_method(request, callback, callback_args, callback_kwargs)</span><br><span class="line">        <span class="keyword">if</span> response:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">if</span> response <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        wrapped_callback = self.make_view_atomic(callback)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            response = wrapped_callback(request, *callback_args, **callback_kwargs)</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            response = self.process_exception_by_middleware(e, request)</span><br><span class="line">    <span class="keyword">if</span> response <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="comment"># 省略对于没有返回响应的异常处理</span></span><br><span class="line">        ...</span><br><span class="line">    <span class="comment"># 应用模板中间件</span></span><br><span class="line">    <span class="keyword">elif</span> hasattr(response, <span class="string">'render'</span>) <span class="keyword">and</span> callable(response.render):</span><br><span class="line">        <span class="keyword">for</span> middleware_method <span class="keyword">in</span> self._template_response_middleware:</span><br><span class="line">            response = middleware_method(request, response)</span><br><span class="line">            <span class="keyword">if</span> response <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">                <span class="comment"># 省略对于没有返回响应的异常处理</span></span><br><span class="line">                ...</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            response = response.render()</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            response = self.process_exception_by_middleware(e, request)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
+<p>抛除URL路由，从请求到响应的流程大致就先分析到这里了。</p>
+<h2 id="URL路由"><a href="#URL路由" class="headerlink" title="URL路由"></a>URL路由</h2><p>在学习Django URL路由之前，先回顾一下Flask的URL路由。</p>
+<p>Flask的URL路由是基于<code>werkzeug</code>的<code>Rule</code>和<code>Map</code>的。使用装饰器，在应用启动的添加<code>Rule</code>到<code>Map</code>中并对URL规则进行预编译，以加快后面的匹配速度。</p>
+<p>当请求来到时，Flask把<code>Map</code>和请求路径信息进行绑定生成一个<code>MapAdapter</code>实例，使用它可以进行路由匹配。<code>werkzeug</code>负责匹配的是URL地址和<code>endpoint</code>，至于<code>endpoit</code>和<code>view_func</code>是通过一个<code>view_funcs</code>字典映射的。这样Flask就找到合适的视图处理函数。</p>
+<p>相比较于Flask这种松散式的路由，Django提倡的是集中式的配置管理。</p>
+<p>在<code>&lt;project&gt;/settings.py</code>文件中，有这么一个配置项：<code>ROOT_URLCONF = &#39;mysite.urls&#39;</code>。</p>
+<p>Djanog URL源码主要有两个重要模块：</p>
+<ul>
+<li><code>django.urls.conf</code>：包括<code>path()</code>, <code>include()</code>, <code>re_path()</code>三个主要方法，用于创建url相关类的实例。</li>
+<li><code>django.urls.urlresolvers</code>：包括Django URL的所有类结构<code>URLPattern</code>, <code>URLResolver</code>, <code>ResolverMatch</code>以及url匹配逻辑。</li>
+</ul>
+<p>在继续学习之前，先弄懂Django URL路由的几个概念：</p>
+<ul>
+<li>URL模式（URL Pattern）：一条最基本的URL配置规则。</li>
+<li>URL分解器（URL Resolve）：包含多条URLPattern或嵌套包含其他URLResolver。</li>
+<li>匹配结果（Resolver Match）：由处理函数、可选的参数和可选的位置参数组成。</li>
+</ul>
+<p>首先来看怎么在Django项目中配置url：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Examples:</span></span><br><span class="line"><span class="comment"># Function views</span></span><br><span class="line"><span class="comment">#     1. Add an import:  from my_app import views</span></span><br><span class="line"><span class="comment">#     2. Add a URL to urlpatterns:  path('', views.home, name='home')</span></span><br><span class="line"><span class="comment"># Class-based views</span></span><br><span class="line"><span class="comment">#     1. Add an import:  from other_app.views import Home</span></span><br><span class="line"><span class="comment">#     2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')</span></span><br><span class="line"><span class="comment"># Including another URLconf</span></span><br><span class="line"><span class="comment">#     1. Import the include() function: from django.urls import include, path</span></span><br><span class="line"><span class="comment">#     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))</span></span><br><span class="line"><span class="keyword">from</span> django.contrib <span class="keyword">import</span> admin</span><br><span class="line"><span class="keyword">from</span> django.urls <span class="keyword">import</span> path</span><br><span class="line"></span><br><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">'admin/'</span>, admin.site.urls),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>在Django 2.0中使用<code>path</code>配置一条URL规则，它和<code>url</code>的区别是它不支持正则的命名元组：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">url</span><span class="params">(regex, view, kwargs=None, name=None)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> re_path(regex, view, kwargs, name)</span><br><span class="line"></span><br><span class="line">re_path = partial(_path, Pattern=RegexPattern)</span><br><span class="line">path = partial(_path, Pattern=RoutePattern)</span><br></pre></td></tr></table></figure>
+<p><code>_path</code>函数接收几个参数：<code>route</code>(路由路径)，<code>view</code>(处理视图或列表)，<code>kwargs</code>(可选的函数默认参数)，<code>name</code>(可选的端点名称)以及<code>Pattern</code>(使用那种匹配模式)：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_path</span><span class="params">(route, view, kwargs=None, name=None, Pattern=None)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(view, (list, tuple)):</span><br><span class="line">        <span class="comment"># For include(...) processing.</span></span><br><span class="line">        pattern = Pattern(route, is_endpoint=<span class="keyword">False</span>)</span><br><span class="line">        urlconf_module, app_name, namespace = view</span><br><span class="line">        <span class="keyword">return</span> URLResolver(</span><br><span class="line">            pattern,</span><br><span class="line">            urlconf_module,</span><br><span class="line">            kwargs,  <span class="comment"># 默认参数可以传递进去</span></span><br><span class="line">            app_name=app_name,</span><br><span class="line">            namespace=namespace,</span><br><span class="line">        )</span><br><span class="line">    <span class="keyword">elif</span> callable(view):</span><br><span class="line">        pattern = Pattern(route, name=name, is_endpoint=<span class="keyword">True</span>)</span><br><span class="line">        <span class="keyword">return</span> URLPattern(pattern, view, kwargs, name)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">raise</span> TypeError(<span class="string">'view must be a callable or a list/tuple in the case of include().'</span>)</span><br></pre></td></tr></table></figure></p>
+<p>接下来是根据<code>view</code>参数的对象类型来调用不同的对象进行解析：</p>
+<ul>
+<li><p><code>list/tuple</code>：如果是这两种类型之一，会创建<code>URLResolver</code>。Django在这里的实现十分的灵活：<br><br>  可以使用<code>path(&#39;admin/&#39;, admin.site.urls)</code>，<code>admin.site</code>指向<code>django.contrib.sites.AdminSite</code>：</p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AdminSite</span>:</span></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">urls</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self.get_urls(), <span class="string">'admin'</span>, self.name</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_urls</span><span class="params">(self)</span>:</span></span><br><span class="line">        urlpatterns = [</span><br><span class="line">            path</span><br><span class="line">            ...</span><br><span class="line">        ]</span><br><span class="line">        <span class="keyword">return</span> urlpatterns</span><br></pre></td></tr></table></figure>
+<p>  也可以使用<code>path(&#39;admin/&#39;, include(&#39;blog.urls&#39;))</code>，甚至是<code>include(extra_patterns)</code>(其中<code>extra_patterns</code>是一个<code>path</code>列表)。<br><br>  这是因为在<code>include</code>中，如果传入的是字符串，它会尝试导入模块并找到<code>urlpatterns</code>，否则会尝试直接从<code>urlconf_module</code>上获取属性<code>urlpatterns</code>且默认值为<code>urlconf_module</code>本身，最后会返回一个三元组：</p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">include</span><span class="params">(arg, namespace=None)</span>:</span></span><br><span class="line">    app_name = <span class="keyword">None</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(arg, tuple):</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            urlconf_module, app_name = arg</span><br><span class="line">        <span class="keyword">except</span> ValueError:</span><br><span class="line">            <span class="comment"># 省略异常处理</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        urlconf_module = arg</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> isinstance(urlconf_module, str):</span><br><span class="line">        urlconf_module = import_module(urlconf_module)</span><br><span class="line">    patterns = getattr(urlconf_module, <span class="string">'urlpatterns'</span>, urlconf_module)</span><br><span class="line">    app_name = getattr(urlconf_module, <span class="string">'app_name'</span>, app_name)</span><br><span class="line">    <span class="keyword">if</span> namespace <span class="keyword">and</span> <span class="keyword">not</span> app_name:</span><br><span class="line">        <span class="comment"># 省略异常处理</span></span><br><span class="line">    namespace = namespace <span class="keyword">or</span> app_name</span><br><span class="line">    <span class="comment"># 省略部分patterns检查</span></span><br><span class="line">    <span class="keyword">return</span> (urlconf_module, app_name, namespace)</span><br></pre></td></tr></table></figure>
+<p>  如此以来<code>include</code>会一致的返回一个三元组，在判断参数<code>view</code>为<code>list/tuple</code>类型时，进行一次拆包，就构建一个<code>URLResolver</code>实例。</p>
+</li>
+<li><code>callable</code>：如果参数<code>view</code>是一个可调用对象，那么Django会直接构建<code>URLPattern</code>。</li>
+</ul>
+<p>现在我们知道了<code>urlpatterns</code>里面只能是<code>path</code>或者<code>re_path</code>的产物。并且<code>settings</code>配置文件里有个选项<code>ROOT_UTLCONF</code>，它指向我们的<code>urlpatterns</code>所在的模块路径。</p>
+<p>回到<code>BaseHandler</code>中，来看看在请求到来时，Django是怎么使用这个配置选项做路由的。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseHandler</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_response</span><span class="params">(self, request)</span>:</span></span><br><span class="line">        <span class="comment"># 设置URL解析器</span></span><br><span class="line">        set_urlconf(settings.ROOT_URLCONF)</span><br><span class="line">        ...</span><br><span class="line">        response = self._middleware_chain(request)</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_get_response</span><span class="params">(self, request)</span>:</span></span><br><span class="line">        response = <span class="keyword">None</span></span><br><span class="line">        <span class="keyword">if</span> hasattr(request, <span class="string">'urlconf'</span>):</span><br><span class="line">            <span class="comment"># 用户自定义url解析器</span></span><br><span class="line">            urlconf = request.urlconf</span><br><span class="line">            set_urlconf(urlconf)</span><br><span class="line">            resolver = get_resolver(urlconf)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            resolver = get_resolver()</span><br><span class="line">        <span class="comment"># 调用解析器匹配地址</span></span><br><span class="line">        resolver_match = resolver.resolve(request.path_info)</span><br><span class="line">        <span class="comment"># 返回callback为视图函数，后面两个为函数参数</span></span><br><span class="line">        callback, callback_args, callback_kwargs = resolver_match</span><br><span class="line">        request.resolver_match = resolver_match</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line"><span class="comment"># in djanog.urls.base.py</span></span><br><span class="line"><span class="comment"># Overridden URLconfs for each thread are stored here.</span></span><br><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> local</span><br><span class="line">_urlconfs = local()</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">set_urlconf</span><span class="params">(urlconf_name)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> urlconf_name:</span><br><span class="line">        _urlconfs.value = urlconf_name</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">if</span> hasattr(_urlconfs, <span class="string">"value"</span>):</span><br><span class="line">            <span class="keyword">del</span> _urlconfs.value</span><br><span class="line"></span><br><span class="line"><span class="comment"># in django.urls.resolvers.py</span></span><br><span class="line"><span class="meta">@functools.lru_cache(maxsize=None)</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_resolver</span><span class="params">(urlconf=None)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> urlconf <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">from</span> django.conf <span class="keyword">import</span> settings</span><br><span class="line">        urlconf = settings.ROOT_URLCONF</span><br><span class="line">    <span class="keyword">return</span> URLResolver(RegexPattern(<span class="string">r'^/'</span>), urlconf)</span><br></pre></td></tr></table></figure>
+<p>在请求刚进入<code>get_response</code>的时候，Django就设置本地线程变量<code>_urlconfs</code>值为<code>settings.ROOT_URLCONF</code>，这个值在其他的地方也有用到。</p>
+<p><code>get_resolver()</code>获取到URL解析器后，接下来的工作就是调<code>resolver.resolver(request.path_info)</code>找到匹配的URL处理函数。</p>
+<p>所以直接来到<code>URLResolver</code>的<code>resolver()</code>方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">resolve</span><span class="params">(self, path)</span>:</span></span><br><span class="line">   path = str(path)  <span class="comment"># path may be a reverse_lazy object</span></span><br><span class="line">   tried = []</span><br><span class="line">   match = self.pattern.match(path)</span><br><span class="line">   <span class="keyword">if</span> match:</span><br><span class="line">       new_path, args, kwargs = match</span><br><span class="line">       <span class="keyword">for</span> pattern <span class="keyword">in</span> self.url_patterns:</span><br><span class="line">           <span class="keyword">try</span>:</span><br><span class="line">               sub_match = pattern.resolve(new_path)</span><br><span class="line">           <span class="keyword">except</span> Resolver404 <span class="keyword">as</span> e:</span><br><span class="line">               sub_tried = e.args[<span class="number">0</span>].get(<span class="string">'tried'</span>)</span><br><span class="line">               <span class="keyword">if</span> sub_tried <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">                   tried.extend([pattern] + t <span class="keyword">for</span> t <span class="keyword">in</span> sub_tried)</span><br><span class="line">               <span class="keyword">else</span>:</span><br><span class="line">                   tried.append([pattern])</span><br><span class="line">           <span class="keyword">else</span>:</span><br><span class="line">               <span class="keyword">if</span> sub_match:</span><br><span class="line">                   sub_match_dict = dict(kwargs, **self.default_kwargs)</span><br><span class="line">                   <span class="comment"># Update the sub_match_dict with the kwargs from the sub_match.</span></span><br><span class="line">                   sub_match_dict.update(sub_match.kwargs)</span><br><span class="line">                   <span class="comment"># If there are *any* named groups, ignore all non-named groups.</span></span><br><span class="line">                   <span class="comment"># Otherwise, pass all non-named arguments as positional arguments.</span></span><br><span class="line">                   sub_match_args = sub_match.args</span><br><span class="line">                   <span class="keyword">if</span> <span class="keyword">not</span> sub_match_dict:</span><br><span class="line">                       sub_match_args = args + sub_match.args</span><br><span class="line">                   <span class="keyword">return</span> ResolverMatch(</span><br><span class="line">                       sub_match.func,</span><br><span class="line">                       sub_match_args,</span><br><span class="line">                       sub_match_dict,</span><br><span class="line">                       sub_match.url_name,</span><br><span class="line">                       [self.app_name] + sub_match.app_names,</span><br><span class="line">                       [self.namespace] + sub_match.namespaces,</span><br><span class="line">                   )</span><br><span class="line">               tried.append([pattern])</span><br><span class="line">       <span class="keyword">raise</span> Resolver404(&#123;<span class="string">'tried'</span>: tried, <span class="string">'path'</span>: new_path&#125;)</span><br><span class="line">   <span class="keyword">raise</span> Resolver404(&#123;<span class="string">'path'</span>: path&#125;)</span><br></pre></td></tr></table></figure>
+<p><code>URLResolver</code>的整个匹配流程的核心代码是嵌套其他<code>URLResolver.resolve()</code>或者<code>URLPattern.resolve()</code>。</p>
+<p><code>URLPattern.resolve()</code>逻辑比较简单，根据传入的<code>path</code>匹配，匹配成功就返回相应的callback。而<code>URLResolver</code>也会匹配path，但会返回<code>urlconf_module</code>子模块的匹配结果，递归流程，直到找到叶子模块<code>URLPattern</code>，然后将匹配结果层层返回。</p>
+<p>而匹配结果是<code>ResolverMatch</code>的实例，由于它重写了魔法方法<code>__getitem__(self, index)</code>，所以可以进行拆包得到<code>callback</code>，<code>args</code>和<code>kwargs</code>。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ResolverMatch</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getitem__</span><span class="params">(self, index)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (self.func, self.args, self.kwargs)[index]</span><br></pre></td></tr></table></figure></p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/372ad3fc/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/cc9966a1/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

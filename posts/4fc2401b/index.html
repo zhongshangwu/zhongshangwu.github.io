@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>元组(tuple) | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python," />
+  
+
+  <meta name="description" content="元组和列表的区别是什么？ 元组和列表都属于序列，而元组是不可变的。">
+<meta name="keywords" content="Python">
+<meta property="og:type" content="article">
+<meta property="og:title" content="元组(tuple)">
+<meta property="og:url" content="http://shawnz.me/posts/4fc2401b/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="元组和列表的区别是什么？ 元组和列表都属于序列，而元组是不可变的。">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="元组(tuple)">
+<meta name="twitter:description" content="元组和列表的区别是什么？ 元组和列表都属于序列，而元组是不可变的。">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#元组和列表的区别是什么？"><span class="toc-text">元组和列表的区别是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#元组的用法"><span class="toc-text">元组的用法</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python元组" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">元组(tuple)</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.11.20</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="元组和列表的区别是什么？"><a href="#元组和列表的区别是什么？" class="headerlink" title="元组和列表的区别是什么？"></a>元组和列表的区别是什么？</h2><blockquote>
+<p><code>元组和列表都属于序列，而元组是不可变的。</code></p>
+</blockquote>
+<a id="more"></a>
+<h2 id="元组的用法"><a href="#元组的用法" class="headerlink" title="元组的用法"></a>元组的用法</h2><ol>
+<li><p>作为字典的键<br> 由于元组的不可变性质，可以使用元组作为字典的键(要求元组里面的元素都是可散列的数据类型)。</p>
+</li>
+<li><p>当做记录使用<br> 元组其实是对数据的记录：元组除了数据本身还记录的里面元素的个数和位置信息。<br> 例如一条位置记录：</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">city, latitude, longitude = (<span class="string">'Beijing'</span>, <span class="number">116.46</span>, <span class="number">39.92</span>)</span><br></pre></td></tr></table></figure>
+<p> 具名元组<br> <code>collections.namedtuple</code>是一个工厂函数，返回一个类，可以用来创建带有字段名的元组。</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> collection <span class="keyword">import</span> namedtuple</span><br><span class="line">City = namedtuple(<span class="string">'City'</span>, <span class="string">'name latitude longitude'</span>)</span><br><span class="line">beijing = City(name=<span class="string">'Beijing'</span>, latitude=<span class="number">116.46</span>, longitude=<span class="number">39.92</span>)</span><br><span class="line"><span class="keyword">assert</span> beijing.name == <span class="string">'Beijing'</span></span><br></pre></td></tr></table></figure>
+<p> 创建具名元组需要两个参数，第一个类名，第二个是类中各字段名称(可以是字符串组成的可迭代对象，也可以是空格分隔的字段名组成的字符串)</p>
+</li>
+<li><p>函数返回值和元组拆包(可迭代元素拆包)</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">(a, b, c)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> a, b, c</span><br><span class="line"></span><br><span class="line">a, b, c = func(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line">a, _, c = func(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line">a, * = func(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+<p> 在上面的用法中：</p>
+<ul>
+<li>可以使用<code>_</code>占位符来处理不感兴趣的数据</li>
+<li><p>可以使用<code>*</code>收集不确定数量的元素</p>
+<p>另外：</p>
+</li>
+<li>交叉赋值：<code>a, b = b, a</code></li>
+<li>嵌套拆包：<code>city, (latitude, longitude) = (&#39;Beijing&#39;, (116.46, 39.92))</code></li>
+</ul>
+</li>
+<li><p>增量运算</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">b = (<span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">b += b</span><br><span class="line"></span><br><span class="line">a = (<span class="number">1</span>, [<span class="number">2</span>, <span class="number">3</span>])</span><br><span class="line">a[<span class="number">1</span>] += [<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>对元组进行增量赋值运算，相当于<code>b = b + b</code>，会产生一个新的对象，和变量<code>b</code>绑定。<br>(一个类如果没有实现<code>__iadd__</code>，python会调用<code>__add__</code>)</p>
+</li>
+<li><p>对于<code>a[1] += 4</code>，a会变成<code>(1, [2, 3, 4])</code>，同时也会抛出异常<code>TypeError</code><br>(可以通过dis.dis(‘s[a] += b’)查看字节码，增量赋值不是一个原子操作，先增然后赋值)</p>
+</li>
+</ul>
+</li>
+</ol>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/b9e0b33e/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/a5c816d6/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>文本和字节序列 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python," />
+  
+
+  <meta name="description" content="人类使用文本，计算机使用字节序列 —Esther Nam 和 Travis Fischer“Character Encoding and Unicode in Python”">
+<meta name="keywords" content="Python">
+<meta property="og:type" content="article">
+<meta property="og:title" content="文本和字节序列">
+<meta property="og:url" content="http://shawnz.me/posts/a5c816d6/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="人类使用文本，计算机使用字节序列 —Esther Nam 和 Travis Fischer“Character Encoding and Unicode in Python”">
+<meta property="og:image" content="http://shawnz.me/images/str和unicode.png">
+<meta property="og:image" content="http://shawnz.me/images/str和bytes.png">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="文本和字节序列">
+<meta name="twitter:description" content="人类使用文本，计算机使用字节序列 —Esther Nam 和 Travis Fischer“Character Encoding and Unicode in Python”">
+<meta name="twitter:image" content="http://shawnz.me/images/str和unicode.png">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#字符和字节"><span class="toc-text">字符和字节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编码和解码"><span class="toc-text">编码和解码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Python编码问题"><span class="toc-text">Python编码问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Python2中的str和unicode"><span class="toc-text">Python2中的str和unicode</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Python3中的str和bytes"><span class="toc-text">Python3中的str和bytes</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Python3中的字节序列"><span class="toc-text">Python3中的字节序列</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python文本和字节序列" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">文本和字节序列</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.11.20</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <blockquote>
+<p>人类使用文本，计算机使用字节序列</p>
+<p style="text-align:right">—Esther Nam 和 Travis Fischer</p><br><p style="text-align:right">“Character Encoding and Unicode in Python”</p>
+</blockquote>
+<a id="more"></a>
+<h2 id="字符和字节"><a href="#字符和字节" class="headerlink" title="字符和字节"></a>字符和字节</h2><p>计算机以字节的形式存储数据，一个字节8个比特位。<br>而字符只是一个符号，用于显示，方便阅读。<br>一个”字符串“就是一个字符序列，关键在于”字符“是怎么的定义。<br>在Python3中，str对象获取的是unicode字符，相当于Python2中unicode对象获取的元素。<br>在Python2中，str对象获取的是原始的字节序列。</p>
+<p>Unicode标准把字符的标识和具体的码位进行了明确的区分：</p>
+<ul>
+<li>字符的标识，即码位，是十进制0~1114111数字，以4~6个十六进制表示。例如，字母A码位’U+0041’。</li>
+<li>字节的具体表述取决于编码。</li>
+</ul>
+<h2 id="编码和解码"><a href="#编码和解码" class="headerlink" title="编码和解码"></a>编码和解码</h2><p>把码位转换成字节序列的过程是<code>编码</code>；<br>把字节序列转换成码位的过程是<code>解码</code>。</p>
+<p>由于Python2中的str和unicode对象存在隐式转换，所以会发现既可以对str进行<code>encode</code>，也可以对unicode进行<code>decode</code>，但是这种用法是不对的。<br>这种行为在Python3中得到了矫正，str对象只具备<code>encode</code>方法。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = <span class="string">'zhong'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a.encode(<span class="string">'utf8'</span>)</span><br><span class="line"><span class="string">b'zhong'</span></span><br></pre></td></tr></table></figure></p>
+<p>那么既然<code>encode</code>得到的是bytes对象，那么<code>b&#39;zhong&#39;</code>和<code>&#39;zhong&#39;</code>看起来一样呢？<br>这是因为bytes的字面量表示法中有ASCII文本，因此会以下面三种方式显示：</p>
+<ul>
+<li>可打印的ASCII范围内的字节，使用ASCII字符本身；</li>
+<li>制表符、换行符、回车符和\对应的字节，使用转移序列\t、\n、\r和\\；</li>
+<li>其他字节的值，使用十六进制转移序列</li>
+</ul>
+<p>Python内置了100多种编解码器，用于文本和字节序列的转换，例如’utf_8’(别名’utf8’、’U8’)。<br>在编码和解码过程中，可能会遇到一下问题：</p>
+<ul>
+<li><code>UnicodeEncodeError</code>，字符串转化成字节序列出错；</li>
+<li><code>UnicodeDecodeError</code>，字节序列转换成字符串出错；</li>
+<li><code>SystaxError</code>，编码与预期的的不符。</li>
+</ul>
+<h2 id="Python编码问题"><a href="#Python编码问题" class="headerlink" title="Python编码问题"></a>Python编码问题</h2><h3 id="Python2中的str和unicode"><a href="#Python2中的str和unicode" class="headerlink" title="Python2中的str和unicode"></a>Python2中的str和unicode</h3><p>在Python2中str中存储的原始的字节序列，所以str更为合适的一种叫法”字节串“(Python2中的bytes相当于str的别名)，而真正意义上的字符串应该是unicode对象。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>str1 = <span class="string">'这是一个str'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[c <span class="keyword">for</span> c <span class="keyword">in</span> str1]</span><br><span class="line">[<span class="string">'\xe8'</span>, <span class="string">'\xbf'</span>, <span class="string">'\x99'</span>, <span class="string">'\xe6'</span>, <span class="string">'\x98'</span>, <span class="string">'\xaf'</span>, <span class="string">'\xe4'</span>, <span class="string">'\xb8'</span>, <span class="string">'\x80'</span>, <span class="string">'\xe4'</span>, <span class="string">'\xb8'</span>, <span class="string">'\xaa'</span>, <span class="string">'s'</span>, <span class="string">'t'</span>, <span class="string">'r'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>str1[<span class="number">0</span>]</span><br><span class="line"><span class="string">'\xe8'</span></span><br></pre></td></tr></table></figure></p>
+<p>终端采用utf8编码，所以输入‘这是一个str’字面值，python解释器接收到<br>‘\xe8\xbf\x99\xe6\x98\xaf\xe4\xb8\x80\xe4\xb8\xaastr’，并存储到str1变量中；<br>输出也是相同的道理，str1中的字节会被终端使用utf8解码。</p>
+<p>可以对str对象进行迭代或者索引，发现str中存储的元素是字节。而unicode对象却不然：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>str2 = <span class="string">u'这是一个str'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[c <span class="keyword">for</span> c <span class="keyword">in</span> str2]</span><br><span class="line">[<span class="string">u'\u8fd9'</span>, <span class="string">u'\u662f'</span>, <span class="string">u'\u4e00'</span>, <span class="string">u'\u4e2a'</span>, <span class="string">u's'</span>, <span class="string">u't'</span>, <span class="string">u'r'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>str2[<span class="number">0</span>]</span><br><span class="line"><span class="string">u'\u8fd9'</span></span><br></pre></td></tr></table></figure>
+<p>在str和unicode之间的转换为:<br><img src="/images/str和unicode.png" alt="str和unicode转换"></p>
+<p>Python2采用的默认编码是<code>ascii</code>，所以在转换时如果不指定编码集，那么python默认使用<code>ascii</code>编解码。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>unicode(<span class="string">'中'</span>)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">UnicodeDecodeError: <span class="string">'ascii'</span> codec cant decode byte <span class="number">0xe4</span> <span class="keyword">in</span> position <span class="number">0</span>: ordinal <span class="keyword">not</span> <span class="keyword">in</span> range(<span class="number">128</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">'中'</span>.encode(<span class="string">'utf8'</span>)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">UnicodeDecodeError: <span class="string">'ascii'</span> codec cant decode byte <span class="number">0xe4</span> <span class="keyword">in</span> position <span class="number">0</span>: ordinal <span class="keyword">not</span> <span class="keyword">in</span> range(<span class="number">128</span>)</span><br></pre></td></tr></table></figure>
+<p>在python源代码文件中，如果出现ASCII字符集之外的字符，在编译时解释器也会报错，一般有两种解决方案：</p>
+<ul>
+<li>Bad Way：修改内部默认编码方式 <code>import sys;reload(sys);sys.setdefaultencoding(&#39;utf-8&#39;)</code></li>
+<li>Good Way：在源文件头部加上一句 <code># coding: utf-8</code></li>
+</ul>
+<h3 id="Python3中的str和bytes"><a href="#Python3中的str和bytes" class="headerlink" title="Python3中的str和bytes"></a>Python3中的str和bytes</h3><p>Python3的一个重要改进就是解决了Python2中字符和编码的问题:</p>
+<ol>
+<li>python3的默认编码从<code>ascii</code>改为了<code>utf-8</code>。</li>
+<li>另外对于文本和字节序列以更加清晰的方式划分开来：<ul>
+<li><code>str</code>标识unicode字符串</li>
+<li><code>bytes</code>表示二进制字节数组</li>
+</ul>
+</li>
+<li>python2中str和Unicode都是basestring的子类，可以拼接；在Python3中str和bytes被设计成两个独立的类</li>
+</ol>
+<p>在str和bytes之间的转换为:<br><img src="/images/str和bytes.png" alt="str和bytes转换"></p>
+<h3 id="Python3中的字节序列"><a href="#Python3中的字节序列" class="headerlink" title="Python3中的字节序列"></a>Python3中的字节序列</h3><ul>
+<li>python3中的bytes和bytearray区别：<ul>
+<li>bytes是不可变序列 ，bytearray是可变的。</li>
+</ul>
+</li>
+<li>python3中的bytes和python2的str/bytes在许多方面表现不一样：<ul>
+<li>python3中bytes中的元素是0~255之间的整数，而python2中是单个的字节；</li>
+<li>然而python3中二进制序列的切片始终是同一类型的二进制序列</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a href="http://pycoders-weekly-chinese.readthedocs.io/en/latest/issue5/unipain.html" target="_blank" rel="noopener">Unicode之痛</a><br><a href="https://www.zhihu.com/question/31833164" target="_blank" rel="noopener">Python编码为什么那么蛋疼？</a></p>
+</blockquote>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/4fc2401b/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/7a7167a/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python源码阅读-虚拟机和字节码 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,源码," />
+  
+
+  <meta name="description" content="这篇博客主要记录Python源代码是怎么转换成一系列的机器指令并执行的。这里说的Python指的是CPython实现。 在我们通过python *.py运行一个Python程序时，CPython解释器首先会对源代码进行编译，产生一组字节码(Byte Code)，然后将编译的结果交给Python的虚拟机(PVM)，由虚拟机一条一条的执行字节码来运行程序。所以说Python解释器包含两个部分：编译器和">
+<meta name="keywords" content="Python,源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python源码阅读-虚拟机和字节码">
+<meta property="og:url" content="http://shawnz.me/posts/eab2cd72/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="这篇博客主要记录Python源代码是怎么转换成一系列的机器指令并执行的。这里说的Python指的是CPython实现。 在我们通过python *.py运行一个Python程序时，CPython解释器首先会对源代码进行编译，产生一组字节码(Byte Code)，然后将编译的结果交给Python的虚拟机(PVM)，由虚拟机一条一条的执行字节码来运行程序。所以说Python解释器包含两个部分：编译器和">
+<meta property="og:image" content="http://shawnz.me/images/python-interpreter.png">
+<meta property="og:image" content="http://shawnz.me/images/python_frame_structure.png">
+<meta property="og:image" content="http://shawnz.me/images/python_runtime_env.png">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.118Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python源码阅读-虚拟机和字节码">
+<meta name="twitter:description" content="这篇博客主要记录Python源代码是怎么转换成一系列的机器指令并执行的。这里说的Python指的是CPython实现。 在我们通过python *.py运行一个Python程序时，CPython解释器首先会对源代码进行编译，产生一组字节码(Byte Code)，然后将编译的结果交给Python的虚拟机(PVM)，由虚拟机一条一条的执行字节码来运行程序。所以说Python解释器包含两个部分：编译器和">
+<meta name="twitter:image" content="http://shawnz.me/images/python-interpreter.png">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#PyCodeObject"><span class="toc-text">PyCodeObject</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pyc"><span class="toc-text">.pyc</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#字节码"><span class="toc-text">字节码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#执行环境"><span class="toc-text">执行环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命名空间"><span class="toc-text">命名空间</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#运行时环境"><span class="toc-text">运行时环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#执行引擎"><span class="toc-text">执行引擎</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python源码阅读-虚拟机和字节码" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Python源码阅读-虚拟机和字节码</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.01.11</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <p>这篇博客主要记录Python源代码是怎么转换成一系列的机器指令并执行的。这里说的Python指的是CPython实现。</p>
+<p>在我们通过<code>python *.py</code>运行一个Python程序时，CPython解释器首先会对源代码进行<code>编译</code>，产生一组<code>字节码</code>(Byte Code)，然后将编译的结果交给Python的<code>虚拟机</code>(PVM)，由虚拟机一条一条的执行字节码来运行程序。所以说Python解释器包含两个部分：编译器和虚拟机。</p>
+<a id="more"></a>
+<p><img src="/images/python-interpreter.png" alt=""></p>
+<h2 id="PyCodeObject"><a href="#PyCodeObject" class="headerlink" title="PyCodeObject"></a>PyCodeObject</h2><p>”编译“的结果就是<code>PyCodeObject</code>对象，而<code>.pyc</code>文件是这个对象在硬盘上的表现形式。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Bytecode object */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    PyObject_HEAD</span><br><span class="line">    <span class="keyword">int</span> co_argcount;		<span class="comment">/* #arguments, except *args */</span></span><br><span class="line">    <span class="keyword">int</span> co_kwonlyargcount;	<span class="comment">/* #keyword only arguments */</span></span><br><span class="line">    <span class="keyword">int</span> co_nlocals;		<span class="comment">/* #local variables */</span></span><br><span class="line">    <span class="keyword">int</span> co_stacksize;		<span class="comment">/* #entries needed for evaluation stack */</span></span><br><span class="line">    <span class="keyword">int</span> co_flags;		<span class="comment">/* CO_..., see below */</span></span><br><span class="line">    <span class="keyword">int</span> co_firstlineno;   <span class="comment">/* first source line number */</span></span><br><span class="line">    PyObject *co_code;		<span class="comment">/* instruction opcodes */</span></span><br><span class="line">    PyObject *co_consts;	<span class="comment">/* list (constants used) */</span></span><br><span class="line">    PyObject *co_names;		<span class="comment">/* list of strings (names used) */</span></span><br><span class="line">    PyObject *co_varnames;	<span class="comment">/* tuple of strings (local variable names) */</span></span><br><span class="line">    PyObject *co_freevars;	<span class="comment">/* tuple of strings (free variable names) */</span></span><br><span class="line">    PyObject *co_cellvars;      <span class="comment">/* tuple of strings (cell variable names) */</span></span><br><span class="line">    <span class="comment">/* The rest aren't used in either hash or comparisons, except for co_name,</span></span><br><span class="line"><span class="comment">       used in both. This is done to preserve the name and line number</span></span><br><span class="line"><span class="comment">       for tracebacks and debuggers; otherwise, constant de-duplication</span></span><br><span class="line"><span class="comment">       would collapse identical functions/lambdas defined on different lines.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> *co_cell2arg; <span class="comment">/* Maps cell vars which are arguments. */</span></span><br><span class="line">    PyObject *co_filename;	<span class="comment">/* unicode (where it was loaded from) */</span></span><br><span class="line">    PyObject *co_name;		<span class="comment">/* unicode (name, for reference) */</span></span><br><span class="line">    PyObject *co_lnotab;	<span class="comment">/* string (encoding addr&lt;-&gt;lineno mapping) See</span></span><br><span class="line"><span class="comment">				   Objects/lnotab_notes.txt for details. */</span></span><br><span class="line">    <span class="keyword">void</span> *co_zombieframe;     <span class="comment">/* for optimization only (see frameobject.c) */</span></span><br><span class="line">    PyObject *co_weakreflist;   <span class="comment">/* to support weakrefs to code objects */</span></span><br><span class="line">    <span class="comment">/* Scratch space for extra data relating to the code object.</span></span><br><span class="line"><span class="comment">       Type is a void* to keep the format private in codeobject.c to force</span></span><br><span class="line"><span class="comment">       people to go through the proper APIs. */</span></span><br><span class="line">    <span class="keyword">void</span> *co_extra;</span><br><span class="line">&#125; PyCodeObject;</span><br></pre></td></tr></table></figure>
+<p>Python编译时，对于代码中的每一个<code>Code Block</code>(进入一个新的名字空间)都会对应一个<code>PyCodeObject</code>对象，和名字空间一样，<code>PyCodeObject</code>也可以嵌套，嵌套在<code>co_consts</code>域。</p>
+<p>可以看到字节码对象<code>PyCodeObject</code>有许多的域，其中包含了Python源代码的一切有用<code>静态</code>信息，例如字符串，常量值以及字节码指令(操作)等。</p>
+<h2 id="pyc"><a href="#pyc" class="headerlink" title=".pyc"></a>.pyc</h2><p><code>.pyc</code>文件是<code>PyCodeObject</code>对象在硬盘上的表现形式，在Python3中，这些文件位于<code>__pycache__</code>文件夹下。我们可以发现通过<code>python *.py</code>的方式运行Python程序时，并不会生成<code>.pyc</code>文件，那么这个文件是什么时候创建的呢？</p>
+<p>在通过<code>import</code>机制对<code>module</code>动态加载的时候，Python会先尝试去查找<code>.pyc</code>文件。如果没有这些文件，Python会将<code>*.py</code>文件编译成相应的<code>PyCodeObject</code>对象，然后再创建<code>*.pyc</code>文件，并将<code>PyCodeObject</code>和一些信息写入到文件中。接下来才是<code>import</code>动作，将<code>*.pyc</code>文件中的<code>PyCodeObject</code>对象在内存中复制出来。</p>
+<p>在Python中提供了许多类库，允许完成<code>.pyc</code>文件的生成：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[generate_pyc.py]</span><br><span class="line"><span class="keyword">import</span> imp</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">generate_pyc</span><span class="params">(name)</span>:</span></span><br><span class="line">    fp, pathname, description = imp.find_module(name)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        imp.load_module(name, fp, pathname, description)    </span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        <span class="keyword">if</span> fp:</span><br><span class="line">            fp.close()</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    generate_pyc(sys.argv[<span class="number">1</span>])</span><br></pre></td></tr></table></figure>
+<p>一个<code>.pyc</code>文件包含三个部分：<code>magic number</code>、<code>pyc文件的创建时间</code>和<code>PyCodeObject对象</code>。</p>
+<p>一般不同版本的Python会定义不同<code>magic number</code>，主要是用来保证兼容性，下面是Python3.5所定义的<code>magic number</code>：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MAGIC_NUMBER = (3379).to_bytes(2, 'little') + b'\r\n'</span><br><span class="line">_RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c</span><br></pre></td></tr></table></figure>
+<h2 id="字节码"><a href="#字节码" class="headerlink" title="字节码"></a>字节码</h2><p>在<code>PyCodeObject</code>对象的<code>co_code</code>就保存着字节码指令序列，以<code>PyStringObject</code>类型存在，在C底层真正存储字节码的就是一个<code>char []</code>数组。</p>
+<p>Python3定义了117条字节码指令，大于或等于90的指令需要参数：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[opcode.c]</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> POP_TOP                   1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ROT_TWO                   2</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> HAVE_ARGUMENT            90</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BUILD_CONST_KEY_MAP     156</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BUILD_STRING            157</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BUILD_TUPLE_UNPACK_WITH_CALL 158</span></span><br><span class="line"><span class="comment">/* 判断一条指令是否需要参数 */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> HAS_ARG(op) ((op) &gt;= HAVE_ARGUMENT)</span></span><br></pre></td></tr></table></figure></p>
+<p>Python标准库提供了用来生成字节码的工具<code>dis</code>，使用<code>dis</code>可以对代码进行性能分析。</p>
+<h2 id="执行环境"><a href="#执行环境" class="headerlink" title="执行环境"></a>执行环境</h2><p><code>.py</code>文件被编译后，Python虚拟机会从<code>PyCodeObject</code>中一条一条读取字节码指令，并在当前上下文环境中执行。</p>
+<p>在讲上下文环境之前，我们先弄懂什么是”执行环境“？<code>PyCodeObject</code>中包含了程序运行的静态信息和字节码，而一些动态捕捉和维护的信息就保存在<code>PyFrameObject</code>对象中，这就是执行环境。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">frame</span> &#123;</span></span><br><span class="line">    PyObject_VAR_HEAD</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">frame</span> *<span class="title">f_back</span>;</span>      <span class="comment">/* previous frame, or NULL */</span></span><br><span class="line">    PyCodeObject *f_code;       <span class="comment">/* PyCodeObject对象 */</span></span><br><span class="line">    PyObject *f_builtins;       <span class="comment">/* builtin名字空间(PyDictObject) */</span></span><br><span class="line">    PyObject *f_globals;        <span class="comment">/* global名字空间(PyDictObject) */</span></span><br><span class="line">    PyObject *f_locals;         <span class="comment">/* local名字空间(PyDictObject) */</span></span><br><span class="line">    PyObject **f_valuestack;    <span class="comment">/* 运行时栈的栈底位置 */</span></span><br><span class="line">    PyObject **f_stacktop;      <span class="comment">/* 运行时栈的栈顶位置*/</span></span><br><span class="line">    PyObject *f_trace;          <span class="comment">/* 记录异常处理 */</span></span><br><span class="line">    PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;</span><br><span class="line">    <span class="comment">/* Borrowed reference to a generator, or NULL */</span></span><br><span class="line">    PyObject *f_gen;</span><br><span class="line">    <span class="keyword">int</span> f_lasti;                <span class="comment">/* 当前字节码位置 */</span></span><br><span class="line">    <span class="keyword">int</span> f_lineno;               <span class="comment">/* 当前行号 */</span></span><br><span class="line">    <span class="keyword">int</span> f_iblock;               <span class="comment">/* 一些局部代码块f_blockstack */</span></span><br><span class="line">    <span class="keyword">char</span> f_executing;           <span class="comment">/* 当前栈桢是否还在执行 */</span></span><br><span class="line">    PyTryBlock f_blockstack[CO_MAXBLOCKS]; <span class="comment">/* for try and loop blocks */</span></span><br><span class="line">    PyObject *f_localsplus[<span class="number">1</span>];  <span class="comment">/* 动态内存维护：locals+stack */</span></span><br><span class="line">&#125; PyFrameObject;</span><br></pre></td></tr></table></figure>
+<p>在Python程序运行的时候，会创建一个又一个的<code>PyFrameObject</code>对象，它们之间通过<code>f_back</code>链接起来。所以对于Python虚拟机引擎来说它面对的就是<code>PyFrameObject</code>对象，相当于对C语言中“栈帧”的模拟，但又不仅仅是C语言中的“栈桢”，它还包括一些其他的信息，例如：</p>
+<ul>
+<li><code>f_code</code>：待执行的<code>PyCodeObject</code>对象，虚拟机从这里面读取并执行字节码；</li>
+<li><code>f_builtins</code>、<code>f_globals</code>和<code>f_locals</code>：维护着三个动态的名字空间，是以<code>PyDictObject</code>的形式维护<code>name</code>和<code>value</code>的映射；</li>
+<li><code>f_localsplus</code>：维护一段变长内存，里面就包括了<code>PyFrameObject</code>对象所维护的”运行时栈“(这个”栈“才是和C语言中的那个栈空间相对应的概念)以及一部分额外的内存(供<code>PyCodeObject</code>对象存储的那些<code>co_names</code>, <code>co_freevars</code>和<code>co_cellvals</code>使用，涉及“闭包”的实现)。</li>
+</ul>
+<p>下面是一个新创建的<code>PyFrameObject</code>对象，它的”栈顶“和“栈底”位置重叠在一起：</p>
+<p><img src="/images/python_frame_structure.png" alt=""></p>
+<h2 id="命名空间"><a href="#命名空间" class="headerlink" title="命名空间"></a>命名空间</h2><p>在<code>PyFrameObject</code>中，我们可以看到三个独立的命名空间：<code>local</code>、<code>global</code>和<code>builtin</code>命名空间。</p>
+<p><strong>作用域和命名空间</strong></p>
+<ul>
+<li>作用域：是指一段程序文本的某一段区域，它决定这约束是否起作用，Python是具有静态作用域的；</li>
+<li>命名空间：名字和对象的映射，一段文本定义作用域在Python程序运行时会转换成对应的命名空间，例如，在执行函数<code>f</code>的时候会创建一个命名空间。</li>
+</ul>
+<p>*Note：在Python中<code>if</code>语句和<code>for</code>语句不会引入新的作用域，另外在Python3中，针对推导式和生成器会引入新的局部作用域，不用担心变量泄露的问题：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>i = <span class="number">1</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">10</span>):</span><br><span class="line"><span class="meta">... </span>   <span class="keyword">pass</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>i</span><br><span class="line"><span class="number">9</span>   <span class="comment"># i产生了变化9</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[i <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>)]</span><br><span class="line">[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>i</span><br><span class="line"><span class="number">9</span>   <span class="comment"># 没有改变i</span></span><br></pre></td></tr></table></figure>
+<p><strong>赋值语句</strong></p>
+<p>在Python中赋值语句(更切确的说是具有赋值行为的语句)，做的就是绑定或重绑定工作，不会产生拷贝。</p>
+<p>除了常见的<code>=</code>显示赋值，在Python中<code>import a</code>、<code>class A:</code>和<code>def f():</code>这样的语句都是赋值语句，它们会创建约束并放在命名空间(<code>dict</code>)中。</p>
+<p>函数的参数传递？</p>
+<p>鉴于这样的行为，能够很好的解释Python的动态类型(名字只是一个符号，用来查找对象，类型的信息都在对象上存储着)以及为什么Python没有函数重载(因为重载需要根据参数签名来决定，而Python只保存了一个名称)。</p>
+<p><strong>引用语句</strong></p>
+<p>既然赋值语句是建立约束，那么引用语句可以看做是访问(查找)约束。Python的引用分为两种：</p>
+<ul>
+<li>属性引用：一个对象的名字空间中的所有名字称为对象的属性，那么我们可以通过属性引用的方式访问对象的属性；</li>
+<li>名字引用：位于一个作用域中的代码能够直接访问出现在作用域中的代码。</li>
+</ul>
+<p><strong>LEGB规则</strong></p>
+<p>要是名字引用访问没有出现在作用域中的名字，Python会怎么处理呢？</p>
+<p>这里有一个<code>最内层嵌套作用域规则</code>：由一个赋值语句引入的名字在赋值语句所在的作用域是<code>可见的</code>，而且在其内部嵌套的作用域也是可见的，除非被嵌套作用域引入了的同一名字的另一个赋值语句所<code>遮蔽</code>。</p>
+<p>Python使用一个<code>LEGB</code>的顺序来查找符号对应的对象：</p>
+<blockquote>
+<p><code>locals</code> –&gt; <code>enclosing</code> –&gt; <code>globals</code> –&gt; <code>builtins</code></p>
+</blockquote>
+<p>一个例子就是<code>闭包</code>的实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">a = <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">f</span><span class="params">()</span>:</span></span><br><span class="line">    a = <span class="number">2</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">g</span><span class="params">()</span>:</span></span><br><span class="line">        print(a) <span class="comment"># a 位于外部嵌套函数的命名空间</span></span><br><span class="line">    <span class="keyword">return</span> g</span><br><span class="line"></span><br><span class="line">func = f()</span><br><span class="line">func()  <span class="comment"># 输出 2</span></span><br></pre></td></tr></table></figure>
+<p><strong>global和nonlocal</strong></p>
+<ul>
+<li><code>global</code>：用来声明一系列变量，这些变量会引用到当前模块的全局命名空间的变量（module－level namespace），如果该变量没有定义，也会在全局空间中添加这个变量。</li>
+<li><code>nonlocal</code>：从声明处从里到外的namespace去搜寻这个变量（the nearest enclosing scope），直到模块的全局域（不包括全局域），不会在当前scope的namespace字典中加入一个key-value对。</li>
+</ul>
+<h2 id="运行时环境"><a href="#运行时环境" class="headerlink" title="运行时环境"></a>运行时环境</h2><p>在Python启动后，真正有意义的初始化动作是从<code>pylifecyle</code>中的<code>Py_Initialize</code>开始的，<code>Py_Initialzie</code>最终调用的是<code>_Py_InitializeEx_Private</code>，在这里面主要完成加载多个基础模块(<code>bulitins, __main__和sys</code>)，类型系统和异常系统的初始化以及一些其他工作。</p>
+<p>Python有自己的一套线程模型，虚拟机在运行的时候，一般是一个或多个线程轮流使用一个字节码执行引擎(具体的多线程机制这里并不涉及)。针对线程和进程，Python分别抽象出了两个状态对象：<code>PyThreadState</code>和<code>PyInterpreterState</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">is</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">is</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">ts</span> *<span class="title">tstate_head</span>;</span></span><br><span class="line">    PyObject *modules;</span><br><span class="line">    ...</span><br><span class="line">    PyObject *builtins;</span><br><span class="line">    PyObject *importlib;</span><br><span class="line">    <span class="keyword">int</span> codecs_initialized;</span><br><span class="line">    <span class="keyword">int</span> fscodec_initialized;</span><br><span class="line">    PyObject *builtins_copy;</span><br><span class="line">    PyObject *import_func;</span><br><span class="line">    <span class="comment">/* Initialized to PyEval_EvalFrameDefault(). */</span></span><br><span class="line">    _PyFrameEvalFunction eval_frame;</span><br><span class="line">&#125; PyInterpreterState;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">ts</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">ts</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">ts</span> *<span class="title">next</span>;</span></span><br><span class="line">    PyInterpreterState *interp;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">frame</span> *<span class="title">frame</span>;</span></span><br><span class="line">    <span class="keyword">int</span> recursion_depth;</span><br><span class="line">    ...</span><br><span class="line">    PyObject *dict;  <span class="comment">/* Stores per-thread state */</span></span><br><span class="line">    <span class="keyword">int</span> gilstate_counter;</span><br><span class="line">    PyObject *async_exc; <span class="comment">/* Asynchronous exception to raise */</span></span><br><span class="line">    <span class="keyword">long</span> thread_id; <span class="comment">/* Thread id where this tstate was created */</span></span><br><span class="line">    ...</span><br><span class="line">    PyObject *async_gen_finalizer;</span><br><span class="line">&#125; PyThreadState;</span><br></pre></td></tr></table></figure>
+<p>可以看到这么一个结构，在进程<code>_is</code>中维护着一个<code>tstate_head</code>线程列表，而在线程<code>_ts</code>中维护着当前线程的栈桢列表<code>frame</code>。</p>
+<p>在Python虚拟机开始执行时，它会将当前线程状态对象的<code>frame</code>设置为当前的执行环境，并执行字节码。在当前栈桢执行完毕后，会创建一个新的<code>PyFrameObject</code>，并从<code>tstate</code>中取得<code>frame</code>构建成一条链表，开始新的征途。</p>
+<p>在某一时刻，虚拟机的运行时的内存布局会是下面这种形式：</p>
+<p><img src="/images/python_runtime_env.png" alt=""></p>
+<h2 id="执行引擎"><a href="#执行引擎" class="headerlink" title="执行引擎"></a>执行引擎</h2><p>当虚拟机的字节码执行引擎在<code>_PyEval_EvalFrameDefault</code>函数里，首先会初始化一批和<code>PyCodeObject</code>有关的变量以及让栈的指针指向<code>f-&gt;f_stacktop</code>：</p>
+<p>在设置好各个变量后，执行引擎会从头遍历整个<code>PyCodeObject</code>的<code>co_code</code>域，依次处理字节码。其中有三个变量和字节码遍历有关：</p>
+<ul>
+<li><code>first_instr</code>：永远指向字节码序列的开始位置；</li>
+<li><code>next_instr</code>：指向下一条待执行的字节码指令；</li>
+<li><code>f_lasti</code>：上一条已执行的字节码在co_code中的索引。</li>
+</ul>
+<p>字节码的处理是在一个<code>for loop</code>中，以<code>switch</code>的方式分发到相应的宏定义上处理各种字节码。一条字节码处理完成过后会跳转到<code>for</code>循环或者是<code>fast_next_opcode</code>执行下一条。其中有个变量<code>why</code>，它保存着结束字节码执行时的状态码信息，是正常还是异常退出。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">PyObject *</span><br><span class="line">_PyEval_EvalFrameDefault(PyFrameObject *f, <span class="keyword">int</span> throwflag)</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    co = f-&gt;f_code;</span><br><span class="line">    names = co-&gt;co_names;</span><br><span class="line">    consts = co-&gt;co_consts;</span><br><span class="line">    fastlocals = f-&gt;f_localsplus;</span><br><span class="line">    freevars = f-&gt;f_localsplus + co-&gt;co_nlocals;</span><br><span class="line">    first_instr = (_Py_CODEUNIT *) PyBytes_AS_STRING(co-&gt;co_code);</span><br><span class="line">    next_instr = first_instr;</span><br><span class="line">    <span class="keyword">if</span> (f-&gt;f_lasti &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        next_instr += f-&gt;f_lasti / <span class="keyword">sizeof</span>(_Py_CODEUNIT) + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    stack_pointer = f-&gt;f_stacktop;</span><br><span class="line"></span><br><span class="line">    why = WHY_NOT;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        fast_next_opcode:</span><br><span class="line">            f-&gt;f_lasti = INSTR_OFFSET();</span><br><span class="line">            ...</span><br><span class="line">        </span><br><span class="line">        dispatch_opcode:</span><br><span class="line">            <span class="keyword">switch</span> (opcode) &#123;</span><br><span class="line"></span><br><span class="line">                TARGET(NOP)</span><br><span class="line">                    FAST_DISPATCH();</span><br><span class="line"></span><br><span class="line">                TARGET(LOAD_FAST) &#123;</span><br><span class="line">                    ...</span><br><span class="line">                &#125;</span><br><span class="line">                ...</span><br><span class="line">            &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/fbe1b588/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/c981e5e/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

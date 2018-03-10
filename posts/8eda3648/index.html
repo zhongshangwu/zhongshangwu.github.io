@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Redis学习笔记 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="数据库,Redis," />
+  
+
+  <meta name="description" content="Redis简介   官方网站  操作命令  Redis 是一个开源，高级的键值存储和一个适用的解决方案，用于构建高性能，可扩展的Web应用程序。 非关系数据库相比关系数据库的优势： 费用：相对传统的关系数据库昂贵的费用，非关系数据库大多是免费的； 功能：NoSQL数据库阉割到了许多关系数据库所具备的功能，更简洁，不具备事务支持； 性能：由于NoSQL基于键值对的，不需要经过SQL层解析,另外由于牺">
+<meta name="keywords" content="数据库,Redis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis学习笔记">
+<meta property="og:url" content="http://shawnz.me/posts/8eda3648/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="Redis简介   官方网站  操作命令  Redis 是一个开源，高级的键值存储和一个适用的解决方案，用于构建高性能，可扩展的Web应用程序。 非关系数据库相比关系数据库的优势： 费用：相对传统的关系数据库昂贵的费用，非关系数据库大多是免费的； 功能：NoSQL数据库阉割到了许多关系数据库所具备的功能，更简洁，不具备事务支持； 性能：由于NoSQL基于键值对的，不需要经过SQL层解析,另外由于牺">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.030Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Redis学习笔记">
+<meta name="twitter:description" content="Redis简介   官方网站  操作命令  Redis 是一个开源，高级的键值存储和一个适用的解决方案，用于构建高性能，可扩展的Web应用程序。 非关系数据库相比关系数据库的优势： 费用：相对传统的关系数据库昂贵的费用，非关系数据库大多是免费的； 功能：NoSQL数据库阉割到了许多关系数据库所具备的功能，更简洁，不具备事务支持； 性能：由于NoSQL基于键值对的，不需要经过SQL层解析,另外由于牺">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis简介"><span class="toc-text">Redis简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#非关系数据库相比关系数据库的优势："><span class="toc-text">非关系数据库相比关系数据库的优势：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Redis优势"><span class="toc-text">Redis优势:</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis数据类型"><span class="toc-text">Redis数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#字符串"><span class="toc-text">字符串</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#散列-哈希"><span class="toc-text">散列/哈希</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#列表"><span class="toc-text">列表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#集合"><span class="toc-text">集合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#可排序集合"><span class="toc-text">可排序集合</span></a></li></ol></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Redis学习笔记" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Redis学习笔记</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.08.28</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/数据库/">数据库</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h1 id="Redis简介"><a href="#Redis简介" class="headerlink" title="Redis简介"></a>Redis简介</h1><blockquote>
+<p>  <a href="&#39;http://www.redis.io/&#39;">官方网站</a><br>  <a href="&#39;&#39;">操作命令</a></p>
+</blockquote>
+<p>Redis 是一个开源，高级的键值存储和一个适用的解决方案，用于构建高性能，可扩展的Web应用程序。</p>
+<h2 id="非关系数据库相比关系数据库的优势："><a href="#非关系数据库相比关系数据库的优势：" class="headerlink" title="非关系数据库相比关系数据库的优势："></a>非关系数据库相比关系数据库的优势：</h2><ol>
+<li>费用：相对传统的关系数据库昂贵的费用，非关系数据库大多是免费的；</li>
+<li>功能：NoSQL数据库阉割到了许多关系数据库所具备的功能，更简洁，不具备事务支持；</li>
+<li>性能：由于NoSQL基于键值对的，不需要经过SQL层解析,另外由于牺牲掉了一些特性，速度更快</li>
+</ol>
+<blockquote>
+<p>在不同的应用场景，为达到不同的使用效果，需要根据实际需求采取不同的策略。</p>
+</blockquote>
+<a id="more"></a>
+<h2 id="Redis优势"><a href="#Redis优势" class="headerlink" title="Redis优势:"></a>Redis优势:</h2><ul>
+<li>速度快：基于内存、舍去ACID等特性。每秒可执行大约110000次的设置<strong>(SET)</strong>操作，每秒大约可执行81000次的读取/获取<strong>(GET)</strong>操作。</li>
+<li>丰富的数据类型：支持大多常用数据类型，例如列表、集合、排列集和散列等。</li>
+<li>原子性操作：更好的应对并发场景</li>
+<li>实用价值高：可用于多种不同的场景，例如：缓存、消息队列(Redis本地支持发布/订阅模式)</li>
+</ul>
+<h1 id="Redis数据类型"><a href="#Redis数据类型" class="headerlink" title="Redis数据类型"></a>Redis数据类型</h1><p>Redis一共支持五种数据类型。</p>
+<h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><p>Redis中存储的字符串是一个字节序列。Redis中的字符串是二进制安全的。一个字符串可以存储512兆字节的内容。</p>
+<p><strong> 示例 </strong></p>
+<blockquote>
+<p>redis 127.0.0.1:6379&gt; set name ‘value’<br>OK<br>redis 127.0.0.1:6379&gt; get name<br>‘value’</p>
+</blockquote>
+<h2 id="散列-哈希"><a href="#散列-哈希" class="headerlink" title="散列/哈希"></a>散列/哈希</h2><p>Redis散列/哈希是字符串字段和字符串值之间的映射。因此，它们用于表示对象。</p>
+<p><strong> 示例 </strong></p>
+<blockquote>
+<p>redis 127.0.0.1:6379&gt; HMSET ukey username “yiibai” password “passswd123” points 200</p>
+</blockquote>
+<h2 id="列表"><a href="#列表" class="headerlink" title="列表"></a>列表</h2><p>Redis列表只是字符串列表，按插入顺序排序。您可以向Redis列表的头部或尾部添加元素。</p>
+<p><strong> 示例 </strong></p>
+<blockquote>
+<p>redis 127.0.0.1:6379&gt; lpush alist redis<br>(integer) 1<br>redis 127.0.0.1:6379&gt; lpush alist mongodb<br>(integer) 2<br>redis 127.0.0.1:6379&gt; lpush alist sqlite<br>(integer) 3<br>redis 127.0.0.1:6379&gt; lrange alist 0 10  </p>
+</blockquote>
+<blockquote>
+<p>1) “sqlite”<br>2) “mongodb”<br>3) “redis”</p>
+</blockquote>
+<h2 id="集合"><a href="#集合" class="headerlink" title="集合"></a>集合</h2><p>Redis集合是字符串的无序集合。在Redis中，您可以添加，删除和测试成员存在的时间O(1)复杂性</p>
+<p><strong> 示例 </strong></p>
+<blockquote>
+<p>redis 127.0.0.1:6379&gt; sadd yiibailist redis<br>(integer) 1<br>redis 127.0.0.1:6379&gt; sadd yiibailist mongodb<br>(integer) 1<br>redis 127.0.0.1:6379&gt; sadd yiibailist sqlite<br>(integer) 1<br>redis 127.0.0.1:6379&gt; sadd yiibailist sqlite<br>(integer) 0<br>redis 127.0.0.1:6379&gt; smembers yiibailist  </p>
+</blockquote>
+<blockquote>
+<p>1) “sqlite”<br>2) “mongodb”<br>3) “redis”</p>
+</blockquote>
+<h2 id="可排序集合"><a href="#可排序集合" class="headerlink" title="可排序集合"></a>可排序集合</h2><p>Redis可排序集合类似于Redis集合，是不重复的字符集合。 不同之处在于，排序集合的每个成员都与分数相关联，这个分数用于按最小分数到最大分数来排序的排序集合。虽然成员是唯一的，但分数值可以重复。</p>
+<p><strong> 示例 </strong><br>    &gt; redis 127.0.0.1:6379&gt; zadd yiibaiset 0 redis<br>    &gt; (integer) 1<br>    &gt; redis 127.0.0.1:6379&gt; zadd yiibaiset 0 mongodb<br>    &gt; (integer) 1<br>    &gt; redis 127.0.0.1:6379&gt; zadd yiibaiset 1 sqlite<br>    &gt; (integer) 1<br>    &gt; redis 127.0.0.1:6379&gt; zadd yiibaiset 1 sqlite<br>    &gt; (integer) 0<br>    &gt; redis 127.0.0.1:6379&gt; ZRANGEBYSCORE yiibaiset 0 1000  </p>
+<pre><code>&gt; 1) &quot;mongodb&quot;
+&gt; 2) &quot;redis&quot;
+&gt; 3) &quot;sqlite&quot;
+</code></pre>
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/1acbf803/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/779b7ee0/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

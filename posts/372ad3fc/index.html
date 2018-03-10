@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Django源码阅读:命令行工具集 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,源码,Django," />
+  
+
+  <meta name="description" content="创建一个项目Django 使用django-admin startproject [projectname]创建项目，并会在项目根目录下生成manage.py文件。从现在开始，我们有了两个Django命令行入口：">
+<meta name="keywords" content="Python,源码,Django">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Django源码阅读:命令行工具集">
+<meta property="og:url" content="http://shawnz.me/posts/372ad3fc/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="创建一个项目Django 使用django-admin startproject [projectname]创建项目，并会在项目根目录下生成manage.py文件。从现在开始，我们有了两个Django命令行入口：">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.082Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Django源码阅读:命令行工具集">
+<meta name="twitter:description" content="创建一个项目Django 使用django-admin startproject [projectname]创建项目，并会在项目根目录下生成manage.py文件。从现在开始，我们有了两个Django命令行入口：">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#创建一个项目"><span class="toc-text">创建一个项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#django-admin和manage-py"><span class="toc-text">django-admin和manage.py</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Django-Management"><span class="toc-text">Django Management</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#扩展自定义命令"><span class="toc-text">扩展自定义命令</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Django源码阅读一" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Django源码阅读:命令行工具集</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.12.31</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="创建一个项目"><a href="#创建一个项目" class="headerlink" title="创建一个项目"></a>创建一个项目</h2><p><code>Django</code> 使用<code>django-admin startproject [projectname]</code>创建项目，并会在项目根目录下生成<code>manage.py</code>文件。从现在开始，我们有了两个<code>Django</code>命令行入口：<br><a id="more"></a><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ django-admin &lt;<span class="built_in">command</span>&gt; [options]</span><br><span class="line">$ ./manage.py &lt;<span class="built_in">command</span>&gt; [options]</span><br></pre></td></tr></table></figure></p>
+<h2 id="django-admin和manage-py"><a href="#django-admin和manage-py" class="headerlink" title="django-admin和manage.py"></a>django-admin和manage.py</h2><p><code>django-admin.py</code>源码：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="keyword">from</span> django.core <span class="keyword">import</span> management</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    management.execute_from_command_line()</span><br></pre></td></tr></table></figure></p>
+<p><code>manage.py</code>源码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    os.environ.setdefault(<span class="string">"DJANGO_SETTINGS_MODULE"</span>, <span class="string">"djangodemo.settings"</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">from</span> django.core.management <span class="keyword">import</span> execute_from_command_line</span><br><span class="line">    <span class="keyword">except</span> ImportError <span class="keyword">as</span> exc:</span><br><span class="line">        <span class="keyword">raise</span> ImportError() <span class="keyword">from</span> exc</span><br><span class="line">    execute_from_command_line(sys.argv)</span><br></pre></td></tr></table></figure>
+<p>两者的相同之处是：底层都使用<code>execute_from_command_line</code>方法执行命令。</p>
+<p>不同的之处是：<code>manage.py</code>设置了<code>DJANGO_SETTINGS_MODULE</code>这个环境变量为当期项目的配置文件(它告诉<code>Django</code>到哪找到配置文件)。</p>
+<p>这两种形式本质上一样的。如果环境变量<code>DJANGO_SETTINGS_MODULE</code>已经配置好了，我们也可以使用<code>django-admin</code>达到和<code>manage.py</code>相同的效果(前提是设置模块处于Python的<code>导入查找路径</code>中)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">export</span> DJANGO_SETTINGS_MODULE=djangodemo.settings</span><br><span class="line">$ django-admin runserver</span><br></pre></td></tr></table></figure>
+<h2 id="Django-Management"><a href="#Django-Management" class="headerlink" title="Django Management"></a>Django Management</h2><p><code>execute_from_command_line()</code>方法在内部调用了<code>django.core.management.ManagementUtility</code>的入口方法<code>excute()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">execute_from_command_line</span><span class="params">(argv=None)</span>:</span></span><br><span class="line">    <span class="string">"""Run a ManagementUtility."""</span></span><br><span class="line">    utility = ManagementUtility(argv)</span><br><span class="line">    utility.execute()</span><br></pre></td></tr></table></figure>
+<p><code>ManagementUtility</code>是Django的命令行工具集的入口，读取命令行参数，解析出应该执行那个子命令，并创建合适的解析器来执行命令：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">execute</span><span class="params">(self)</span>:</span></span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       subcommand = self.argv[<span class="number">1</span>]  <span class="comment"># 获取子命令名称</span></span><br><span class="line">   <span class="keyword">except</span> IndexError:</span><br><span class="line">       subcommand = <span class="string">'help'</span>  <span class="comment"># 如果没有提供，默认help命令</span></span><br><span class="line"></span><br><span class="line">   <span class="comment"># CommandParser继承自ArgumentParser，一个内置的命令行解析工具</span></span><br><span class="line">   <span class="comment"># 在这里主要进行预处理选项配置</span></span><br><span class="line">   <span class="comment"># 我们可以直接从命令行设置settings和pythonpath</span></span><br><span class="line">   <span class="comment"># 这写参数会影响到可用命令，需要尽早处理</span></span><br><span class="line">   parser = CommandParser(<span class="keyword">None</span>, usage=<span class="string">"%(prog)s subcommand [options] [args]"</span>, add_help=<span class="keyword">False</span>)</span><br><span class="line">   parser.add_argument(<span class="string">'--settings'</span>)</span><br><span class="line">   parser.add_argument(<span class="string">'--pythonpath'</span>)</span><br><span class="line">   parser.add_argument(<span class="string">'args'</span>, nargs=<span class="string">'*'</span>)  <span class="comment"># catch-all</span></span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       options, args = parser.parse_known_args(self.argv[<span class="number">2</span>:])</span><br><span class="line">       handle_default_options(options)</span><br><span class="line">   <span class="keyword">except</span> CommandError:</span><br><span class="line">       <span class="keyword">pass</span>  <span class="comment"># Ignore any option errors at this point.</span></span><br><span class="line">   <span class="comment"># 这里setting是django.conf.LazySettings的一个实例</span></span><br><span class="line">   <span class="comment"># 如果尝试获取`INSTALLED_APPS`，而没有找到配置文件会抛出异常</span></span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       settings.INSTALLED_APPS</span><br><span class="line">   <span class="keyword">except</span> ImproperlyConfigured <span class="keyword">as</span> exc:</span><br><span class="line">       self.settings_exception = exc</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> settings.configured:</span><br><span class="line">       <span class="comment"># 这里会尝试启动服务器，无论如何都会保证setup已经调用过</span></span><br><span class="line">       <span class="comment"># setup负责初始化日志模块和应用加载</span></span><br><span class="line">       <span class="keyword">if</span> subcommand == <span class="string">'runserver'</span> <span class="keyword">and</span> <span class="string">'--noreload'</span> <span class="keyword">not</span> <span class="keyword">in</span> self.argv:</span><br><span class="line">           <span class="keyword">try</span>:</span><br><span class="line">               autoreload.check_errors(django.setup)()</span><br><span class="line">           <span class="keyword">except</span> Exception:</span><br><span class="line">               apps.all_models = defaultdict(OrderedDict)</span><br><span class="line">               apps.app_configs = OrderedDict()</span><br><span class="line">               apps.apps_ready = apps.models_ready = apps.ready = <span class="keyword">True</span></span><br><span class="line">       <span class="keyword">else</span>:</span><br><span class="line">           django.setup()</span><br><span class="line"></span><br><span class="line">   self.autocomplete()</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> subcommand == <span class="string">'help'</span>:</span><br><span class="line">       <span class="keyword">if</span> <span class="string">'--commands'</span> <span class="keyword">in</span> args:</span><br><span class="line">           sys.stdout.write(self.main_help_text(commands_only=<span class="keyword">True</span>) + <span class="string">'\n'</span>)</span><br><span class="line">       <span class="keyword">elif</span> len(options.args) &lt; <span class="number">1</span>:</span><br><span class="line">           sys.stdout.write(self.main_help_text() + <span class="string">'\n'</span>)</span><br><span class="line">       <span class="keyword">else</span>:</span><br><span class="line">           self.fetch_command(options.args[<span class="number">0</span>]).print_help(self.prog_name, options.args[<span class="number">0</span>])</span><br><span class="line">   <span class="keyword">elif</span> subcommand == <span class="string">'version'</span> <span class="keyword">or</span> self.argv[<span class="number">1</span>:] == [<span class="string">'--version'</span>]:</span><br><span class="line">       sys.stdout.write(django.get_version() + <span class="string">'\n'</span>)</span><br><span class="line">   <span class="keyword">elif</span> self.argv[<span class="number">1</span>:] <span class="keyword">in</span> ([<span class="string">'--help'</span>], [<span class="string">'-h'</span>]):</span><br><span class="line">       sys.stdout.write(self.main_help_text() + <span class="string">'\n'</span>)</span><br><span class="line">   <span class="keyword">else</span>:</span><br><span class="line">       <span class="comment"># 找到子命令并传入参数执行</span></span><br><span class="line">       self.fetch_command(subcommand).run_from_argv(self.argv)</span><br></pre></td></tr></table></figure></p>
+<p>Django使用<code>fetch_command</code>从以下两个路径查找对应的<code>Command</code>类：</p>
+<ul>
+<li>django.core.management.commands模块下</li>
+<li>应用模块下的management.commands模块下</li>
+</ul>
+<p>到现在为止，Django的命令执行过程就比较清晰了：__</p>
+<ul>
+<li>首先从命令行参数解析出子命令名称:<br><br>  <code>subcommand = self.argv[1]</code></li>
+<li>调用fetch_command找到对应的子命令Command类：<br><br>  <code>self.fetch_command(subcommand)</code></li>
+<li>根据返回的subcommand实例，执行run_from_argv()方法:<br><br>  <code>self.fetch_command(subcommand).run_from_argv(self.argv)</code></li>
+<li>从django.core.management.base.BaseCommand中可知run_from_argv()方法的调用过程为：<br><br>  <code>run_from_argv() -&gt; execute() -&gt; handle()</code></li>
+<li><code>handle()</code>方法的执行结果就是命令的返回。</li>
+</ul>
+<h2 id="扩展自定义命令"><a href="#扩展自定义命令" class="headerlink" title="扩展自定义命令"></a>扩展自定义命令</h2><p>知道了Django的命令解析原理，扩展自定义<code>Command</code>就很容易了。我们可以创建一个<code>app</code>并加入<code>settings.INSTALLED_APPS</code>中，在<code>app</code>下面新建一个包<code>management.commands</code>，并创建一个模块<code>hello.py</code>。于是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> django.core.management.base <span class="keyword">import</span> BaseCommand</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Command</span><span class="params">(BaseCommand)</span>:</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle</span><span class="params">(self, *args, **kwargs)</span>:</span></span><br><span class="line">        print(<span class="string">"Hello, World!"</span>)</span><br></pre></td></tr></table></figure>
+<p>运行：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ python manage.py hello</span><br><span class="line">Hello, World!</span><br></pre></td></tr></table></figure></p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/68384a74/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/1470b96d/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

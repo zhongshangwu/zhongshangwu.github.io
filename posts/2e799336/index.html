@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>AES加密 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,算法," />
+  
+
+  <meta name="description" content="AES.AES（Advanced Encryption Standard），在密码学中又称Rijndael加密法，是美国联邦政府采用的一种区块加密标准。这个标准用来替代原先的DES。其密钥长度则可以是128，192或256比特。">
+<meta name="keywords" content="Python,算法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AES加密">
+<meta property="og:url" content="http://shawnz.me/posts/2e799336/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="AES.AES（Advanced Encryption Standard），在密码学中又称Rijndael加密法，是美国联邦政府采用的一种区块加密标准。这个标准用来替代原先的DES。其密钥长度则可以是128，192或256比特。">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.046Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AES加密">
+<meta name="twitter:description" content="AES.AES（Advanced Encryption Standard），在密码学中又称Rijndael加密法，是美国联邦政府采用的一种区块加密标准。这个标准用来替代原先的DES。其密钥长度则可以是128，192或256比特。">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#AES"><span class="toc-text">AES.</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#工作模式"><span class="toc-text">工作模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AES-In-Python"><span class="toc-text">AES In Python</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考链接"><span class="toc-text">参考链接</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-数据加解密-AES" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">AES加密</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.12.04</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/算法/">算法</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="AES"><a href="#AES" class="headerlink" title="AES."></a>AES.</h2><p>AES（Advanced Encryption Standard），在密码学中又称Rijndael加密法，是美国联邦政府采用的一种区块加密标准。这个标准用来替代原先的DES。其密钥长度则可以是128，192或256比特。</p>
+<a id="more"></a>
+<h2 id="工作模式"><a href="#工作模式" class="headerlink" title="工作模式"></a>工作模式</h2><p>AES是分组加密，AES标准支持的分组大小固定为128位（16字节），对于怎样按分组大小切分以及数据不对齐怎么处理，AES提供了几种工作模式：</p>
+<ul>
+<li><code>电子密码本</code>：Electronic Code Book Mode (ECB)：密文被分割成分组长度相等的块（不足补齐），然后单独一个个加密，一个个输出组成密文。模式的问题是无法隐藏原明文数据的模式，因为同样的明文分组加密得到的密文也是一样的。</li>
+<li><code>密码分组链接</code>：Cipher Block Chaining Mode (CBC)：引入了IV（初始化向量：Initialization Vector）的概念，IV是长度为分组大小的一组随机。CBC要求第一个分组的明文在加密运算前先与IV进行异或；从第二组开始，所有的明文先与前一分组加密后的密文进行异或。CBC模式相比ECB实现了更好的模式隐藏，但由于将密文引入运算，加解密操作无法并行操作。同时引入的IV向量，还需要加、解密双方共同知晓方可。</li>
+<li><code>密文反馈</code>：Cipher Feedback Mode (CFB)：CFB模式先生成密码流字典，然后用密码字典与明文进行异或操作并最终生成密文。后一分组的密码字典的生成需要前一分组的密文参与运算。</li>
+<li><code>输出反馈</code>：Output Feedback Mode (OFB)：与CFB模式不同的地方是生成字典的时候会采用明文参与运算，CFB采用的是密文。<br>(ps: 后面两种反馈模式不太明白。。)</li>
+</ul>
+<h2 id="AES-In-Python"><a href="#AES-In-Python" class="headerlink" title="AES In Python"></a>AES In Python</h2><p>PyCrypto加密算法库提供了AES的加解密算法：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line">clipher = AES.new(key, mode, IV)</span><br></pre></td></tr></table></figure></p>
+<p>该方法返回一个<code>AESCipher</code>对像，函数的几个参数：</p>
+<ul>
+<li><code>key</code>：字节或者字符串，必须为16 (<em>AES-128</em>), 24 (<em>AES-192</em>), 或者2 (<em>AES-256</em>)字节，用来对称加密。</li>
+<li><code>mode</code>： 工作模式常量，默认为<code>MODE_ECB</code>。</li>
+<li><code>IV</code>： 可选，初始化向量，必须和分组大小相同16个字节，缺省的时候为全0字节。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AESCryptor</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="string">''' AES加密器 '''</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="comment"># key 长度必须为16、24、或32Bytes 长度</span></span><br><span class="line">        <span class="comment"># AES-256</span></span><br><span class="line">        self.key = hashlib.sha256(<span class="string">'zhongshangwu'</span>.encode(<span class="string">'utf-8'</span>)).digest()</span><br><span class="line">        self.mode = AES.MODE_CBC</span><br><span class="line">        self.iv = bytes(os.urandom(<span class="number">16</span>))</span><br><span class="line">        self.block_size = <span class="number">16</span>  <span class="comment"># 分组大小</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">encrypt</span><span class="params">(self, plain)</span>:</span></span><br><span class="line">        <span class="string">''' 加密 '''</span>        </span><br><span class="line">        <span class="comment"># 转成字节序列</span></span><br><span class="line">        <span class="keyword">if</span> isinstance(plain, str):</span><br><span class="line">            plain = plain.encode(<span class="string">'utf-8'</span>)</span><br><span class="line">        <span class="keyword">assert</span> isinstance(plain, bytes)</span><br><span class="line"></span><br><span class="line">        length_of_plain = len(plain)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 补齐</span></span><br><span class="line">        padding_count = self.block_size - (length_of_plain % self.block_size)</span><br><span class="line">        plain += <span class="string">b'\0'</span> * padding_count</span><br><span class="line"></span><br><span class="line">        cryptor = AES.new(self.key, self.mode, self.iv)</span><br><span class="line">        cipher = cryptor.encrypt(plain)</span><br><span class="line">        <span class="comment"># 统一把加密后的字符串转化为16进制字符串</span></span><br><span class="line">        cipher = (padding_count).to_bytes(<span class="number">4</span>, byteorder=<span class="string">'big'</span>) + cipher</span><br><span class="line">        <span class="keyword">return</span> cipher</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">decrypt</span><span class="params">(self, cipher)</span>:</span></span><br><span class="line">        <span class="string">''' 解密 '''</span></span><br><span class="line">        <span class="keyword">assert</span> isinstance(cipher, bytes)</span><br><span class="line">        <span class="keyword">assert</span> cipher <span class="keyword">and</span> len(cipher) &gt; <span class="number">4</span></span><br><span class="line"></span><br><span class="line">        padding_count_bytes = cipher[:<span class="number">4</span>]</span><br><span class="line">        padding_count = int.from_bytes(padding_count_bytes, byteorder=<span class="string">'big'</span>)</span><br><span class="line">        encrypted_cipher = cipher[<span class="number">4</span>:]</span><br><span class="line"></span><br><span class="line">        cryptor = AES.new(self.key, self.mode, self.iv)</span><br><span class="line">        plain = cryptor.decrypt(encrypted_cipher)</span><br><span class="line">        plain = plain[:-padding_count]</span><br><span class="line">        <span class="keyword">return</span> plain.decode(<span class="string">'utf-8'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    cryptor = AESCryptor()</span><br><span class="line">    e = cryptor.encrypt(<span class="string">'zhongshangwu'</span>)</span><br><span class="line">    d = cryptor.decrypt(e)</span><br><span class="line">    print(d)</span><br></pre></td></tr></table></figure>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a href="https://github.com/matt-wu/AES" target="_blank" rel="noopener">AES简介</a></li>
+</ul>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/de8de911/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/a319874a/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

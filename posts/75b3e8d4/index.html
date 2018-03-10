@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python源码阅读-类机制 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,源码," />
+  
+
+  <meta name="description" content="类型模型在Python3中所有的类都是新式类，继承自&amp;lt;type &amp;#39;object&amp;#39;&amp;gt;，且默认的所有类对象都是&amp;lt;type &amp;#39;type&amp;#39;&amp;gt;的实例。(到这里你可能会疑惑“先有鸡还是先有蛋”) 在Python中它们的关系如下：">
+<meta name="keywords" content="Python,源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python源码阅读-类机制">
+<meta property="og:url" content="http://shawnz.me/posts/75b3e8d4/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="类型模型在Python3中所有的类都是新式类，继承自&amp;lt;type &amp;#39;object&amp;#39;&amp;gt;，且默认的所有类对象都是&amp;lt;type &amp;#39;type&amp;#39;&amp;gt;的实例。(到这里你可能会疑惑“先有鸡还是先有蛋”) 在Python中它们的关系如下：">
+<meta property="og:image" content="http://shawnz.me/images/pyclassobject-1.png">
+<meta property="og:image" content="http://shawnz.me/images/pyclassobject-2.png">
+<meta property="og:image" content="http://shawnz.me/images/pyclassobject-3.png">
+<meta property="og:image" content="http://shawnz.me/images/pyclassobject-4.png">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.162Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python源码阅读-类机制">
+<meta name="twitter:description" content="类型模型在Python3中所有的类都是新式类，继承自&amp;lt;type &amp;#39;object&amp;#39;&amp;gt;，且默认的所有类对象都是&amp;lt;type &amp;#39;type&amp;#39;&amp;gt;的实例。(到这里你可能会疑惑“先有鸡还是先有蛋”) 在Python中它们的关系如下：">
+<meta name="twitter:image" content="http://shawnz.me/images/pyclassobject-1.png">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#类型模型"><span class="toc-text">类型模型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类对象初始化"><span class="toc-text">类对象初始化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Slot机制"><span class="toc-text">Slot机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Descriptor"><span class="toc-text">Descriptor</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立联系"><span class="toc-text">建立联系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#方法重写"><span class="toc-text">方法重写</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MRO"><span class="toc-text">MRO</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基类与子类加工"><span class="toc-text">基类与子类加工</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#用户自定义类"><span class="toc-text">用户自定义类</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#build-class"><span class="toc-text">build_class</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#调用metaclass"><span class="toc-text">调用metaclass</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#创建instance"><span class="toc-text">创建instance</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Resources"><span class="toc-text">Resources</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python源码阅读-类机制" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Python源码阅读-类机制</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.01.11</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="类型模型"><a href="#类型模型" class="headerlink" title="类型模型"></a>类型模型</h2><p>在Python3中所有的类都是新式类，继承自<code>&lt;type &#39;object&#39;&gt;</code>，且默认的所有类对象都是<code>&lt;type &#39;type&#39;&gt;</code>的实例。(到这里你可能会疑惑“先有鸡还是先有蛋”)</p>
+<p>在Python中它们的关系如下：</p>
+<a id="more"></a>
+<p><img src="/images/pyclassobject-1.png" alt=""></p>
+<h2 id="类对象初始化"><a href="#类对象初始化" class="headerlink" title="类对象初始化"></a>类对象初始化</h2><p>在<code>pylifecycle.c</code>的<code>Py_Initialize()</code>中，Python内部先是会使用<code>_Py_ReadyTypes</code>完成类型系统的准备。类型体系的准备是以一个固定的顺序调用<code>PyType_Ready</code>初始化各种内置类型对象。</p>
+<p>我们来看看<code>PyType_Ready</code>都做了哪些工作：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span></span><br><span class="line">PyType_Ready(PyTypeObject *type)</span><br><span class="line">&#123;</span><br><span class="line">    PyObject *dict, *bases;</span><br><span class="line">    PyTypeObject *base;</span><br><span class="line">    Py_ssize_t i, n;</span><br><span class="line">    <span class="comment">/* [1].尝试获得type的tp_base指定基类，否则指定基类为`PyBaseObject_Type` */</span></span><br><span class="line">    base = type-&gt;tp_base;</span><br><span class="line">    <span class="keyword">if</span> (base == <span class="literal">NULL</span> &amp;&amp; type != &amp;PyBaseObject_Type) &#123;</span><br><span class="line">        base = type-&gt;tp_base = &amp;PyBaseObject_Type;</span><br><span class="line">        Py_INCREF(base);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* 到现在为止，基类仍然为空的只能是PyBaseObject_Type */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* [2].如果基类没有初始化，先初始化基类 */</span></span><br><span class="line">    <span class="keyword">if</span> (base != <span class="literal">NULL</span> &amp;&amp; base-&gt;tp_dict == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (PyType_Ready(base) &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">goto</span> error;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* [3].设置ob_type信息 */</span></span><br><span class="line">    <span class="keyword">if</span> (Py_TYPE(type) == <span class="literal">NULL</span> &amp;&amp; base != <span class="literal">NULL</span>)</span><br><span class="line">        Py_TYPE(type) = Py_TYPE(base);</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* [4].初始化tp_bases */</span></span><br><span class="line">    bases = type-&gt;tp_bases;</span><br><span class="line">    <span class="keyword">if</span> (bases == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (base == <span class="literal">NULL</span>)</span><br><span class="line">            bases = PyTuple_New(<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            bases = PyTuple_Pack(<span class="number">1</span>, base);</span><br><span class="line">        <span class="keyword">if</span> (bases == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">goto</span> error;</span><br><span class="line">        type-&gt;tp_bases = bases;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>在初始化阶段，对于指定了<code>tp_base</code>的内置类型对象，它的基类就是指定的<code>tp_base</code>，否则Python会为所有类型对象设置基类为<code>PyBaseObject_Type</code>，也就我们说的<code>&lt;type &#39;object&#39;&gt;</code>，在这一步<code>PyBaseObject_Type</code>的基类可为空的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>object.__base__</span><br><span class="line">&gt;&gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>接下来是检查基类是否初始化完毕，如果没有就会先初始化基类(这里的检查条件是<code>tp_dict</code>是否为空，因为初始化的过程主要就是<code>tp_dict</code>的填充)。</p>
+<p>有了基类对象，虚拟机会将所有没有指定<code>ob_type</code>的类，设置<code>ob_type</code>为基类的<code>ob_type</code>，这个<code>ob_type</code>就是我们说的<code>元类</code>。</p>
+<p>到现在为止，也就有了所有类型对象的基类是<code>PyBaseObject_Type</code>(除了<code>PyBaseObject_Type</code>本身)，所有类型对象的<code>metaclass</code>就是<code>PyBaseObject_Type</code>的<code>metaclass</code>，而在<code>PyBaseObject_Type</code>的定义中，其<code>ob_type</code>域被设定为<code>PyType_Type</code>即<code>&lt;type &#39;type&#39;&gt;</code><br>。</p>
+<p>进行到第[4]步，是对基类列表的初始化，对于<code>PyBaseObject_Type</code>来说，其基类为空，基类列表也为空。而其他类型对象，如果<code>tp_bases</code>为空，那么它的基类列表都包含它的基类。</p>
+<p>接下就进了了初始化最关键的阶段：填充<code>tp_dict</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="comment">/* [5]. 初始化tp_dict */</span></span><br><span class="line">dict = type-&gt;tp_dict;</span><br><span class="line"><span class="keyword">if</span> (dict == <span class="literal">NULL</span>) &#123;</span><br><span class="line">    dict = PyDict_New();</span><br><span class="line">    <span class="keyword">if</span> (dict == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">goto</span> error;</span><br><span class="line">    type-&gt;tp_dict = dict;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Add type-specific descriptors to tp_dict */</span></span><br><span class="line"><span class="keyword">if</span> (add_operators(type) &lt; <span class="number">0</span>)</span><br><span class="line">    <span class="keyword">goto</span> error;</span><br><span class="line"><span class="keyword">if</span> (type-&gt;tp_methods != <span class="literal">NULL</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (add_methods(type, type-&gt;tp_methods) &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">goto</span> error;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> (type-&gt;tp_members != <span class="literal">NULL</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (add_members(type, type-&gt;tp_members) &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">goto</span> error;</span><br><span class="line">&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>填充<code>tp_dict</code>这个过程十分的繁琐，它是通过<code>add_operators</code>、<code>add_methods</code>、<code>add_members</code>和<code>tp_getset</code>几个函数将方法名和函数指针添加到<code>tp_dict</code>中。具体是怎么关联的就设计到了<code>slot机制</code>。</p>
+<h2 id="Slot机制"><a href="#Slot机制" class="headerlink" title="Slot机制"></a>Slot机制</h2><p><code>slot</code>可以视为表示<code>PyTypeObject</code>中定义的操作, 在一个操作对应一个slot。但一个<code>slot</code>不止包括一个函数指针，还有一些其他的信息，在Python内部是通过<code>slotdef</code>这个结构体实现的：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">wrapperbase</span> <span class="title">slotdef</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">wrapperbase</span> &#123;</span></span><br><span class="line">    <span class="keyword">char</span> *name; <span class="comment">/* name 表示操作应该的名称，如“__add__” */</span></span><br><span class="line">    <span class="keyword">int</span> offset; <span class="comment">/* 表示操作的函数在PyTypeObject或PyHeapTypeObject中的偏移量 */</span></span><br><span class="line">    <span class="keyword">void</span> *function; <span class="comment">/* 指向一个称谓为slot function的函数指针 */</span></span><br><span class="line">    wrapperfunc wrapper;</span><br><span class="line">    <span class="keyword">char</span> *doc;</span><br><span class="line">    <span class="keyword">int</span> flags;</span><br><span class="line">    PyObject *name_strobj;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>为了定义一个slot, Python提供了多个宏来定义, 其中最基本的有两个:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \</span></span><br><span class="line">    &#123;NAME, offsetof(PyTypeObject, SLOT), (<span class="keyword">void</span> *)(FUNCTION), WRAPPER, \</span><br><span class="line">     PyDoc_STR(DOC)&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> `ETSLOT`(NAME, SLOT, FUNCTION, WRAPPER, DOC) \</span></span><br><span class="line">    &#123;NAME, offsetof(PyHeapTypeObject, SLOT), (<span class="keyword">void</span> *)(FUNCTION), WRAPPER, \</span><br><span class="line">     PyDoc_STR(DOC)&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这两个宏定义，有一个明显的区别：<code>TPSLOT</code>里面的偏移是在<code>PyTypeObject</code>上的偏移，而<code>ETSLOT</code>的偏移是在<code>PyHeapTypeObject</code>上。</p>
+<p>这一点是因为在<code>PyTypeObject</code>上，有的操作，例如<code>nb_add</code>，其函数指针是存放在<code>PyNumberMethods</code>结构体中，在<code>PyTypeObject</code>中只有一个<code>tp_as_number</code>指针指向那个结构体。所以根本无法计算函数指针在<code>PyTypeObject</code>上的偏移量。所以Python引入了<code>PyHeapTypeObject</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">heaptypeobject</span> &#123;</span></span><br><span class="line">    PyTypeObject ht_type; <span class="comment">/* 结构体的首部是一个PyTypeObject */</span></span><br><span class="line">    PyAsyncMethods as_async;</span><br><span class="line">    PyNumberMethods as_number;</span><br><span class="line">    PyMappingMethods as_mapping;</span><br><span class="line">    PySequenceMethods as_sequence; </span><br><span class="line">    PyBufferProcs as_buffer;</span><br><span class="line">    PyObject *ht_name, *ht_slots, *ht_qualname;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">dictkeysobject</span> *<span class="title">ht_cached_keys</span>;</span></span><br><span class="line">    <span class="comment">/* here are optional user slots, followed by the members. */</span></span><br><span class="line">&#125; PyHeapTypeObject;</span><br></pre></td></tr></table></figure>
+<h2 id="Descriptor"><a href="#Descriptor" class="headerlink" title="Descriptor"></a>Descriptor</h2><p>然而<code>slot</code>并不是对象，它并不能放在<code>tp_dict</code>中，也不会调用(因为没有类型)，所以在<code>tp_dict</code>中与<code>__getitem__</code>对应只能是另外一个包装了<code>slot</code>的东西，在Pythono中称之为<code>descriptor</code>。</p>
+<p>与<code>PyTypeObject</code>中操作对应的就是<code>PyWrapperDescrObject</code>，它里面包含一个<code>slot</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    PyObject_HEAD</span><br><span class="line">    PyTypeObject *d_type;</span><br><span class="line">    PyObject *d_name;</span><br><span class="line">    PyObject *d_qualname;</span><br><span class="line">&#125; PyDescrObject;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PyDescr_COMMON PyDescrObject d_common</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    PyDescr_COMMON; <span class="comment">/* 所有descriptor都有PyDescr_COMMON部分 */</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">wrapperbase</span> *<span class="title">d_base</span>;</span> <span class="comment">/* 对应一个slot */</span></span><br><span class="line">    <span class="keyword">void</span> *d_wrapped; <span class="comment">/* 对应函数指针 */</span></span><br><span class="line">&#125; PyWrapperDescrObject;</span><br></pre></td></tr></table></figure>
+<p>这些<code>descriptor</code>通过<code>PyDescr_NewWrapper</code>创建:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">PyObject *</span><br><span class="line">PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, <span class="keyword">void</span> *wrapped)</span><br><span class="line">&#123;</span><br><span class="line">    PyWrapperDescrObject *descr;</span><br><span class="line">    descr = (PyWrapperDescrObject *)descr_new(&amp;PyWrapperDescr_Type,</span><br><span class="line">                                             type, base-&gt;name);</span><br><span class="line">    <span class="keyword">if</span> (descr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        descr-&gt;d_base = base;</span><br><span class="line">        descr-&gt;d_wrapped = wrapped;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> (PyObject *)descr;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> PyDescrObject *</span><br><span class="line">descr_new(PyTypeObject *descrtype, PyTypeObject *type, <span class="keyword">const</span> <span class="keyword">char</span> *name)</span><br><span class="line">&#123;</span><br><span class="line">    PyDescrObject *descr;</span><br><span class="line">    descr = (PyDescrObject *)PyType_GenericAlloc(descrtype, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (descr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        descr-&gt;d_type = type;</span><br><span class="line">        descr-&gt;d_name = PyUnicode_InternFromString(name);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> descr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>创建的<code>PyDescrObject</code>对象的<code>d_type</code>域被设置为参数<code>type</code>，而<code>d_wrapped</code>存放着最重要的信息：操作对应的函数指针。 比如对<code>PyList_Type</code>来说, 它的<code>tp_dict[&quot;__getitem__&quot;].d_wrapped</code>就是<code>&amp;mp_subscript</code>，而<code>slot</code>则被存放在<code>d_base</code>中。</p>
+<p><code>PyWrapperDescrObject</code>对象的类型对象是<code>PyWrapperDescr_Type</code>，这个类型对象的<code>tp_call</code>域的函数指针指向<code>wrapperdescr_call</code>，Python在”调用“一个<code>descriptor</code>时，也就会调用<code>wrapperdescr_call</code>。</p>
+<h2 id="建立联系"><a href="#建立联系" class="headerlink" title="建立联系"></a>建立联系</h2><p>在Python2中，<code>slotdefs</code>在初始化的过程<code>init_slotdefs</code>中，需要经历一次”快排“排好序，而在Python3中，<code>slotdefs</code>会以一种有序的顺序预先定义好，在<code>init_slotdefs</code>只会检查<code>slotdefs</code>里操作偏移量是递增的。</p>
+<p>现在<code>slotdefs</code>已经准备好了，在<code>add_operators</code>中会基于每个<code>slot</code>建立一个<code>descriptor</code>，然后在<code>tp_dict</code>保存操作名到<code>descriptor</code>的关联：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">int</span></span><br><span class="line">add_operators(PyTypeObject *type)</span><br><span class="line">&#123;</span><br><span class="line">    PyObject *dict = type-&gt;tp_dict;</span><br><span class="line">    slotdef *p;</span><br><span class="line">    PyObject *descr;</span><br><span class="line">    <span class="keyword">void</span> **ptr;</span><br><span class="line"></span><br><span class="line">    init_slotdefs(); <span class="comment">/* [1].初始化slotdefs，这个函数只会在第一次调用的时候生效 */</span></span><br><span class="line">    <span class="keyword">for</span> (p = slotdefs; p-&gt;name; p++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (p-&gt;wrapper == <span class="literal">NULL</span>) <span class="comment">/* [2].如果slot没有指定wrapper，则不做处理 */</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        ptr = slotptr(type, p-&gt;offset); <span class="comment">/* [3].获得slotdef对应的操作在PyTypeObject中的偏移量 */</span></span><br><span class="line">        <span class="keyword">if</span> (!ptr || !*ptr)</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">if</span> (PyDict_GetItem(dict, p-&gt;name_strobj))<span class="comment">/* [4].如果tp_dict已存在同名操作名，则不作处理 */</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">if</span> (*ptr == (<span class="keyword">void</span> *)PyObject_HashNotImplemented) &#123;</span><br><span class="line">            <span class="comment">/* Classes may prevent the inheritance of the tp_hash</span></span><br><span class="line"><span class="comment">               slot by storing PyObject_HashNotImplemented in it. Make it</span></span><br><span class="line"><span class="comment">               visible as a None value for the __hash__ attribute. */</span></span><br><span class="line">            <span class="keyword">if</span> (PyDict_SetItem(dict, p-&gt;name_strobj, Py_None) &lt; <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            descr = PyDescr_NewWrapper(type, p, *ptr); <span class="comment">/* [5].创建descriptor */</span></span><br><span class="line">            <span class="keyword">if</span> (descr == <span class="literal">NULL</span>)</span><br><span class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">            <span class="comment">/* [6].将(操作名，descriptor)放入tp_dict中 */</span> </span><br><span class="line">            <span class="keyword">if</span> (PyDict_SetItem(dict, p-&gt;name_strobj, descr) &lt; <span class="number">0</span>) &#123; </span><br><span class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (type-&gt;tp_new != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (add_tp_new_wrapper(type) &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>add_operators</code>中一切都很简单，直观，需要注意的一点是在[4]处，如果<code>tp_dict</code>已存在同名操作名，则不作处理，意味着如果相同的操作名对应多个<code>slot</code>，那么只有定义在前面的才会填充进<code>tp_dict</code>中。例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MPSLOT(<span class="string">"__getitem__"</span>, mp_subscript, slot_mp_subscript, wrap_binaryfunc, <span class="string">"__getitem__(..."</span>),</span><br><span class="line">SQSLOT(<span class="string">"__getitem__"</span>, sq_item, slot_sq_item, wrap_sq_item, <span class="string">"__getitem__($..."</span>),</span><br></pre></td></tr></table></figure>
+<p>例如操作名<code>__getitem__</code>同时对应着两个操作，但是偏移量<code>mp_subscript</code>小于<code>sq_item</code>，前者会先被处理，虚拟机会将<code>slot_mp_subscript</code>和操作名<code>__getitem__</code>绑定。</p>
+<p>在[3]处函数<code>slotptr</code>背后，通过这个函数可以找到<code>slot</code>到<code>slot</code>对应的操作的真实函数指针转换：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> **</span><br><span class="line">slotptr(PyTypeObject *type, <span class="keyword">int</span> ioffset)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">char</span> *ptr;</span><br><span class="line">    <span class="keyword">long</span> offset = ioffset;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* 在PyHeapTypeObject上从后往前计算指针偏移量 */</span></span><br><span class="line">    assert(offset &gt;= <span class="number">0</span>); <span class="comment">/* 操作对应的函数指针偏移量必然在0~as_buffer之间 */</span></span><br><span class="line">    assert((<span class="keyword">size_t</span>)offset &lt; offsetof(PyHeapTypeObject, as_buffer));</span><br><span class="line">    <span class="keyword">if</span> ((<span class="keyword">size_t</span>)offset &gt;= offsetof(PyHeapTypeObject, as_sequence)) &#123;</span><br><span class="line">        ptr = (<span class="keyword">char</span> *)type-&gt;tp_as_sequence;</span><br><span class="line">        offset -= offsetof(PyHeapTypeObject, as_sequence);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((<span class="keyword">size_t</span>)offset &gt;= offsetof(PyHeapTypeObject, as_mapping)) &#123;</span><br><span class="line">        ptr = (<span class="keyword">char</span> *)type-&gt;tp_as_mapping;</span><br><span class="line">        offset -= offsetof(PyHeapTypeObject, as_mapping);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((<span class="keyword">size_t</span>)offset &gt;= offsetof(PyHeapTypeObject, as_number)) &#123;</span><br><span class="line">        ptr = (<span class="keyword">char</span> *)type-&gt;tp_as_number;</span><br><span class="line">        offset -= offsetof(PyHeapTypeObject, as_number);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((<span class="keyword">size_t</span>)offset &gt;= offsetof(PyHeapTypeObject, as_async)) &#123;</span><br><span class="line">        ptr = (<span class="keyword">char</span> *)type-&gt;tp_as_async;</span><br><span class="line">        offset -= offsetof(PyHeapTypeObject, as_async);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        ptr = (<span class="keyword">char</span> *)type; <span class="comment">/* 偏移量是基于PyTypeObject的 */</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>)</span><br><span class="line">        ptr += offset;</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">void</span> **)ptr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面这种在<code>PyHeapTypeObject</code>结构体的<code>as_sequence</code>、<code>as_mapping</code>…到<code>type</code>几个域从后往前计算函数指针偏移量的方式，能够一次就保证找到真实的函数指针地址。</p>
+<p>通过<code>add_operators</code>为<code>PyType_Type</code>添加一些操作后, 还会通过<code>add_methods</code>、<code>add_members</code>和<code>add_getsets</code>添加<code>tp_methods</code>, <code>tp_members</code>和<code>tp_getset</code>函数集。虽然和<code>add_operators</code>类似, 但添加的<code>descriptor</code>不是<code>PyWrapperDescrObject</code>, 而分别是<code>PyMethodDescrObject</code>, <code>PyMemberDescrObject</code>和<code>PyGetSetDescrObject</code>。</p>
+<p><img src="/images/pyclassobject-2.png" alt=""></p>
+<h2 id="方法重写"><a href="#方法重写" class="headerlink" title="方法重写"></a>方法重写</h2><p>我们应该知道，<code>__repr__</code>是一个特殊的<code>magic method</code>， 当执行<code>s = &quot;%r&quot; % A()</code>的时候， 最终会调用<code>A.tp_repr</code>。 如果假设 A 是 list 类型， 那么就应该调用<code>list_repr</code>这个函数， 然而实际并不是这样的， Python知道需要对这个方法进行特殊处理，最终执行我们重写的<code>__repr__</code>函数。</p>
+<p>而Python之所以知道， 是因为<code>slot</code>， 有一条特殊的<code>TPSLOT(&quot;__repr__&quot;,tp_repr,slot_tp_repr...)</code>。虚拟机在初始化A的时候，会检查到A的<code>tp_dict</code>中是否有<code>__repr__</code>函数， 一旦找到，就会根据对应的<code>slot</code>顺藤摸瓜找到<code>tp_repr</code>， 并替换成<code>slot_tp_repr</code>， 所以后面实际执行的是<code>slot_tp_repr</code>。</p>
+<p>这个函数内部会在对象上查找<code>__repr__</code>函数， 调用。</p>
+<p>函数指针的修复，发生在<code>fixup_slot_dispatchers(PyTypeObject* type)</code>中，对于内置的class对象， 并不会进行这个操作，实际这个操作发生在自定义class对象的初始化期间。</p>
+<h2 id="MRO"><a href="#MRO" class="headerlink" title="MRO"></a>MRO</h2><p><code>MRO</code>(<code>Method Resolution Order</code>，即方法解析顺序)。对于Python这种多继承语言来说，<code>MRO</code>显得比较复杂。</p>
+<p>在这里不会讲到Python的<code>MRO</code>过去的算法，重点关注的是Python3中的<code>C3 MRO</code>。</p>
+<p>在<code>PyType_Ready</code>填充完<code>tp_dict</code>后会通过<code>mro_internal</code>函数计算类型的<code>MRO</code>循序，由于这个过程十分繁琐，这里只针对关键代码进行了分析：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> PyObject *</span><br><span class="line">mro_implementation(PyTypeObject *type)</span><br><span class="line">&#123;</span><br><span class="line">    bases = type-&gt;tp_bases; <span class="comment">/* type的基类列表 */</span></span><br><span class="line">    n = PyTuple_GET_SIZE(bases); </span><br><span class="line">    <span class="comment">/* to_merge是一个列表的列表，前面n个元素是每个基类的mro列表，最后一个元素是基类列表 */</span></span><br><span class="line">    to_merge = PyList_New(n+<span class="number">1</span>); </span><br><span class="line">    <span class="comment">/* 将基类列表中每个基类的mro顺序放在to_merge中 */</span></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i); <span class="comment">/* 基类 */</span></span><br><span class="line">        base_mro_aslist = PySequence_List(base-&gt;tp_mro);  <span class="comment">/* 基类的mro列表 */</span></span><br><span class="line">        PyList_SET_ITEM(to_merge, i, base_mro_aslist);</span><br><span class="line">    &#125;</span><br><span class="line">    bases_aslist = PySequence_List(bases);</span><br><span class="line">    <span class="comment">/* 重复基类检查 */</span></span><br><span class="line">    <span class="keyword">if</span> (check_duplicates(bases_aslist) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">goto</span> out;</span><br><span class="line">    &#125;</span><br><span class="line">    PyList_SET_ITEM(to_merge, n, bases_aslist); <span class="comment">/* to_merge最后一个元素设为基类列表 */</span></span><br><span class="line">    result = Py_BuildValue(<span class="string">"[O]"</span>, (PyObject *)type); <span class="comment">/* merge结果保存在result里 */</span></span><br><span class="line">    res = pmerge(result, to_merge); <span class="comment">/* 合并操作 */</span></span><br><span class="line">  out:</span><br><span class="line">    Py_DECREF(to_merge);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其核心的<code>pmerge</code>操作：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">int</span></span><br><span class="line">pmerge(PyObject *acc, PyObject* to_merge)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> res = <span class="number">0</span>;</span><br><span class="line">    Py_ssize_t i, j, to_merge_size, empty_cnt;</span><br><span class="line">    <span class="keyword">int</span> *remain;</span><br><span class="line">    to_merge_size = PyList_GET_SIZE(to_merge);</span><br><span class="line">    <span class="comment">/* remain数组存放了第i个基类mro列表下一次取得元素的索引 */</span></span><br><span class="line">    remain = (<span class="keyword">int</span> *)PyMem_MALLOC(SIZEOF_INT*to_merge_size);</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; to_merge_size; i++)</span><br><span class="line">        remain[i] = <span class="number">0</span>; <span class="comment">/* 初始化为0 */</span></span><br><span class="line"></span><br><span class="line">  again:</span><br><span class="line">    empty_cnt = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; to_merge_size; i++) &#123;</span><br><span class="line">        PyObject *candidate; <span class="comment">/* 候选类 */</span></span><br><span class="line">        PyObject *cur_list = PyList_GET_ITEM(to_merge, i); <span class="comment">/* 基类的mro列表 */</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (remain[i] &gt;= PyList_GET_SIZE(cur_list)) &#123; <span class="comment">/* 该基类的mro列表已取完 */</span></span><br><span class="line">            empty_cnt++;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        candidate = PyList_GET_ITEM(cur_list, remain[i]); <span class="comment">/* 从基类mro列表中确定了候选类 */</span></span><br><span class="line">        <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; to_merge_size; j++) &#123; <span class="comment">/* 如果在其他基类列表中的”尾部“包括了候选类，则跳过*/</span></span><br><span class="line">            PyObject *j_lst = PyList_GET_ITEM(to_merge, j);</span><br><span class="line">            <span class="keyword">if</span> (tail_contains(j_lst, remain[j], candidate))</span><br><span class="line">                <span class="keyword">goto</span> skip; <span class="comment">/* continue outer loop */</span></span><br><span class="line">        &#125;</span><br><span class="line">        res = PyList_Append(acc, candidate); <span class="comment">/* 将候选类追加到acc中 */</span></span><br><span class="line">        <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; to_merge_size; j++) &#123;</span><br><span class="line">            PyObject *j_lst = PyList_GET_ITEM(to_merge, j);</span><br><span class="line">            <span class="keyword">if</span> (remain[j] &lt; PyList_GET_SIZE(j_lst) &amp;&amp;</span><br><span class="line">                PyList_GET_ITEM(j_lst, remain[j]) == candidate) &#123;</span><br><span class="line">                remain[j]++; <span class="comment">/* 索引加一 */</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">goto</span> again;</span><br><span class="line">      skip: ;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (empty_cnt != to_merge_size) &#123; <span class="comment">/* 处理结束后，如果还有基类的mro列表没有处理完成，则失败 */</span></span><br><span class="line">        set_mro_error(to_merge, remain);</span><br><span class="line">        res = <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  out:</span><br><span class="line">    PyMem_FREE(remain);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看完上述代码，总结其过程就是：</p>
+<p>我们把类<code>C</code>的线性化MRO记为<code>L[C] = [C1, C2,…,CN]</code>。其中<code>C1</code>称为<code>L[C]</code>的“头”，其余元素<code>[C2,…,CN]</code>称为”尾“。如果一个类<code>C</code>继承自基类<code>B1、B2、……、BN</code>，那么我们可以根据以下两步计算出<code>L[C]</code>：</p>
+<ul>
+<li><code>L[object] = [object]</code></li>
+<li><code>L[C(B1…BN)] = [C] + merge(L[B1]…L[BN], [B1]…[BN])</code></li>
+</ul>
+<p>这里的关键在于<code>merge</code>，其输入是一组列表，按照如下方式输出一个列表：</p>
+<ol>
+<li>检查第一个列表的头元素（如<code>L[B1]</code>的头），记作<code>H</code>。</li>
+<li>若<code>H</code>未出现在其它列表的“尾部”，则将其输出，并将其从所有列表中删除(其实并不删除，只是记录索引位置，不过这里方便起见，可以理解为删除)，然后回到步骤1；否则，取出下一个列表的头部记作<code>H</code>，继续该步骤。</li>
+<li>重复上述步骤，直至列表为空(对应上面所有mro列表处理完毕)，则算法结束；<br><br> 或者不能再找出可以输出的元素(结束了但是还有mro列表没有处理完)，说明无法构建继承关系，Python会抛出异常。</li>
+</ol>
+<h2 id="基类与子类加工"><a href="#基类与子类加工" class="headerlink" title="基类与子类加工"></a>基类与子类加工</h2><p>在确定好<code>mro</code>列表后，就已经知道了基类和子类的关系，在<code>PyType_Ready</code>的下一步只要就是从基类那里继承各种属性和操作：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">inherit_special(type, type-&gt;tp_base);  <span class="comment">/* Inherit special flags from dominant base */</span></span><br><span class="line">inherit_slots(type, (PyTypeObject *)b);  <span class="comment">/* Initialize tp_dict properly */</span></span><br><span class="line">... <span class="comment">/* All bases of statically allocated type should be statically allocated */</span></span><br><span class="line">... <span class="comment">/* Sanity check for tp_free. */</span></span><br><span class="line">... <span class="comment">/* Hack for tp_hash and __hash__ */</span></span><br><span class="line">...  <span class="comment">/* Some more special stuff */</span></span><br><span class="line">add_subclass((PyTypeObject *)b, type) &lt; <span class="number">0</span>) <span class="comment">/* Link into each base class's list of subclasses */</span></span><br><span class="line">... <span class="comment">/* All done -- set the ready flag */</span></span><br></pre></td></tr></table></figure></p>
+<p>到现在为止，<code>PyType_Ready</code>的工作总结起来就是：</p>
+<ul>
+<li>设置type信息和基类信息</li>
+<li>填充tp_dict</li>
+<li>确定mro列表</li>
+<li>子类继承父类的操作</li>
+<li>设置基类的子类列表tp_subclasses</li>
+</ul>
+<h2 id="用户自定义类"><a href="#用户自定义类" class="headerlink" title="用户自定义类"></a>用户自定义类</h2><p>我们以一个简单例子开始：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[class_a.py]</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span>:</span></span><br><span class="line">    name = <span class="string">'Python'</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        print(<span class="string">"A.__init__"</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">f</span><span class="params">(self)</span>:</span></span><br><span class="line">        print(<span class="string">"A.f"</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">g</span><span class="params">(self, value)</span>:</span></span><br><span class="line">        self.value = value</span><br><span class="line">        print(self.value)</span><br><span class="line"></span><br><span class="line">a = A()</span><br><span class="line">a.f()</span><br><span class="line">a.g(<span class="number">10</span>)</span><br></pre></td></tr></table></figure></p>
+<p>显然对于<code>class_a.py</code>源文件，经过编译后会得到四个<code>PyCodeObject</code>，它们的关系如下：</p>
+<p><img src="/images/pyclassobject-3.png" alt=""></p>
+<p>来看<code>class A</code>的创建过程：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[PyCodeObject <span class="keyword">for</span> class_a.py]</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span>:</span></span><br><span class="line"><span class="number">0</span> LOAD_BUILD_CLASS</span><br><span class="line"><span class="number">2</span> LOAD_CONST               <span class="number">1</span> (&lt;code object A at <span class="number">0x7f1445f840c0</span>, file <span class="string">"class_a.py"</span>, line <span class="number">3</span>&gt;)</span><br><span class="line"><span class="number">4</span> LOAD_CONST               <span class="number">2</span> (<span class="string">'A'</span>)</span><br><span class="line"><span class="number">6</span> MAKE_FUNCTION            <span class="number">0</span></span><br><span class="line"><span class="number">8</span> LOAD_CONST               <span class="number">2</span> (<span class="string">'A'</span>)</span><br><span class="line"><span class="number">10</span> CALL_FUNCTION            <span class="number">2</span></span><br><span class="line"><span class="number">12</span> STORE_NAME               <span class="number">1</span> (A)</span><br></pre></td></tr></table></figure>
+<p>首先，我们可以看到的是一条指令<code>LOAD_BUILD_CLASS</code>，由这条指令的注释我们可以知道：这条指令将函数<code>builtins.__build_class__</code>压入了栈中，然后被之后的<code>CALL_FUNCTION</code>指令调用，构建一个类对象。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.. opcode:: LOAD_BUILD_CLASS</span><br><span class="line">   Pushes :func:`builtins.__build_class__` onto the <span class="built_in">stack</span>.  It is later called</span><br><span class="line">   by :opcode:`CALL_FUNCTION` to construct a <span class="class"><span class="keyword">class</span>.</span></span><br></pre></td></tr></table></figure>
+<p>正如注释里所说的，在<code>LOAD_BUILD_CLASS</code>指令后面，虚拟机加载了类对应的<code>PyCodeObject</code>和函数名称<code>A</code>构建了一个函数并压入栈中，所以直到<code>CALL_FUNCTION</code>调用的时候，此时运行时栈的内存布局应该是下面这个样子的：</p>
+<p><img src="/images/pyclassobject-4.png" alt=""></p>
+<p>接下来就是<code>CALL_FUNCTION</code>指令的执行了，由于它的指令参数为<code>2</code>(代表两个函数参数)，所以调用的<code>func</code>应该是<code>__build_class__</code>，也就是<code>__build_class__(&lt;func A&gt;, &quot;A&quot;&gt;)</code>。</p>
+<h2 id="build-class"><a href="#build-class" class="headerlink" title="build_class"></a><strong>build_class</strong></h2><p><code>__bulid_class__</code>的作用是通过一个函数对象创建类对象。它的的调用过程比较复杂，这里删除掉了一些源码(不影响阅读)：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> PyObject *</span><br><span class="line">builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)</span><br><span class="line">&#123;</span><br><span class="line">    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;</span><br><span class="line">    PyObject *cls = <span class="literal">NULL</span>, *cell = <span class="literal">NULL</span>;</span><br><span class="line">    Py_ssize_t nargs;</span><br><span class="line">    <span class="keyword">int</span> isclass = <span class="number">0</span>;   <span class="comment">/* initialize to prevent gcc warning */</span></span><br><span class="line"></span><br><span class="line">    nargs = PyTuple_GET_SIZE(args);</span><br><span class="line">    func = PyTuple_GET_ITEM(args, <span class="number">0</span>); <span class="comment">/* 类的函数对象 */</span></span><br><span class="line">    name = PyTuple_GET_ITEM(args, <span class="number">1</span>); <span class="comment">/* 类名 */</span></span><br><span class="line">    bases = PyTuple_GetSlice(args, <span class="number">2</span>, nargs); <span class="comment">/* 如果有剩余参数的话，就作为基类 */</span></span><br><span class="line">    <span class="keyword">if</span> (bases == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (kwds == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        meta = <span class="literal">NULL</span>;</span><br><span class="line">        mkw = <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        mkw = PyDict_Copy(kwds); <span class="comment">/* 不修改传递进来的关键字参数 */</span></span><br><span class="line">        meta = _PyDict_GetItemId(mkw, &amp;PyId_metaclass); <span class="comment">/* 尝试获取metaclass关键字参数 */</span></span><br><span class="line">        <span class="keyword">if</span> (meta != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            isclass = PyType_Check(meta); <span class="comment">/* 检查meta是不是类 */</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (meta == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (PyTuple_GET_SIZE(bases) == <span class="number">0</span>) &#123; <span class="comment">/* 如果没有基类，那么metaclass就是type */</span></span><br><span class="line">            meta = (PyObject *) (&amp;PyType_Type);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123; <span class="comment">/* 否则元类就是第一个基类的元类 */</span></span><br><span class="line">            PyObject *base0 = PyTuple_GET_ITEM(bases, <span class="number">0</span>);</span><br><span class="line">            meta = (PyObject *) (base0-&gt;ob_type);</span><br><span class="line">        &#125;</span><br><span class="line">        isclass = <span class="number">1</span>; <span class="comment">/* 基类是一个类 */</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isclass) &#123;</span><br><span class="line">        <span class="comment">/* 元类计算，会从所有元类中选出一个在继承关系上最底层的元类 */</span></span><br><span class="line">        winner = (PyObject *)_PyType_CalculateMetaclass((PyTypeObject *)meta, bases);</span><br><span class="line">        <span class="keyword">if</span> (winner != meta) &#123;</span><br><span class="line">            meta = winner;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* 尝试调用元类的__prepare__方法，这个方法会返回一个字典作为类的dict */</span></span><br><span class="line">    prep = _PyObject_GetAttrId(meta, &amp;PyId___prepare__);</span><br><span class="line">    <span class="keyword">if</span> (prep == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (PyErr_ExceptionMatches(PyExc_AttributeError)) &#123;</span><br><span class="line">            PyErr_Clear();</span><br><span class="line">            ns = PyDict_New();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        PyObject *pargs[<span class="number">2</span>] = &#123;name, bases&#125;;</span><br><span class="line">        ns = _PyObject_FastCallDict(prep, pargs, <span class="number">2</span>, mkw);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!PyMapping_Check(ns)) &#123;</span><br><span class="line">        <span class="comment">/* ns 必须是一个mapping类型 */</span></span><br><span class="line">        <span class="keyword">goto</span> error;</span><br><span class="line">    &#125;<span class="comment">/* 将类的函数对象作为闭包调用 */</span></span><br><span class="line">    cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,</span><br><span class="line">                             <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>,</span><br><span class="line">                             PyFunction_GET_CLOSURE(func)); </span><br><span class="line">    <span class="keyword">if</span> (cell != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        PyObject *margs[<span class="number">3</span>] = &#123;name, bases, ns&#125;; <span class="comment">/* 参宿包括类名，基类列表和类的locals命名空间 */</span></span><br><span class="line">        cls = _PyObject_FastCallDict(meta, margs, <span class="number">3</span>, mkw); <span class="comment">/* 接下来就是调用元类的tp_call了 */</span></span><br><span class="line">        <span class="keyword">if</span> (cls != <span class="literal">NULL</span> &amp;&amp; PyType_Check(cls) &amp;&amp; PyCell_Check(cell)) &#123;</span><br><span class="line">            PyObject *cell_cls = PyCell_GET(cell);</span><br><span class="line">            <span class="keyword">if</span> (cell_cls != cls) &#123;</span><br><span class="line">                ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">error:</span><br><span class="line">    <span class="keyword">return</span> cls;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大致描述一下<code>__build_class__</code>创建类的过程为：</p>
+<ol>
+<li>获取<code>metaclass</code>：虚拟机会先检查是在在类定义的是否使用关键字参数<code>metaclass</code>自定义了元类，若没有那么元类就是<code>type</code>；</li>
+<li>尝试获取并调用元类的<code>__prepare__</code>方法：通过这个可以得到一个<code>ns</code>字典，这里会存放类的动态元信息；</li>
+<li>将类对应的<code>PyCodeObject</code>作为函数执行：所以在类的第一层定义的语句都会执行一次，这样<code>ns</code>作为<code>f_locals</code>函数定义，类变量都会存在这个命名空间中；</li>
+<li>调用元类的<code>tp_call</code>创建类；</li>
+</ol>
+<h2 id="调用metaclass"><a href="#调用metaclass" class="headerlink" title="调用metaclass"></a>调用metaclass</h2><p>默认的元类是<code>PyTypeObject</code>，所以我们来到它的<code>tp_call</code>定义处：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> PyObject *</span><br><span class="line">type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)</span><br><span class="line">&#123;</span><br><span class="line">    PyObject *obj;</span><br><span class="line">    obj = type-&gt;tp_new(type, args, kwds);</span><br><span class="line"></span><br><span class="line">    type = Py_TYPE(obj);</span><br><span class="line">    <span class="keyword">if</span> (type-&gt;tp_init != <span class="literal">NULL</span>) &#123;  <span class="comment">/* 尝试调用类型的__init__方法，初始化类对象 */</span></span><br><span class="line">        <span class="keyword">int</span> res = type-&gt;tp_init(obj, args, kwds);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> obj;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>tp_call</code>函数中，传递的参数<code>type</code>是基类，而<code>args</code>中包括了类名，基类列表和命名空间。在内部，真正创建类对象的函数是<code>type</code>对象<code>type_new</code>，这个函数十分复杂，依照惯例只罗列部分关键源码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="创建instance"><a href="#创建instance" class="headerlink" title="创建instance"></a>创建instance</h2><p>现在就可以调用<code>class</code>对象创建<code>instance</code>实例了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a = A()</span><br><span class="line"><span class="comment"># 14 LOAD_NAME                0 (A)</span></span><br><span class="line"><span class="comment"># 16 CALL_FUNCTION            0</span></span><br><span class="line"><span class="comment"># 18 STORE_NAME               1 (a)</span></span><br></pre></td></tr></table></figure>
+<p>创建实例时，执行的是<code>CALL_FUNCTION</code>指令，我们知道这条指令会执行它对应的<code>PyType_Object</code>上定义的<code>tp_call</code>操作。这里class对象的<code>type</code>就是<code>PyType_Type</code>，而对应的<code>tp_call</code>操作中会调用<code>A.tp_new</code>创建示例。</p>
+<p>在上一步<code>__build_class__</code>的过程中，class对象从<code>PyBaseObject_Type</code>那里继承了一些操作，其中就有<code>tp_new</code>。<code>PyBaseObject_Type</code>的<code>object_new</code>会调用<code>PyType_GenericAlloc</code>来为对象分配内存，其大小为：<br><br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PyObject_NEW_VAR(type, typeobj, n) \</span></span><br><span class="line">( (type *) PyObject_InitVar( \</span><br><span class="line">      (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE((typeobj),(n)) ),\</span><br><span class="line">      (typeobj), (n)) )</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">size_t</span> size = _PyObject_VAR_SIZE(type, nitems+<span class="number">1</span>);</span><br></pre></td></tr></table></figure></p>
+<p>申请完内存后，回到<code>tp_call</code>中，创建完<code>instance</code>对像后，会尝试调用<code>tp_init</code>初始化对象：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">type = Py_TYPE(obj);</span><br><span class="line"><span class="keyword">if</span> (type-&gt;tp_init != <span class="literal">NULL</span>) &#123;  <span class="comment">/* 尝试调用类型的__init__方法，初始化类对象 */</span></span><br><span class="line">    <span class="keyword">int</span> res = type-&gt;tp_init(obj, args, kwds);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>还记得，在<code>slot</code>机制一节，讲过方法的重写，如果子类重写了<code>__init__</code>方法，那么在<code>fixup_slot_dispatchers</code>中，<code>tp_init</code>会指向<code>slotdefs</code>定义的<code>slot_tp_init</code>，而这个操作会在我们自定义的类及<code>mro</code>上搜索属性<code>__init__</code>对应的操作。</p>
+<p>这里总结一下从创建类对象到创建实例对象这么一个过程：</p>
+<h2 id="Resources"><a href="#Resources" class="headerlink" title="Resources"></a>Resources</h2><p><code>&gt;&gt;&gt;</code> <a href="http://lucumr.pocoo.org/2014/8/16/the-python-i-would-like-to-see/" target="_blank" rel="noopener">The Python I Would Like To See</a><br><br><code>&gt;&gt;&gt;</code> <a href="http://live.julik.nl/2012/08/messages-versus-slots" target="_blank" rel="noopener">The Python I Would Like To See</a><br><br><code>&gt;&gt;&gt;</code> <a href="http://hanjianwei.com/2013/07/25/python-mro/" target="_blank" rel="noopener">Python的方法解析顺序(MRO)</a></p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/c981e5e/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/5a3f63f9/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python源码学习-对象 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,源码," />
+  
+
+  <meta name="description" content="Become a better Pythoner最近在整理Python知识体系的时候，发现还是有许多的迷惑。 于是准备从源码的角度去了解Python。参考《Python源码剖析》，这书是根据Python2写的。 &amp;gt;&amp;gt;&amp;gt; Python3.6.4源码 + 『Python源码剖析』 + 几乎为零的C水平 这篇博客主要分析的是Python的对象机制。">
+<meta name="keywords" content="Python,源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python源码学习-对象">
+<meta property="og:url" content="http://shawnz.me/posts/8c2cc9bc/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="Become a better Pythoner最近在整理Python知识体系的时候，发现还是有许多的迷惑。 于是准备从源码的角度去了解Python。参考《Python源码剖析》，这书是根据Python2写的。 &amp;gt;&amp;gt;&amp;gt; Python3.6.4源码 + 『Python源码剖析』 + 几乎为零的C水平 这篇博客主要分析的是Python的对象机制。">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.086Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python源码学习-对象">
+<meta name="twitter:description" content="Become a better Pythoner最近在整理Python知识体系的时候，发现还是有许多的迷惑。 于是准备从源码的角度去了解Python。参考《Python源码剖析》，这书是根据Python2写的。 &amp;gt;&amp;gt;&amp;gt; Python3.6.4源码 + 『Python源码剖析』 + 几乎为零的C水平 这篇博客主要分析的是Python的对象机制。">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Become-a-better-Pythoner"><span class="toc-text">Become a better Pythoner</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PyObject"><span class="toc-text">PyObject</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类型对象"><span class="toc-text">类型对象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#对象的创建"><span class="toc-text">对象的创建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#多态性"><span class="toc-text">多态性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#引用计数"><span class="toc-text">引用计数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考链接"><span class="toc-text">参考链接</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python源码剖析阅读笔记" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Python源码学习-对象</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.01.02</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="Become-a-better-Pythoner"><a href="#Become-a-better-Pythoner" class="headerlink" title="Become a better Pythoner"></a><strong>Become a better Pythoner</strong></h2><p>最近在整理Python知识体系的时候，发现还是有许多的迷惑。</p>
+<p>于是准备从源码的角度去了解Python。参考《Python源码剖析》，这书是根据Python2写的。</p>
+<p><code>&gt;&gt;&gt;</code> Python3.6.4源码 + 『Python源码剖析』 + 几乎为零的C水平</p>
+<p>这篇博客主要分析的是Python的对象机制。</p>
+<a id="more"></a>
+<h2 id="PyObject"><a href="#PyObject" class="headerlink" title="PyObject"></a>PyObject</h2><p>在Python中所有东西都是对象，而所有的对象都有一些相同的东西，这部分定义在<code>PyObject</code>中，它是整个Python对象机制的核心。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">object</span> &#123;</span></span><br><span class="line">    _PyObject_HEAD_EXTRA</span><br><span class="line">    Py_ssize_t ob_refcnt;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">typeobject</span> *<span class="title">ob_type</span>;</span></span><br><span class="line">&#125; PyObject;</span><br></pre></td></tr></table></figure></p>
+<p><code>PyObject</code>里面很简单，只包括一个<code>_PyObject_HEAD_EXTRA</code>，和两个额外的两个成员变量：</p>
+<ul>
+<li><code>ob_refcnt</code>：维护一个引用计数的计数器。</li>
+<li><code>ob_type</code>：一个指向对象类型对象的指针。</li>
+</ul>
+<p>另外，Python使用<code>PyVarObject</code>表示 <strong>变长对象</strong> ：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    PyObject ob_base;</span><br><span class="line">    Py_ssize_t ob_size; <span class="comment">/* Number of items in variable part */</span></span><br><span class="line">&#125; PyVarObject;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到<code>PyVarObject</code>和<code>PyObject</code>相比，只增加了一个新的数据成员：</p>
+<ul>
+<li><code>ob_size</code>：表示变长对象容纳了多少个元素。</li>
+</ul>
+<p>另外<code>_PyObject_HEAD_EXTRA</code>是一个宏定义，它维护<code>next</code>和<code>prev</code>指针，用来支持双链表把堆中所有对象串起来：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _PyObject_HEAD_EXTRA            \</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">object</span> *_<span class="title">ob_next</span>;</span>           \</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">object</span> *_<span class="title">ob_prev</span>;</span></span><br></pre></td></tr></table></figure></p>
+<p><strong>C指针指向的是对象边界，而所有对象都有相同的头部定义<code>PyObject</code>，即只需要一个泛型指针<code>PyObject*</code>就可以引用任何一个对象。</strong></p>
+<h2 id="类型对象"><a href="#类型对象" class="headerlink" title="类型对象"></a>类型对象</h2><p><code>PyObject</code>中的指针<code>*ob_type</code>指向对象的类型，在<code>object.h</code>中找到定义处：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*  object.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">typeobject</span> &#123;</span></span><br><span class="line">    PyObject_VAR_HEAD  <span class="comment">/* 表示这是一个变长对象 */</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span> *tp_name; <span class="comment">/* For printing, in format "&lt;module&gt;.&lt;name&gt;" */</span></span><br><span class="line">    Py_ssize_t tp_basicsize, tp_itemsize; <span class="comment">/* For allocation */</span></span><br><span class="line">    <span class="comment">/* 一大堆函数指针 */</span></span><br><span class="line">    destructor tp_dealloc;</span><br><span class="line">    printfunc tp_print;</span><br><span class="line">    ...    </span><br><span class="line">&#125; PyTypeObject;</span><br></pre></td></tr></table></figure></p>
+<p><code>PyTypeObject</code>中包含了许多的信息，主要分为4类：</p>
+<ul>
+<li>类型名，<code>*tp_name</code>，主要是Python内部以及调试使用；</li>
+<li>创建类型的对象需要分配的内存大小，<code>tp_basicsize</code>和<code>tp_itemsize</code>；</li>
+<li>与类型对象相关联的操作(如<code>tp_print</code>这样的函数指针)；</li>
+<li>类型信息</li>
+</ul>
+<p>一个<code>PyTypeObject</code>结构体变量就相当于Python中“类”这个概念的实现，称之为”类型对象“。例如<code>PyLong_Type</code>就是整数对象的类型对象，<code>PyList_Type</code>是列表对象的类型对象。</p>
+<p>在<code>PyTypeObject</code>头部，我们还发现了<code>PyObject_VAR_HEAD</code>，这意味着 <strong>Python中的类型也是一种对象。</strong> <br><br>既然Python对象可以通过<code>*ob_type</code>找到对象的类型，那么类型对象的<code>*ob_type</code>是什么呢？<br><br>答案是：<code>PyType_Type</code>，它相当于Python中的<code>type</code>类型：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Objects/typeobject.c */</span></span><br><span class="line">PyTypeObject PyType_Type = &#123;</span><br><span class="line">    PyVarObject_HEAD_INIT(&amp;PyType_Type, <span class="number">0</span>)      <span class="comment">/* 它的ob_type指向本身 */</span></span><br><span class="line">    <span class="string">"type"</span>,                                     <span class="comment">/* tp_name */</span></span><br><span class="line">    <span class="keyword">sizeof</span>(PyHeapTypeObject),                   <span class="comment">/* tp_basicsize */</span></span><br><span class="line">    <span class="keyword">sizeof</span>(PyMemberDef),                        <span class="comment">/* tp_itemsize */</span></span><br><span class="line">    (destructor)type_dealloc,                   <span class="comment">/* tp_dealloc */</span></span><br><span class="line">    <span class="number">0</span>,                                          <span class="comment">/* tp_print */</span></span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>以整数对象为例：</p>
+<ul>
+<li>整数对象的类型为<code>PyLong_Type</code>；</li>
+<li><code>PyLong_Type</code>是类型对象，其类型是<code>PyType_Type</code>；</li>
+<li><code>PyType_Type</code>也是类型对象，其类型是它本身。</li>
+</ul>
+<p>这样以来就很好地理解了 <strong>Python“类型的类型”默认是<code>type</code>，这个类称为元类(<code>metaclass</code>)，它的类型为它本身。</strong> <br><br>一个简单的例子：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">A</span><span class="params">(object)</span>:</span></span><br><span class="line"><span class="meta">... </span>   <span class="keyword">pass</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>A.__class__</span><br><span class="line">&lt;type <span class="string">'type'</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>A.__class__.__class__</span><br><span class="line">&lt;type <span class="string">'type'</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>type.__class__</span><br><span class="line">&lt;type <span class="string">'type'</span>&gt;</span><br></pre></td></tr></table></figure></p>
+<h2 id="对象的创建"><a href="#对象的创建" class="headerlink" title="对象的创建"></a>对象的创建</h2><p>Python的对象创建有两种方式：</p>
+<ul>
+<li><p>通过Python的C API，而这些API又分为两种：</p>
+<ul>
+<li>泛型API，AOL(Abstract Object API)。这类API都具有注入PyObject_<em>**的形式，可以应用到任何Python对象上。例如：<br><br>  `PyObject</em> intobj = PyObject_New(PyObject，&amp;PyLong_Type)`</li>
+<li>类型相关的API，COL(Co Object API)。Python为内建对象提供这样一组的API。例如：<br><br>  <code>PyObject* intobj = PyLong_FromLong(10)</code></li>
+</ul>
+</li>
+<li>使用类型对象创建。</li>
+</ul>
+<p>在Python中，<code>int(10)</code>来创建一个<code>int</code>对象，实际是因为Python完成环境初始化后，符号<code>int</code>对应着內建类型对象<code>PyLong_Type</code>，所以我们可以使用它创建对象。例如：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>int_type = __builtins__.dict[<span class="string">'int'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = int_type(<span class="number">10</span>)  <span class="comment"># 获取內建的int类型对象来创建一个int对象</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a</span><br><span class="line"><span class="number">10</span></span><br></pre></td></tr></table></figure></p>
+<p>那么<code>PyLong_Type</code>又是怎么创建<code>int</code>对象的呢？</p>
+<p>我们知道对象创建需要经历<code>__new__</code>和<code>__init__</code>方法的调用。在结构体类型<code>PyTypeObject</code>中定义了许多的函数指针，这些指针可以视为类型对象中所定义的操作。其中两个特殊的函数指针：<code>newfunc tp_new;</code>和<code>initproc tp_init;</code>与Python中的<code>__new__</code>和<code>__init__</code>相对应。</p>
+<h2 id="多态性"><a href="#多态性" class="headerlink" title="多态性"></a>多态性</h2><p>在Python中创建一个对象时，会分配内存，进行初始化。然后在Python内部会用一个<code>PyObject*</code>变量来保存和维护指针，这个对象是什么类型需要通过<code>ob_type</code>进行解析得到，正是这个域实现了Python的多态机制。例如，一个<code>Print</code>函数：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Print</span><span class="params">(PyObject* object)</span> </span>&#123;</span><br><span class="line">    object-&gt;ob_type-&gt;tp_print(object)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果传给<code>Print</code>的指针<code>PyObject</code> 是<code>PyLongObject</code>对象，那么就会调用<code>PyLong_Type</code>中定义的<code>tp_print</code>；<br><br>如果传给<code>Print</code>的指针<code>PyObject</code> 是<code>PyStringObject</code>对象，那么就会调用<code>PyString_Type</code>中定义的<code>tp_print</code>；<br></p>
+<h2 id="引用计数"><a href="#引用计数" class="headerlink" title="引用计数"></a>引用计数</h2><p>Python的垃圾收集机制是通过引用计数实现的。</p>
+<p>在所有对象的头部都维护着一个变量<code>ob_refcnt</code>作为引用计数器。</p>
+<ul>
+<li>Pyhton初始化对象的时候使用<code>_Py_NewReference</code>设置<code>ob_refcnt</code>为<code>1</code></li>
+<li><code>Py_INCREF(ob)</code>和<code>Py_DECREF(ob)</code>两个宏函数可以增加和减少一个对象的引用。</li>
+<li>当引用计数器减少到0后，<code>Py_DECREF</code>会调用对象的类型对象上定义的<code>tp_dealloc</code>(相当于C++中的析构函数)。</li>
+</ul>
+<p>有一点需要注意的是，调用析构不意味着调用<code>free</code>释放内存，Python会使用内存池技术避免频繁申请和释放内存空间。</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><code>&gt;&gt;&gt;</code> <a href="https://www.python.org/downloads/release/python-364/" target="_blank" rel="noopener">Python3.6.4源码</a><br><br><code>&gt;&gt;&gt;</code> <a href="">Python源码剖析</a></p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/cc9966a1/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/34d7e996/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

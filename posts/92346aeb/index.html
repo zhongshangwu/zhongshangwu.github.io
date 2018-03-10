@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python源码阅读-Dict | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,源码," />
+  
+
+  <meta name="description" content="存储策略Python中字典的实现策略:  底层使用散列表进行存储">
+<meta name="keywords" content="Python,源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python源码阅读-Dict">
+<meta property="og:url" content="http://shawnz.me/posts/92346aeb/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="存储策略Python中字典的实现策略:  底层使用散列表进行存储">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.118Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python源码阅读-Dict">
+<meta name="twitter:description" content="存储策略Python中字典的实现策略:  底层使用散列表进行存储">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#存储策略"><span class="toc-text">存储策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#定义"><span class="toc-text">定义</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PyDictEntry"><span class="toc-text">PyDictEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PyDictObject"><span class="toc-text">PyDictObject</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#创建"><span class="toc-text">创建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#搜索策略"><span class="toc-text">搜索策略</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python源码阅读-Dict" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Python源码阅读-Dict</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.01.04</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="存储策略"><a href="#存储策略" class="headerlink" title="存储策略"></a>存储策略</h2><p>Python中字典的实现策略:</p>
+<ol>
+<li>底层使用散列表进行存储</li>
+</ol>
+<a id="more"></a>
+<ol>
+<li>开放定址发检测冲突<ul>
+<li>插入：发生冲突，通过二次探测算法，寻找下一个位置，直到找到可用位置，插入元素(构成一条”探测链“)。</li>
+<li>查找：需要遍历“探测链”；</li>
+<li>删除：如果对象在“探测链”上，不能直接删除元素，会导致探测链上的下个元素找不到，采用标记删除技术。</li>
+</ul>
+</li>
+</ol>
+<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><h3 id="PyDictEntry"><a href="#PyDictEntry" class="headerlink" title="PyDictEntry"></a>PyDictEntry</h3><p>Python2中使用<code>PyDictEntry</code>定义一对<code>key-value</code>键值对：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">	<span class="comment">/* Cached hash code of me_key.  Note that hash codes are C longs.</span></span><br><span class="line"><span class="comment">	 * We have to use Py_ssize_t instead because dict_popitem() abuses</span></span><br><span class="line"><span class="comment">	 * me_hash to hold a search finger.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	Py_ssize_t me_hash;</span><br><span class="line">	PyObject *me_key;</span><br><span class="line">	PyObject *me_value;</span><br><span class="line">&#125; PyDictEntry;</span><br></pre></td></tr></table></figure>
+<p>在一个<code>PyDictEntry</code>的生存变化过程中，<code>entey</code>会在几个状态之间切换：</p>
+<ul>
+<li><p><code>Unused</code>：当一个<code>entry</code>的<code>me_key</code>和<code>me_value</code>都是<code>NULL</code>时，<code>entry</code>处于<code>Unused</code>态。每个<code>entry</code>初始化时会处于这个状态，而且只有<code>Unused</code>态下，<code>me_key</code>才会为<code>NULL</code>。</p>
+</li>
+<li><p><code>Active</code>：当<code>entry</code>中存储着一对<code>me_key</code>和<code>me_value</code>时，<code>entry</code>处于<code>Active</code>态，在这个状态下，<code>me_key</code>和<code>me_value</code>都不能为<code>NULL</code>。</p>
+</li>
+<li><p><code>Dummy</code>：当删除一个键值对时，<code>entry</code>不能直接删除，这个时候<code>me_key</code>指向<code>dummy</code>对象，<code>entry</code>进入<code>Dummy</code>态。</p>
+</li>
+</ul>
+<h3 id="PyDictObject"><a href="#PyDictObject" class="headerlink" title="PyDictObject"></a>PyDictObject</h3><p>Python2中字典的实现是<code>PyDictObject</code>，它是一堆<code>PyDictEntry</code>集合：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">dictobject</span> <span class="title">PyDictObject</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">dictobject</span> &#123;</span></span><br><span class="line">    PyObject_HEAD</span><br><span class="line">    Py_ssize_t ma_fill;  <span class="comment">/* 元素个数 Active + # Dummy */</span></span><br><span class="line">    Py_ssize_t ma_used;  <span class="comment">/* 元素个数 Active */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* The table contains ma_mask + 1 slots, and that's a power of 2.</span></span><br><span class="line"><span class="comment">    * We store the mask instead of the size because the mask is more</span></span><br><span class="line"><span class="comment">    * frequently needed.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    Py_ssize_t ma_mask;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* ma_table points to ma_smalltable for small tables, else to</span></span><br><span class="line"><span class="comment">    * additional malloc'ed memory.  ma_table is never NULL!  This rule</span></span><br><span class="line"><span class="comment">    * saves repeated runtime null-tests in the workhorse getitem and</span></span><br><span class="line"><span class="comment">    * setitem calls.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    PyDictEntry *ma_table;</span><br><span class="line">    PyDictEntry *(*ma_lookup)(PyDictObject *mp, PyObject *key, <span class="keyword">long</span> hash);</span><br><span class="line">    PyDictEntry ma_smalltable[PyDict_MINSIZE];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>其中：</p>
+<ul>
+<li><code>ma_fill</code>：维护着从<code>PyDictObject</code>创建开始直到现在，曾经及正处于<code>Active</code>态的<code>entry</code>；</li>
+<li><code>ma_used</code>：维护着当期处于<code>Active</code>态的<code>entry</code>；</li>
+<li><code>ma_smalltable</code>：当一个<code>PyDictObject</code>对象创建时，至少有<code>PyDict_MINSIZE</code>(8)个<code>entry</code>同时创建；</li>
+<li><code>ma_table</code>：指向一片作为<code>PyDictEntry</code>集合的内存开始地址。Python对于一个小<code>dict</code>(即<code>entry</code>少于8个)，<code>ma_table</code>指向<code>ma_smalltable</code>，否则会申请一片额外的内存，并将<code>ma_table</code>指向它。(这个策略可以避免对<code>ma_table</code>的有效性检查);</li>
+<li><code>ma_mask</code>：字典拥有的<code>entry</code>数量减一， 在将hash值映射到散列表上需要用到这个值；</li>
+<li><code>ma_lookup</code>：字典的搜索策略。</li>
+</ul>
+<h2 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">[Objects/dictobject.c]</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> INIT_NONZERO_DICT_SLOTS(mp) do &#123;				\</span></span><br><span class="line">	(mp)-&gt;ma_table = (mp)-&gt;ma_smalltable;				\</span><br><span class="line">	(mp)-&gt;ma_mask = PyDict_MINSIZE - <span class="number">1</span>;				\</span><br><span class="line">    &#125; <span class="keyword">while</span>(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EMPTY_TO_MINSIZE(mp) do &#123;					\</span></span><br><span class="line">	<span class="built_in">memset</span>((mp)-&gt;ma_smalltable, <span class="number">0</span>, <span class="keyword">sizeof</span>((mp)-&gt;ma_smalltable));	\</span><br><span class="line">	(mp)-&gt;ma_used = (mp)-&gt;ma_fill = <span class="number">0</span>;				\</span><br><span class="line">	INIT_NONZERO_DICT_SLOTS(mp);					\</span><br><span class="line">    &#125; <span class="keyword">while</span>(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">PyObject *</span><br><span class="line">PyDict_New(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">register</span> dictobject *mp;</span><br><span class="line">    <span class="comment">/* dummy key */</span></span><br><span class="line">    <span class="keyword">if</span> (dummy == <span class="literal">NULL</span>) &#123; <span class="comment">/* Auto-initialize dummy */</span></span><br><span class="line">        dummy = PyString_FromString(<span class="string">"&lt;dummy key&gt;"</span>);</span><br><span class="line">        <span class="keyword">if</span> (dummy == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* 缓冲池机制 */</span></span><br><span class="line">    <span class="keyword">if</span> (num_free_dicts) &#123; <span class="comment">/* 从缓冲池中去最后一个空闲对象 */</span></span><br><span class="line">        mp = free_dicts[--num_free_dicts];</span><br><span class="line">        _Py_NewReference((PyObject *)mp);</span><br><span class="line">        <span class="keyword">if</span> (mp-&gt;ma_fill) &#123;</span><br><span class="line">            EMPTY_TO_MINSIZE(mp);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* 3. ma_table -&gt; ma_smalltable */</span></span><br><span class="line">            <span class="comment">/* 4. ma_mask = PyDict_MINSIZE - 1 = 7 */</span></span><br><span class="line">            INIT_NONZERO_DICT_SLOTS(mp);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">/* 创建PyDictObject对象 */</span></span><br><span class="line">        mp = PyObject_GC_New(dictobject, &amp;PyDict_Type);</span><br><span class="line">        <span class="keyword">if</span> (mp == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        EMPTY_TO_MINSIZE(mp);</span><br><span class="line">    &#125;</span><br><span class="line">    mp-&gt;ma_lookup = lookdict_string;</span><br><span class="line"></span><br><span class="line">    _PyObject_GC_TRACK(mp);</span><br><span class="line">    <span class="keyword">return</span> (PyObject *)mp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到Python在创建<code>PyDictObject</code>会确保<code>dummy</code>的存在(这是一个特殊字符串)</p>
+<p>和列表相同，字典也使用了缓冲池机制，如果缓冲池有空闲对象，就会从里面获取一个并进行清空操作：</p>
+<ul>
+<li><code>EMPTY_TO_MINSIZE</code>：将<code>small_table</code>清零，<code>ma_size=ma_fill=0</code>。</li>
+<li><code>INIT_NONZERO_DICT_SLOTS</code>：将<code>ma_table</code>指向<code>small_table</code>，并设置<code>ma_mask=7</code>；</li>
+</ul>
+<p>在创建的最后，<code>lookdict_string</code>赋予给了<code>ma_lookup</code>，它指定了字典的搜索策略。</p>
+<h2 id="搜索策略"><a href="#搜索策略" class="headerlink" title="搜索策略"></a>搜索策略</h2><p>Python 为字典提供了两种搜索策略：<code>lookdict</code>和<code>lookdict_string</code>(针对<code>PyStringObject</code>对象的特殊形式)。由于把字符串作为字典的键十分普遍，Python将<code>lookdict_string</code>作为字典的默认搜索策略。</p>
+<p>在这里，我们还是看更一般的<code>lookdict</code>的实现：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">static</span> dictentry *</span><br><span class="line">lookdict(dictobject *mp, PyObject *key, <span class="keyword">register</span> <span class="keyword">long</span> hash)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">size_t</span> i;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">size_t</span> perturb;</span><br><span class="line">    <span class="keyword">register</span> dictentry *freeslot;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">size_t</span> mask = (<span class="keyword">size_t</span>)mp-&gt;ma_mask;</span><br><span class="line">    dictentry *ep0 = mp-&gt;ma_table;</span><br><span class="line">    <span class="keyword">register</span> dictentry *ep;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> cmp;</span><br><span class="line">    PyObject *startkey;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* [1].将散列值与mask做位与运算，保证了i落在范围内 */</span></span><br><span class="line">    i = (<span class="keyword">size_t</span>)hash &amp; mask;</span><br><span class="line">    ep = &amp;ep0[i]; <span class="comment">/* 找到散列表上该位置的元素 */</span></span><br><span class="line">    <span class="comment">/* [2].entry处于Unused态或者key相等(同一个内存地址)，直接返回 */</span></span><br><span class="line">    <span class="keyword">if</span> (ep-&gt;me_key == <span class="literal">NULL</span> || ep-&gt;me_key == key)</span><br><span class="line">        <span class="keyword">return</span> ep; <span class="comment">/* 包含两种情况：没找到和第一次散列就找到了 */</span></span><br><span class="line">    <span class="comment">/* [3].Dummy态，设置freeslot */</span></span><br><span class="line">    <span class="keyword">if</span> (ep-&gt;me_key == dummy)</span><br><span class="line">        freeslot = ep;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (ep-&gt;me_hash == hash) &#123;</span><br><span class="line">            startkey = ep-&gt;me_key;</span><br><span class="line">            Py_INCREF(startkey);</span><br><span class="line">            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);</span><br><span class="line">            Py_DECREF(startkey);</span><br><span class="line">            <span class="keyword">if</span> (cmp &lt; <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            <span class="keyword">if</span> (ep0 == mp-&gt;ma_table &amp;&amp; ep-&gt;me_key == startkey) &#123;</span><br><span class="line">                <span class="keyword">if</span> (cmp &gt; <span class="number">0</span>)</span><br><span class="line">                    <span class="keyword">return</span> ep;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* The compare did major nasty stuff to the</span></span><br><span class="line"><span class="comment">                    * dict:  start over.</span></span><br><span class="line"><span class="comment">                    * XXX A clever adversary could prevent this</span></span><br><span class="line"><span class="comment">                    * XXX from terminating.</span></span><br><span class="line"><span class="comment">                    */</span></span><br><span class="line">                <span class="keyword">return</span> lookdict(mp, key, hash);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        freeslot = <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* In the loop, me_key == dummy is by far (factor of 100s) the</span></span><br><span class="line"><span class="comment">        least likely outcome, so test for that last. */</span></span><br><span class="line">    <span class="keyword">for</span> (perturb = hash; ; perturb &gt;&gt;= PERTURB_SHIFT) &#123;</span><br><span class="line">        i = (i &lt;&lt; <span class="number">2</span>) + i + perturb + <span class="number">1</span>;</span><br><span class="line">        ep = &amp;ep0[i &amp; mask];</span><br><span class="line">        <span class="keyword">if</span> (ep-&gt;me_key == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">return</span> freeslot == <span class="literal">NULL</span> ? ep : freeslot;</span><br><span class="line">        <span class="keyword">if</span> (ep-&gt;me_key == key)</span><br><span class="line">            <span class="keyword">return</span> ep;</span><br><span class="line">        <span class="keyword">if</span> (ep-&gt;me_hash == hash &amp;&amp; ep-&gt;me_key != dummy) &#123;</span><br><span class="line">            startkey = ep-&gt;me_key;</span><br><span class="line">            Py_INCREF(startkey);</span><br><span class="line">            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);</span><br><span class="line">            Py_DECREF(startkey);</span><br><span class="line">            <span class="keyword">if</span> (cmp &lt; <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            <span class="keyword">if</span> (ep0 == mp-&gt;ma_table &amp;&amp; ep-&gt;me_key == startkey) &#123;</span><br><span class="line">                <span class="keyword">if</span> (cmp &gt; <span class="number">0</span>)</span><br><span class="line">                    <span class="keyword">return</span> ep;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* The compare did major nasty stuff to the</span></span><br><span class="line"><span class="comment">                    * dict:  start over.</span></span><br><span class="line"><span class="comment">                    * XXX A clever adversary could prevent this</span></span><br><span class="line"><span class="comment">                    * XXX from terminating.</span></span><br><span class="line"><span class="comment">                    */</span></span><br><span class="line">                <span class="keyword">return</span> lookdict(mp, key, hash);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (ep-&gt;me_key == dummy &amp;&amp; freeslot == <span class="literal">NULL</span>)</span><br><span class="line">            freeslot = ep;</span><br><span class="line">    &#125;</span><br><span class="line">    assert(<span class="number">0</span>);	<span class="comment">/* NOT REACHED */</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/1d425055/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/1b888408/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

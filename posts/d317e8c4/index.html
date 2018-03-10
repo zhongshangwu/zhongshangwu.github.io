@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python网络编程 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,Socket," />
+  
+
+  <meta name="description" content="Socket(套接字)通常指”通信端点“，用于进程间通信。">
+<meta name="keywords" content="Python,Socket">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python网络编程">
+<meta property="og:url" content="http://shawnz.me/posts/d317e8c4/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="Socket(套接字)通常指”通信端点“，用于进程间通信。">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python网络编程">
+<meta name="twitter:description" content="Socket(套接字)通常指”通信端点“，用于进程间通信。">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#概述"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Python中的Socket编程"><span class="toc-text">Python中的Socket编程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#TCP-Socket通信"><span class="toc-text">TCP Socket通信</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UDP-Socke通信"><span class="toc-text">UDP Socke通信</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考链接"><span class="toc-text">参考链接</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python网络编程-socket" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Python网络编程</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.12.02</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <blockquote>
+<p>Socket(套接字)通常指”通信端点“，用于进程间通信。<br><a id="more"></a></p>
+</blockquote>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Socket API 是由操作系统提供的一个编程接口，让应用程序可以控制使用 socket 技术。</p>
+<p>在TCP/IP五层架构中，Socket API 不属于TCP/IP协议簇，只是操作系统提供的一个用于网络编程的接口，工作在应用层与传输层之间：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">   +----------------+</span><br><span class="line">   |  Application   | &lt;+</span><br><span class="line">   +----------------+  |</span><br><span class="line">   +----------------+  |</span><br><span class="line">+&gt; |   Socket API   | &lt;+</span><br><span class="line">|  +----------------+  |</span><br><span class="line">|  +----------------+  |</span><br><span class="line">|  |   Transport    | &lt;+</span><br><span class="line">|  +----------------+</span><br><span class="line">|  +----------------+</span><br><span class="line">+&gt; |    Internet    |</span><br><span class="line">   +----------------+</span><br><span class="line">   +----------------+</span><br><span class="line">   | Network Access |</span><br><span class="line">   +----------------+</span><br></pre></td></tr></table></figure></p>
+<p>一个socket包含两个必要组成部分：</p>
+<ul>
+<li>地址，由ip和端口组成，例如192.168.1.10：80。</li>
+<li>协议，socket用的传输控制层协议，目前有三种：<code>TCP</code>，<code>UDP</code>和<code>rawIP</code>。</li>
+</ul>
+<p>地址与协议可以确定一个socket；一台机器上，只允许存在一个同样的socket。TCP 端口 53 的 socket 与 UDP 端口 53 的 socket 是两个不同的 socket。</p>
+<p>根据 socket 传输数据方式的不同（使用协议不同），可以分为以下三种：</p>
+<ol>
+<li><code>Stream sockets</code>，也称为“面向连接”的 socket，使用 TCP 协议。提供序列化的，可靠地和不重复的数据交付，而没有记录边界，这意味着上层协议需要自己去界定数据分隔符，其优势是数据是可靠的。创建流套接字，必须使用<code>SOCK_STREAM</code>作为套接字类型。</li>
+<li><code>Datagram sockets</code>，也称为“无连接”的 socket，使用 UDP 协议。实际通信前不需要连接，在传输过程中，无法确保它的顺序性，可靠性或重复性，然而数据确实保存了边界记录，这意味着消息是以整体发送的。创建数据包套接字，必须使用<code>SOCK_DAGRAM</code>作为套接字类型。<br>3.<code>Raw sockets</code>, 原始套接字（raw socket）是一种网络套接字，允许直接发送/接收IP协议数据包而不需要任何传输层协议格式。用原始套接字发送数据，是否自动增加传输层协议包头是可选的。<code>SOCK_RAW</code>作为套接字类型。</li>
+</ol>
+<p>根据使用的地址家族不同，可以分为两种：</p>
+<ol>
+<li>UNIX套接字：基于文件，创建时使用<code>AF_UNIX</code>，或<code>AF_LOCAL</code>作为地址家族。</li>
+<li>INET套接字：面向网络，创建时使用<code>AF_INET</code>,或<code>AF_INET6</code>作为地址家族。</li>
+</ol>
+<h2 id="Python中的Socket编程"><a href="#Python中的Socket编程" class="headerlink" title="Python中的Socket编程"></a>Python中的Socket编程</h2><p>在Python中提供了socket和SocketServer模块可以面向套接字编程。</p>
+<h3 id="TCP-Socket通信"><a href="#TCP-Socket通信" class="headerlink" title="TCP Socket通信"></a>TCP Socket通信</h3><p><a href="">tcp_echo_server.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">from</span> time <span class="keyword">import</span> ctime</span><br><span class="line"></span><br><span class="line">tcp_server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">tcp_server_sock.bind((<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line">tcp_server_sock.listen(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_message</span><span class="params">(client_sock, addr)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        data = client_sock.recv(<span class="number">1024</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        print(<span class="string">'[from %s:%s] %s'</span> % (addr + (data.decode(<span class="string">'utf-8'</span>),)))</span><br><span class="line">        client_sock.\</span><br><span class="line">            send(bytes(<span class="string">"[%s] %s"</span> % (ctime(), data.decode(<span class="string">'utf-8'</span>)), <span class="string">'utf-8'</span>))</span><br><span class="line">    client_sock.close()</span><br><span class="line">    print(<span class="string">'client[%s:%s] socket closed'</span> % addr)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forever</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            print(<span class="string">"waiting for connection..."</span>)</span><br><span class="line">            tcp_client_sock, addr = tcp_server_sock.accept()</span><br><span class="line">            print(<span class="string">"connected from:%s:%s"</span>, addr)</span><br><span class="line">            handle_message(tcp_client_sock, addr)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        tcp_server_sock.close()</span><br><span class="line">        print(<span class="string">'server socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forever()</span><br></pre></td></tr></table></figure></p>
+<p><a href="">tcp_echo_client.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line">tcp_client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">tcp_client_sock.connect((<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forver</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            data = input(<span class="string">'&gt; '</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            tcp_client_sock.send(bytes(data, <span class="string">'utf-8'</span>))</span><br><span class="line">            data = tcp_client_sock.recv(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            print(data.decode(<span class="string">'utf-8'</span>))</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        tcp_client_sock.close()</span><br><span class="line">        print(<span class="string">'client socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forver()</span><br></pre></td></tr></table></figure></p>
+<h3 id="UDP-Socke通信"><a href="#UDP-Socke通信" class="headerlink" title="UDP Socke通信"></a>UDP Socke通信</h3><p><a href="">udp_server.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">from</span> time <span class="keyword">import</span> ctime</span><br><span class="line"></span><br><span class="line">udp_server_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line">udp_server_sock.bind((<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forever</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            print(<span class="string">"waiting for message..."</span>)</span><br><span class="line">            data, addr = udp_server_sock.recvfrom(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            print(<span class="string">'[from %s:%s] %s'</span> % (addr + (data.decode(<span class="string">'utf-8'</span>),)))</span><br><span class="line">            udp_server_sock.\</span><br><span class="line">                sendto(bytes(<span class="string">"[%s] %s"</span> % (ctime(),</span><br><span class="line">                             data.decode(<span class="string">'utf-8'</span>)), <span class="string">'utf-8'</span>), addr)</span><br><span class="line">            print(<span class="string">'...received from and returned to:%s:%s'</span> % addr)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        udp_server_sock.close()</span><br><span class="line">        print(<span class="string">'server socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forever()</span><br></pre></td></tr></table></figure></p>
+<p><a href="">udp_client.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line">udp_client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forver</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            data = input(<span class="string">'&gt; '</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            udp_client_sock.sendto(bytes(data, <span class="string">'utf-8'</span>), (<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line">            data, addr = udp_client_sock.recvfrom(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            print(data.decode(<span class="string">'utf-8'</span>))</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        udp_client_sock.close()</span><br><span class="line">        print(<span class="string">'client socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forver()</span><br></pre></td></tr></table></figure></p>
+<p>###</p>
+<blockquote>
+<font face="Sans Serif"><em><strong>最简单的socket通信</strong></em></font>
+</blockquote>
+<font face="Sans Serif"><em><strong>SocketServer</strong></em></font><br><font face="Sans Serif"><em><strong>select</strong></em></font>
+
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a href="https://docs.python.org/3/library/socket.html" target="_blank" rel="noopener">socket文档</a></li>
+</ul>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/6cd209b1/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/22c73ece/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

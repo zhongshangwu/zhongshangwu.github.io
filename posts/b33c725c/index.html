@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>一致性哈希算法 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Hash,算法," />
+  
+
+  <meta name="description" content="背景在使用n台缓存服务器时，对资源object的请求使用hash(object) mod n来映射到某一台缓存服务器。 当增加或减少一台缓存服务器时,由于n的改变导致缓存映射到另一台服务器上hash(object) mod n&amp;#39;。也就意味着所有的缓存都失效了，这会使得缓存服务器大量集中地向原始内容服务器更新缓存。 一致性hash的思想早在1997年就由MIT的Karger及其合作者提出来了">
+<meta name="keywords" content="Hash,算法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一致性哈希算法">
+<meta property="og:url" content="http://shawnz.me/posts/b33c725c/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="背景在使用n台缓存服务器时，对资源object的请求使用hash(object) mod n来映射到某一台缓存服务器。 当增加或减少一台缓存服务器时,由于n的改变导致缓存映射到另一台服务器上hash(object) mod n&amp;#39;。也就意味着所有的缓存都失效了，这会使得缓存服务器大量集中地向原始内容服务器更新缓存。 一致性hash的思想早在1997年就由MIT的Karger及其合作者提出来了">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-1.png">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-2.png">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-3.png">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-4.png">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-5.png">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-6.png">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-7.png">
+<meta property="og:image" content="http://shawnz.me/images/consistent-hash-8.png">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.062Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="一致性哈希算法">
+<meta name="twitter:description" content="背景在使用n台缓存服务器时，对资源object的请求使用hash(object) mod n来映射到某一台缓存服务器。 当增加或减少一台缓存服务器时,由于n的改变导致缓存映射到另一台服务器上hash(object) mod n&amp;#39;。也就意味着所有的缓存都失效了，这会使得缓存服务器大量集中地向原始内容服务器更新缓存。 一致性hash的思想早在1997年就由MIT的Karger及其合作者提出来了">
+<meta name="twitter:image" content="http://shawnz.me/images/consistent-hash-1.png">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#背景"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#特性"><span class="toc-text">特性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#原理"><span class="toc-text">原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Python实现"><span class="toc-text">Python实现</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-一致性哈希算法" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">一致性哈希算法</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.12.27</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/算法/">算法</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在使用<code>n</code>台缓存服务器时，对资源<code>object</code>的请求使用<code>hash(object) mod n</code>来映射到某一台缓存服务器。</p>
+<p>当增加或减少一台缓存服务器时,由于<code>n</code>的改变导致缓存映射到另一台服务器上<code>hash(object) mod n&#39;</code>。也就意味着所有的缓存都失效了，这会使得缓存服务器大量集中地向原始内容服务器更新缓存。</p>
+<p>一致性hash的思想早在1997年就由MIT的Karger及其合作者提出来了,目标就是解决互联网中热点问题(缓存问题)。</p>
+<a id="more"></a>
+<h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><p>一致性hash算法提出了在动态变化的Cache环境中，判定哈希算法好坏的四个定义：</p>
+<ul>
+<li><p><code>平衡性(Balance)</code>：平衡性是指哈希的结果能够尽可能分布到所有的缓冲中去，这样可以使得所有的缓冲空间都得到利用。很多哈希算法都能够满足这一条件。</p>
+</li>
+<li><p><code>单调性(Monotonicity)</code>：单调性是指如果已经有一些内容通过哈希分派到了相应的缓冲中，又有新的缓冲加入到系统中。哈希的结果应能够保证原有已分配的内容可以被映射到原有的或者新的缓冲中去，而不会被映射到旧的缓冲集合中的其他缓冲区。 </p>
+</li>
+<li><p><code>分散性(Spread)</code>：在分布式环境中，终端有可能看不到所有的缓冲，而是只能看到其中的一部分。当终端希望通过哈希过程将内容映射到缓冲上时，由于不同终端所见的缓冲范围有可能不同，从而导致哈希的结果不一致，最终的结果是相同的内容被不同的终端映射到不同的缓冲区中。这种情况显然是应该避免的，因为它导致相同内容被存储到不同缓冲中去，降低了系统存储的效率。分散性的定义就是上述情况发生的严重程度。好的哈希算法应能够尽量避免不一致的情况发生，也就是尽量降低分散性。 </p>
+</li>
+<li><p><code>负载(Load)</code>：负载问题实际上是从另一个角度看待分散性问题。既然不同的终端可能将相同的内容映射到不同的缓冲区中，那么对于一个特定的缓冲区而言，也可能被不同的用户映射为不同 的内容。与分散性一样，这种情况也是应当避免的，因此好的哈希算法应能够尽量降低缓冲的负荷。</p>
+</li>
+</ul>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>为了了解它的运作方式，我们先想像有一个 <code>hash values</code> 的空间 (Space)，其范围是 <code>0 ~ 2^32-1</code>，也就相当于 <code>4字节的无符号整数</code>(Unsigned integer) 的范围。我们把此 Space 看作一个依照顺时针方向递增的环 (<code>Consistent Hash Ring</code>)，如下图：</p>
+<p><img src="/images/consistent-hash-1.png" alt=""></p>
+<p>我们假设有三台服务器：<code>ServiceNode-1</code>，<code>ServiceNode-2</code>和<code>ServiceNode-3</code>。现在我们将这三台服务器以某种形式（一般情况下通过hash函数计算名称的key值）放在这个<code>Consistent Hash Ring</code>上，如图：</p>
+<p><img src="/images/consistent-hash-2.png" alt=""></p>
+<p>接下来我们关注的问题是：对于某个数据，通过它对应的一个key值找一个存放的缓存服务器。我们将数据的key以同样的hash函数映射到<code>Consistent Hash Ring</code>上，如下图绿色标识部分：</p>
+<p><img src="/images/consistent-hash-3.png" alt=""></p>
+<p>接着，<code>Consistent Hash</code>的做法是：<strong>沿着顺时针的方向走，遇到第一个Node</strong>。在这里我们沿着顺时针方向走，遇到的第一个节点是<code>ServiceNode-2</code>，即找到了这份数据对应的缓存服务器，如图土黄色标识部分：</p>
+<p><img src="/images/consistent-hash-4.png" alt=""></p>
+<p>现在，我们再来讨论增加和删除服务器节点的情况。</p>
+<p>假设，我们<code>增加</code>了一个新的缓存服务器结点<code>ServiceNode-4</code>，这种情况下，只有图中黄色区间的keys会因为新节点的加入而找到不同的服务器：</p>
+<p><img src="/images/consistent-hash-5.png" alt=""></p>
+<p>假设，我们<code>删除</code>了节点<code>ServiceNode-2</code>，那么只有图中黄色区间的keys因为节点的删除而映射到不同的服务器上：</p>
+<p><img src="/images/consistent-hash-6.png" alt=""></p>
+<p>如果服务器节点数很少，而它们的分布可能不均。如图所示，绿色区间的keys都映射到<code>ServiceNode-1</code>，只有一少部分keys映射到了<code>ServiceNode-2</code>：</p>
+<p><img src="/images/consistent-hash-7.png" alt=""></p>
+<p>经过上面的图解分析，我们知道一致性哈希算法满足了<code>单调性</code>和<code>负载均衡的特性</code>以及一般hash算法的<code>分散性</code>，但还缺乏一个重要的特性：<code>平衡性</code>。</p>
+<p><code>Consistent Hash</code>通过引入了<code>“虚拟节点”</code>的概念：</p>
+<p><code>“虚拟节点”</code>(virtual node)是实际节点(机器)在 hash 空间的复制品(replica)，一实际个节点(机器)对应了若干个<code>“虚拟节点”</code>，这个对应个数也成为“复制个数”，<code>“虚拟节点”</code>在 hash 空间中以hash值排列。</p>
+<p>在实际应用中，我们经常会搭配一些<code>虚拟节点</code>。</p>
+<p>在上面那种分布不均的情况下，我们假设每个节点都有四个复制品(replicas)，对于多出来的<code>虚拟节点</code>我们采用同样的方式映射到<code>Consistent Hash Ringing</code>上，那么多出来的区间实际还是映射到原有的服务器上：</p>
+<p><img src="/images/consistent-hash-8.png" alt=""></p>
+<h2 id="Python实现"><a href="#Python实现" class="headerlink" title="Python实现"></a>Python实现</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> md5</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">HashRing</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, nodes=None, replicas=<span class="number">3</span>)</span>:</span></span><br><span class="line">        <span class="string">"""Manages a hash ring.</span></span><br><span class="line"><span class="string">        `nodes` is a list of objects that have a proper __str__ representation.</span></span><br><span class="line"><span class="string">        `replicas` indicates how many virtual points should be used pr. node,</span></span><br><span class="line"><span class="string">        replicas are required to improve the distribution.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        self.replicas = replicas</span><br><span class="line">        self.ring = dict()</span><br><span class="line">        self._sorted_keys = []</span><br><span class="line">        <span class="keyword">if</span> nodes:</span><br><span class="line">            <span class="keyword">for</span> node <span class="keyword">in</span> nodes:</span><br><span class="line">                self.add_node(node)</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">add_node</span><span class="params">(self, node)</span>:</span></span><br><span class="line">        <span class="string">"""Adds a `node` to the hash ring (including a number of replicas).</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">0</span>, self.replicas):</span><br><span class="line">            key = self.gen_key(<span class="string">'%s:%s'</span> % (node, i))</span><br><span class="line">            self.ring[key] = node</span><br><span class="line">            self._sorted_keys.append(key)</span><br><span class="line">        self._sorted_keys.sort()</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">remove_node</span><span class="params">(self, node)</span>:</span></span><br><span class="line">        <span class="string">"""Removes `node` from the hash ring and its replicas.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">0</span>, self.replicas):</span><br><span class="line">            key = self.gen_key(<span class="string">'%s:%s'</span> % (node, i))</span><br><span class="line">            <span class="keyword">del</span> self.ring[key]</span><br><span class="line">            self._sorted_keys.remove(key)</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_node</span><span class="params">(self, string_key)</span>:</span></span><br><span class="line">        <span class="string">"""Given a string key a corresponding node in the hash ring is returned.</span></span><br><span class="line"><span class="string">        If the hash ring is empty, `None` is returned.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">return</span> self.get_node_pos(string_key)[<span class="number">0</span>]</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_node_pos</span><span class="params">(self, string_key)</span>:</span></span><br><span class="line">        <span class="string">"""Given a string key a corresponding node in the hash ring is returned</span></span><br><span class="line"><span class="string">        along with it's position in the ring.</span></span><br><span class="line"><span class="string">        If the hash ring is empty, (`None`, `None`) is returned.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.ring:</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">None</span>, <span class="keyword">None</span></span><br><span class="line">        key = self.gen_key(string_key)</span><br><span class="line">        nodes = self._sorted_keys</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">0</span>, len(nodes)):</span><br><span class="line">            node = nodes[i]</span><br><span class="line">            <span class="keyword">if</span> key &lt;= node:</span><br><span class="line">                <span class="keyword">return</span> self.ring[node], i</span><br><span class="line">        <span class="keyword">return</span> self.ring[nodes[<span class="number">0</span>]], <span class="number">0</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_nodes</span><span class="params">(self, string_key)</span>:</span></span><br><span class="line">        <span class="string">"""Given a string key it returns the nodes as a generator that can hold the key.</span></span><br><span class="line"><span class="string">        The generator is never ending and iterates through the ring</span></span><br><span class="line"><span class="string">        starting at the correct position.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.ring:</span><br><span class="line">            <span class="keyword">yield</span> <span class="keyword">None</span>, <span class="keyword">None</span></span><br><span class="line">        node, pos = self.get_node_pos(string_key)</span><br><span class="line">        <span class="keyword">for</span> key <span class="keyword">in</span> self._sorted_keys[pos:]:</span><br><span class="line">            <span class="keyword">yield</span> self.ring[key]</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            <span class="keyword">for</span> key <span class="keyword">in</span> self._sorted_keys:</span><br><span class="line">                <span class="keyword">yield</span> self.ring[key]</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">gen_key</span><span class="params">(self, key)</span>:</span></span><br><span class="line">        <span class="string">"""Given a string key it returns a long value,</span></span><br><span class="line"><span class="string">        this long value represents a place on the hash ring.</span></span><br><span class="line"><span class="string">        md5 is currently used because it mixes well.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        m = md5.new()</span><br><span class="line">        m.update(key)</span><br><span class="line">        <span class="keyword">return</span> long(m.hexdigest(), <span class="number">16</span>)</span><br></pre></td></tr></table></figure>
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/dfa9b87c/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/f034d9c0/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

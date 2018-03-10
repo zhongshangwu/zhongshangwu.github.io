@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>哈希表 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Hash,数据结构," />
+  
+
+  <meta name="description" content="前言数组和链表的比较:  数组内的元素在内存中是连续存放的；链表的元素不是连续的，而是通过指针联系在一起． 数组的长度必须固定；链表可以动态分配存储空间 数组从栈中分配；链表从堆分配空间">
+<meta name="keywords" content="Hash,数据结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="哈希表">
+<meta property="og:url" content="http://shawnz.me/posts/850f2080/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="前言数组和链表的比较:  数组内的元素在内存中是连续存放的；链表的元素不是连续的，而是通过指针联系在一起． 数组的长度必须固定；链表可以动态分配存储空间 数组从栈中分配；链表从堆分配空间">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.030Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="哈希表">
+<meta name="twitter:description" content="前言数组和链表的比较:  数组内的元素在内存中是连续存放的；链表的元素不是连续的，而是通过指针联系在一起． 数组的长度必须固定；链表可以动态分配存储空间 数组从栈中分配；链表从堆分配空间">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#实现"><span class="toc-text">实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见的散列函数构造方法"><span class="toc-text">常见的散列函数构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#处理冲突"><span class="toc-text">处理冲突</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Hash表算法" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">哈希表</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.10.09</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/数据结构/">数据结构</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>数组和链表的比较:</p>
+<ol>
+<li>数组内的元素在内存中是连续存放的；链表的元素不是连续的，而是通过指针联系在一起．</li>
+<li>数组的长度必须固定；链表可以动态分配存储空间</li>
+<li>数组从栈中分配；链表从堆分配空间</li>
+</ol>
+<a id="more"></a>
+<p>在查询和插入删除上的区别：</p>
+<ol>
+<li>查询．数组可以通过索引找到元素，而链表需要从头遍历．所以数组查询效率高于链表<br><code>note</code>从头遍历时间复杂度为O(n),采用二叉排序树存储，时间复杂度O(logn)</li>
+<li>插入或删除．数组插入和删除需要移动大量的元素，而链表只需要改变指针指向．所以插入删除链表效率高于数组</li>
+</ol>
+<p>而哈希表介于两者之间:既具备数组的高效查询，又能融合链表增加和删除元素的优势</p>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>哈希表就是根据Key直接访问访问对应的值的存储结构．对于不同长度的输入产生一个固定长度输出，散列结果应具有同一性(输出应尽量分布均匀)和雪崩效应(微笑的输入变化导致输出发生巨大的变化)</p>
+<p>实现思路：｀<br>将key通过散列函数转换成数组的索引．如果没有内存限制，那么可以将健作为索引，需要定义m&gt;n,即数组的长度大于元素的数量，时间复杂度为O(1)．由于将近乎无限的关键字集合压缩映射到有限的哈希表中的地址值中，那么必然存在产生＂冲突＂的现象，需要处理哈希碰撞冲突．<br>关于哈希表实现的两个关键在于哈希函数的构造和冲突的解决方法．</p>
+<h2 id="常见的散列函数构造方法"><a href="#常见的散列函数构造方法" class="headerlink" title="常见的散列函数构造方法"></a>常见的散列函数构造方法</h2><ol>
+<li><strong>直接寻址法</strong><br>取某个关键字的线性函数值为散列地址，比例在0~100的年龄统计表里，可以直接将年龄作为地址,即<br> $$f(key) = a * key + b$$</li>
+<li><strong>平方取中法</strong><br>假设关键字是123,那么平方是1522756，取中间3位就是227，作为散列地址．<code>适用于关键字位数少</code></li>
+<li><strong>折叠法</strong><br>将关键字从左到右分割成位数相等的几部分，然后将这几部分叠加求和，并按散列表表长，取后几位作为散列地址。叠加方法又分为移位叠加和边界叠加．<code>适用于关键字位数较多</code></li>
+<li><strong>减去法</strong><br>减去一个特定数值求得存储地址．</li>
+<li><strong>基数转化法</strong><br>将十进制X看作其他进制，例如十三进制，再转换成十进制取其中几位作为存储地址．</li>
+<li><strong>取模余数法</strong><br>对于散列表长度为m的散列公式函数为:$f(key) = key mod p(p&lt;=m)$<br>这种方法的关键在于p的选取，根据经验:模p取不大于表长且最接近表长m素数时效果最好，且p最好取1.1n～1.7n之间的一个素数（n为存在的数据元素个数）</li>
+<li><strong>随机数法</strong><br>取关键字的随机函数值作为散列地址，即$f(key) = random(key)$.<code>适用于长度不确定</code></li>
+</ol>
+<p>实际应用中需要根据关键字位数，分布情况，散列表长度等因素选择合适的策略，可以采用多种方式协作处理．</p>
+<h2 id="处理冲突"><a href="#处理冲突" class="headerlink" title="处理冲突"></a>处理冲突</h2><ol>
+<li><strong>链地址法</strong><br>解决冲突的一种常用方法，将所有散列到同一个地址元素保存在一个同义词链表里，散列数组中只保存链表的头指针。<br><code>实例</code><br>假设有哈希表长度m = 5, f(key) = key mod 5, 关键词序列为3, 12, 7, 19, 24, 32, 26，那么采用外链地址法会建立如下哈希表：</li>
+</ol>
+<p>链地址法处理简单，没有堆积现象，因此平均查找长度较小。另外结点空间是动态申请的，适合于表长未知的情况</p>
+<ol>
+<li><strong>开放定址法</strong><br>开放定址，即在散列产生冲突的时候，寻找下一个散列地址，只要表的空间足够大，那么总能找到位置插入元素。分为一下几种方法：</li>
+</ol>
+<ul>
+<li><p>线性探测法<br>线性探测的函数为 $f(k, i) = (h(k) + 1) mod m, i = 0, 1, 2,.., m - 1$<br>步骤：<br>首先探查 h(k) mod m的位置，当被占用时，继续探查(h(k) + 1) mod m的位置，如果依然被占用，那么继续探查，直到找到合适的位置，或者达到表的末尾，则停止。</p>
+</li>
+<li><p>二次探测法<br>二次探测在一次探测的基础上增加了一个二项式， $f(k, i) = (h(k) + c_1i + c_2i^2) mod m$,相对线性探测，二次探测群聚现象没那么重，但依然存在二次群聚。</p>
+</li>
+<li><p>双散列函数探测法</p>
+</li>
+</ul>
+<ol>
+<li><strong>建立公共溢出区</strong><br>单独设立一个溢出表，只要散列值发生冲突，就存入改表中。</li>
+</ol>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/86a93a60/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/653170c4/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

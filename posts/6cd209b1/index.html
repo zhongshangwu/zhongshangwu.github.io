@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python并发编程 | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,并发," />
+  
+
+  <meta name="description" content="Python中的并发本文主要介绍Python中的并发库：  thread threading queue multiprocessing concurrent.futures yield协程 asyncio">
+<meta name="keywords" content="Python,并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python并发编程">
+<meta property="og:url" content="http://shawnz.me/posts/6cd209b1/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="Python中的并发本文主要介绍Python中的并发库：  thread threading queue multiprocessing concurrent.futures yield协程 asyncio">
+<meta property="og:image" content="http://shawnz.me/images/coroutine.png">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python并发编程">
+<meta name="twitter:description" content="Python中的并发本文主要介绍Python中的并发库：  thread threading queue multiprocessing concurrent.futures yield协程 asyncio">
+<meta name="twitter:image" content="http://shawnz.me/images/coroutine.png">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Python中的并发"><span class="toc-text">Python中的并发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#多线程"><span class="toc-text">多线程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#thread"><span class="toc-text">thread</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#threading"><span class="toc-text">threading</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Queue"><span class="toc-text">Queue</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#怎么结束线程"><span class="toc-text">怎么结束线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#join方法"><span class="toc-text">join方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#多进程"><span class="toc-text">多进程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#GIL是什么？"><span class="toc-text">GIL是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#一个例子"><span class="toc-text">一个例子</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#concurrent-futures"><span class="toc-text">concurrent.futures</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Executor类"><span class="toc-text">Executor类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Future类"><span class="toc-text">Future类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他辅助函数"><span class="toc-text">其他辅助函数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#协程"><span class="toc-text">协程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#协程-Coroutine-简介"><span class="toc-text">协程(Coroutine)简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#一个基本的协程演示"><span class="toc-text">一个基本的协程演示</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#抛出异常和停止"><span class="toc-text">抛出异常和停止</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#协程返回值"><span class="toc-text">协程返回值</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#yield-from"><span class="toc-text">yield from</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#asyncio"><span class="toc-text">asyncio</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gevent"><span class="toc-text">gevent</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考链接"><span class="toc-text">参考链接</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Python并发编程-thread和threading" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Python并发编程</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.11.24</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="Python中的并发"><a href="#Python中的并发" class="headerlink" title="Python中的并发"></a>Python中的并发</h2><p>本文主要介绍Python中的并发库：</p>
+<ul>
+<li>thread</li>
+<li>threading</li>
+<li>queue</li>
+<li>multiprocessing</li>
+<li>concurrent.futures</li>
+<li>yield协程</li>
+<li>asyncio<a id="more"></a>
+</li>
+</ul>
+<h2 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h2><p>Python提供了多个模块来支持多线程编程，包括thread、threading和queue。thread提供了基本的线程和锁定的支持，而threading模块提供了更高级别的，功能更全面的线程管理。使用queue.Queue创建队列，用于线程之间共享。</p>
+<h3 id="thread"><a href="#thread" class="headerlink" title="thread"></a><strong>thread</strong></h3><center>表-1 thread模块和锁对象</center>
+
+<table>
+<thead>
+<tr>
+<th>函数/方法</th>
+<th>描          述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>thread.start_new_thread(func, args, kwargs=None)</td>
+<td>派生一个新的线程，使用给定的args和可选的kwargs来执行func</td>
+</tr>
+<tr>
+<td>thread.allocate_lock()</td>
+<td>分配LockType所对象</td>
+</tr>
+<tr>
+<td>thread.exit()</td>
+<td>给线程退出指令</td>
+</tr>
+<tr>
+<td>LockType.accquire(wait=None)</td>
+<td>尝试获取所对象</td>
+</tr>
+<tr>
+<td>LockType.locked()</td>
+<td>如果获取了锁对象，则返回True，否则返回False</td>
+</tr>
+<tr>
+<td>LockType.release()</td>
+<td>释放锁</td>
+</tr>
+</tbody>
+</table>
+<h3 id="threading"><a href="#threading" class="headerlink" title="threading"></a><strong>threading</strong></h3><center>表-2 threading模块的对象</center>
+
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>描          述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thread</td>
+<td>表示一个执行线程的对象</td>
+</tr>
+<tr>
+<td>Lock</td>
+<td>锁原语对象</td>
+</tr>
+<tr>
+<td>RLock</td>
+<td>可重入所对象，使用单一线程可以再次获得已持有的锁</td>
+</tr>
+<tr>
+<td>Coordition</td>
+<td>条件变量对象，使得一个线程等待另一个线程满足特定的条件，比如改变状态或者某个数值</td>
+</tr>
+<tr>
+<td>Event</td>
+<td>条件变量的通用版本，任意数量线程等待某个事件发生，在该事件发生后所有线程被激活</td>
+</tr>
+<tr>
+<td>Semaphore</td>
+<td>为线程之间共享的资源提供一个“计数器”，如果没有可用资源则阻塞</td>
+</tr>
+<tr>
+<td>BoundedSemaphore</td>
+<td>与Semaphore相似，不过允许超过初始值</td>
+</tr>
+<tr>
+<td>Timer</td>
+<td>与Thread相似，不过它在运行前等待一定时间</td>
+</tr>
+<tr>
+<td>Barrier</td>
+<td>创建一个“障碍”，必须达到制定数量的线程才能继续</td>
+</tr>
+</tbody>
+</table>
+<p>避免使用thread模块，推荐使用更高级别的threading模块的原因：</p>
+<ul>
+<li>threading模块更加先进，有更好的线程支持，并且thread中的某些属性和threading的一些属性存在冲突</li>
+<li>低级别的thread模块拥有同步原语很少，而threding有很多</li>
+<li>thread模块对于进程何时退出没有做控制。当主进程结束时，其他线程也就结束了，没有清理和警告。</li>
+</ul>
+<p><code>示例</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"><span class="keyword">from</span> time <span class="keyword">import</span> ctime, sleep</span><br><span class="line"></span><br><span class="line">loops = [<span class="number">4</span>, <span class="number">2</span>]</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop</span><span class="params">(nloop, nsec)</span>:</span></span><br><span class="line">    print(<span class="string">"start loop"</span>, nloop, <span class="string">"at:"</span>, ctime())</span><br><span class="line">    sleep(nsec)</span><br><span class="line">    print(<span class="string">"loop"</span>, nloop, <span class="string">"done at:"</span>, ctime())</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    print(<span class="string">"starting at:"</span>, ctime())</span><br><span class="line">    threads = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> loops:</span><br><span class="line">        thread = treading.Thread(target=loop, args=(i, loops[i]))</span><br><span class="line">        threads.append(thread)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> thread <span class="keyword">in</span> threads:</span><br><span class="line">        thread.start()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> thread <span class="keyword">in</span> threads:</span><br><span class="line">        thread.join()</span><br><span class="line">    </span><br><span class="line">    print(<span class="string">"all done at:"</span>, ctime())</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>可以得到如下输出<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">starting at: Sat Nov 25 01:34:01 2017</span><br><span class="line">start loop 0 at: Sat Nov 25 01:34:01 2017</span><br><span class="line">start loop 1 at: Sat Nov 25 01:34:01 2017</span><br><span class="line">loop 1 done at: Sat Nov 25 01:34:03 2017</span><br><span class="line">loop 0 done at: Sat Nov 25 01:34:05 2017</span><br><span class="line">all done at: Sat Nov 25 01:34:05 2017</span><br></pre></td></tr></table></figure></p>
+<p>在threading模块中，实例化<code>Thread</code>和调用<code>thread.starat_new_thread</code>的最大的区别就是新的线程不会立即执行，在线程分配完成过后，可以通过<code>start</code>方法启动线程。<code>join</code>方法将等待线程结束，或者达到超时时间后结束线程。</p>
+<ul>
+<li><p><strong>Thread的创建和启动：</strong></p>
+<ul>
+<li>创建Thread实例，并传递一个函数</li>
+<li>创建Thread实例，并传递一个可调用对象</li>
+<li>派生Thread的子类，并创建子类的实例</li>
+</ul>
+</li>
+<li><p><strong>Lock和RLock</strong></p>
+<p>  RLock是可重入锁，除了Lock使用的锁定和解锁之外，还“拥有线程”和“递归级别”的概念。一旦线程获得了可重入锁，同一线程可以再次获取它而不阻塞；线程必须每获取一次必须有对应的释放一次，才能彻底释放锁。</p>
+</li>
+<li><p><strong>Condition</strong></p>
+<p>  Condition提供了比Lock, RLock更高级的功能，允许我们能够控制复杂的线程同步问题。Condition内部维护一把锁，默认是RLock，也可以通过构造方法传递，accquire和release操作关联的锁。在获取到锁之后，才可以调用相应的其他方法。</p>
+<p>  wait方法释放锁，然后阻塞，直到另一个线程通过调用 notify 或 notify_all唤醒它。一旦被唤醒，wait 重新获取锁并返回。也可以指定超时。</p>
+<p>  notify 和 notify_all 方法不释放锁；这意味着被唤醒的线程或线程不会立即从它们的 wait 调用返回，而是只有当调用 notify 或 notify_all 的线程最终放弃锁的所有权时</p>
+<p>  可以看个生产者-消费者模式</p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Consume one item</span></span><br><span class="line"><span class="keyword">with</span> cv:</span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> an_item_is_available():</span><br><span class="line">        cv.wait()</span><br><span class="line">    get_an_available_item()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Produce one item</span></span><br><span class="line"><span class="keyword">with</span> cv:</span><br><span class="line">    make_an_item_available()</span><br><span class="line">    cv.notify()</span><br></pre></td></tr></table></figure>
+<p>  while 循环检查应用程序的条件是必要的，因为 wait() 可以在任意长时间后返回，并且 notify() 调用的条件可能不再成立。这是多线程编程固有的。 wait_for() 方法可以用于自动化条件检查，并且减少超时的计算:</p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Consume an item</span></span><br><span class="line"><span class="keyword">with</span> cv:</span><br><span class="line">    cv.wait_for(an_item_is_available)</span><br><span class="line">    get_an_available_item()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Semphore和BoundSemphore</strong></p>
+<p>  对于拥有有限资源的应用来说，使用信号量是个不错的选择。BoundedSemphore实现有界信号对象，能保证信号量的释放次数不会大于信号量初始的值。</p>
+</li>
+<li><p><strong>Event</strong></p>
+<p>  事件对象是线程之间通信的最简单机制之一：一个线程表示事件，而其他线程等待它。事件对象管理内部标志，set方法设置为True，clear设置为False，另外wait将阻塞直到另外一个线程调用set将标志设置为True，或者等待可选的超时发生。</p>
+</li>
+<li><p><strong>Barrier</strong></p>
+<p>  这个类提供了一个简单的同步原语，供需要彼此等待的固定数量的线程使用。每个线程尝试通过调用 wait 方法通过屏障，并将阻塞，直到所有线程都已调用。在这一点上，线程被同时释放。</p>
+</li>
+<li><p><strong>在with语句中使用lock，condition和semphore：</strong></p>
+<p>  threading模块提供的所有实现了accquire和release方法的对象，都实现了上下文管理器，在进入时accquire，退出时release。</p>
+</li>
+</ul>
+<h3 id="Queue"><a href="#Queue" class="headerlink" title="Queue"></a><strong>Queue</strong></h3><p>在生产者消费者场景下，可以通过queue/Queue模块提供的队列数据结构，进行安全的交换数据。</p>
+<p>可以实现一个简单的实例：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> Thread</span><br><span class="line"><span class="keyword">from</span> queue <span class="keyword">import</span> Queue</span><br><span class="line"><span class="keyword">from</span> time <span class="keyword">import</span> sleep</span><br><span class="line"><span class="keyword">from</span> random <span class="keyword">import</span> randint</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">queue = Queue(<span class="number">32</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">consumer</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="string">''' 消费者 '''</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        queue.get(<span class="string">'xxx'</span>)</span><br><span class="line">        <span class="comment"># do something</span></span><br><span class="line">        print(<span class="string">"consuming from queue...size now:"</span>, queue.qsize())</span><br><span class="line">        sleep(randint(<span class="number">2</span>, <span class="number">5</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">producer</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="string">''' 生产者 '''</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        queue.put(<span class="string">'xxx'</span>, block=<span class="keyword">True</span>)</span><br><span class="line">        print(<span class="string">"producing to queue...size now:"</span>, queue.qsize())</span><br><span class="line">        sleep(randint(<span class="number">1</span>, <span class="number">3</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    consumers = []</span><br><span class="line">    producers = []</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):</span><br><span class="line">        thread = Thread(target=consumer)</span><br><span class="line">        consumers.append(thread)</span><br><span class="line">        thread = Thread(target=producer)</span><br><span class="line">        producers.append(thread)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> c, p <span class="keyword">in</span> zip(consumers, producers):</span><br><span class="line">        c.start()</span><br><span class="line">        p.start()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> c, p <span class="keyword">in</span> zip(consumers, producers):</span><br><span class="line">        c.join()</span><br><span class="line">        p.join()</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">producing to queue...size now: 1</span><br><span class="line">consuming from queue...size now: 0</span><br><span class="line">producing to queue...size now: 1</span><br><span class="line">consuming from queue...size now: 0</span><br><span class="line">producing to queue...size now: 1</span><br><span class="line">producing to queue...size now: 2</span><br><span class="line">producing to queue...size now: 3</span><br><span class="line">consuming from queue...size now: 2</span><br><span class="line">consuming from queue...size now: 1</span><br><span class="line">producing to queue...size now: 2</span><br><span class="line">producing to queue...size now: 3</span><br><span class="line">producing to queue...size now: 4</span><br></pre></td></tr></table></figure>
+<h3 id="怎么结束线程"><a href="#怎么结束线程" class="headerlink" title="怎么结束线程"></a>怎么结束线程</h3><h3 id="join方法"><a href="#join方法" class="headerlink" title="join方法"></a>join方法</h3><h2 id="多进程"><a href="#多进程" class="headerlink" title="多进程"></a>多进程</h2><p>多进程模块<code>mutilprocessing</code>有着类似<code>threading</code>相似的接口API。</p>
+<h3 id="GIL是什么？"><a href="#GIL是什么？" class="headerlink" title="GIL是什么？"></a>GIL是什么？</h3><!-- more -->
+<p>GIL的全称是Global Interpreter Lock(全局解释器锁)，在Python语言的实现CPython中，一个防止多线程并发执行机器码的一个Mutex，并不是 Python 的一个特性。</p>
+<p>在解释器解释执行任何 Python 代码时，都需要先获得这把锁才行当一个线程开始sleep或者进行I/O操作时，另一个线程就有机会拿到GIL锁，开始执行它的代码。这就是cooperative multitasking(协作式多任务处理)。</p>
+<p>同时CPython也有preemptive multitasking(抢占式多任务处理)的机制：在Python2采用ticks计步，当一个线程无中断地运行了100个字节码(可以通过sys.getcheckinterval()查看)，或者在Python3中，新的GIL实现中用一个固定的超时时间来指示当前的线程放弃全局锁。在当前线程保持这个锁，且其他线程请求这个锁时，当前线程就会在5毫秒后被强制释放该锁。</p>
+<h3 id="一个例子"><a href="#一个例子" class="headerlink" title="一个例子"></a>一个例子</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> Thread</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">countdown</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> n &gt; <span class="number">0</span>:</span><br><span class="line">        n -= <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    s = time.time()</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):</span><br><span class="line">        countdown(<span class="number">100000000</span>)</span><br><span class="line">    print(<span class="string">"use time:"</span>, time.time() - s)</span><br></pre></td></tr></table></figure>
+<p>单线程下执行耗时:<code>use time: 11.602031946182251</code><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> Thread</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">countdown</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> n &gt; <span class="number">0</span>:</span><br><span class="line">        n -= <span class="number">1</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    s = time.time()</span><br><span class="line">    threads = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):</span><br><span class="line">        thread = Thread(target=countdown, args=(<span class="number">100000000</span>, ))</span><br><span class="line">        thread.start()</span><br><span class="line">        threads.append(thread)</span><br><span class="line">    <span class="keyword">for</span> thread <span class="keyword">in</span> threads:</span><br><span class="line">        thread.join()</span><br><span class="line">    print(<span class="string">"use time:"</span>, time.time() - s)</span><br></pre></td></tr></table></figure></p>
+<p>两个并发线程下执行耗时：<code>use time: 11.905225038528442</code>，可以看到Python多线程并不能能提高效率，线程进行锁竞争、切换线程，一定程度上还会消耗资源。</p>
+<p>解决GIL问题的方法：</p>
+<ul>
+<li>使用多线程在解决IO密集型任务，能有效规避GIL</li>
+<li>使用C扩展，在C扩展里面能够创建原生线程。</li>
+<li>使用mutilprocessing模块，使用多进程替换多线程。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> multiprocessing <span class="keyword">import</span> Process</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">countdown</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> n &gt; <span class="number">0</span>:</span><br><span class="line">        n -= <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    s = time.time()</span><br><span class="line">    processes = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):</span><br><span class="line">        process = Process(target=countdown, args=(<span class="number">100000000</span>, ))</span><br><span class="line">        processes.append(process)</span><br><span class="line">        process.start()</span><br><span class="line">    <span class="keyword">for</span> process <span class="keyword">in</span> processes:</span><br><span class="line">        process.join()</span><br><span class="line">    print(<span class="string">"use time:"</span>, time.time() - s)</span><br></pre></td></tr></table></figure>
+<p>在多进程下，执行时间为：<code>use time: 5.931055545806885</code>，可以发现执行时间大幅度减少了。</p>
+<ul>
+<li><p><strong>Process</strong></p>
+<p>  Process有着类似Thread的API，只是从线程换成了进程。</p>
+</li>
+<li><p><strong>进程间交换对象</strong><br>  支持进程之间的两种类型的通信信道</p>
+<ul>
+<li>队列。</li>
+<li>管道。</li>
+</ul>
+</li>
+<li><p><strong>进程同步</strong>  </p>
+<p>  multiprocessing 包含来自 threading 的所有同步原语的等同物。</p>
+</li>
+<li><p><strong>共享状态</strong>  </p>
+<p>  当进行并发编程时，通常最好避免使用尽可能共享的状态。在使用多个进程时尤其如此。<br>  然而，如果你真的需要使用一些共享数据，那么 multiprocessing 提供了这样做的几种方法</p>
+<ul>
+<li>共享内存。提供Array和Value类，另外 multiprocessing.sharedctypes 模块支持创建从共享内存分配的任意ctpyes对象。</li>
+<li>服务器进程。Manager()返回的管理器对象控制一个服务器进程， 返回的管理器将支持类型 list，dict，Namespace，Lock，RLock，Semaphore，BoundedSemaphore，Condition，Event，Barrier，Queue，Value 和 Array。此外，单个管理器可以由网络上不同计算机上的进程共享。但是，它们比使用共享内存慢。</li>
+</ul>
+</li>
+<li><p><strong>进程池</strong>   </p>
+<p>  Pool 类控制可以提交作业的工作进程池。它支持具有超时和回调的异步结果，并具有并行映射实现。</p>
+</li>
+</ul>
+<h2 id="concurrent-futures"><a href="#concurrent-futures" class="headerlink" title="concurrent.futures"></a>concurrent.futures</h2><p>concurrent.futures是Python3增加的一个异步并发库，提供了ThreadPoolExecutor和ProcessPoolExecutor两个池的类，实现了对threading和multiprocessing的进一步封装，对于用户来讲，可以不用直接动手处理线程、进程和队列等底层基础设施。<br><!-- more --><br>concurrent.futures的源码只有三个文件：<code>base.py</code>，<code>thread.py</code>和<code>process.py</code>，通过Executor和Future对外暴露API。</p>
+<h3 id="Executor类"><a href="#Executor类" class="headerlink" title="Executor类"></a>Executor类</h3><p>Executor有两个实现：ThreadPoolExecutor和ProcessPoolExecutor，两个类的逻辑代码大致相同，只是分别对线程池(threading)和进程池(multiprocessing)进行实现，同事内部维护一个工作队列(queue.Queue)。</p>
+<ul>
+<li><p><strong>实现上下文管理协议</strong></p>
+<p>  Executor实现了<code>__enter__</code>和<code>__exit__</code>两个方法，可以使用如下用法：</p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> concurrent.futures.ThreadPoolExecutor(max_workers) <span class="keyword">as</span> executor:</span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Executor.submit()</strong></p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">submit</span><span class="params">(self, fn, *args, **kwargs)</span>:</span></span><br><span class="line">    <span class="keyword">with</span> self._shutdown_lock:</span><br><span class="line">        <span class="keyword">if</span> self._shutdown:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">'cannot schedule new futures after shutdown'</span>)</span><br><span class="line"></span><br><span class="line">        f = _base.Future()</span><br><span class="line">        w = _WorkItem(f, fn, args, kwargs)</span><br><span class="line"></span><br><span class="line">        self._work_queue.put(w)</span><br><span class="line">        self._adjust_thread_count()</span><br><span class="line">        <span class="keyword">return</span> f</span><br></pre></td></tr></table></figure>
+<p>  使用submit方法往池中添加一个任务<code>fn</code>，submit方法返回一个Future对象。</p>
+</li>
+<li><p><strong>Executor.map()</strong></p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">map</span><span class="params">(self, fn, *iterables, timeout=None, chunksize=<span class="number">1</span>)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> timeout <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        end_time = timeout + time.time()</span><br><span class="line"></span><br><span class="line">    fs = [self.submit(fn, *args) <span class="keyword">for</span> args <span class="keyword">in</span> zip(*iterables)]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">result_iterator</span><span class="params">()</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">for</span> future <span class="keyword">in</span> fs:</span><br><span class="line">                <span class="keyword">if</span> timeout <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">                    <span class="keyword">yield</span> future.result()</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    <span class="keyword">yield</span> future.result(end_time - time.time())</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            <span class="keyword">for</span> future <span class="keyword">in</span> fs:</span><br><span class="line">                future.cancel()</span><br><span class="line">    <span class="keyword">return</span> result_iterator()</span><br></pre></td></tr></table></figure>
+<p>  使用<code>map</code>方法返回一个<code>Future生成器</code>，对该生成器迭代将调用<code>result</code>获取结果。</p>
+</li>
+</ul>
+<h3 id="Future类"><a href="#Future类" class="headerlink" title="Future类"></a>Future类</h3><blockquote>
+<p>期物<br>在《流畅的Python》中，译者将<code>future</code>翻译成期物，用来表示可能已经发生或者尚未完成的延迟计算。<br>由于期物表示终将发成的事情，而确定某件事情会发生的唯一方式就是执行时间已经排定，所以应该把排定某件事情交个框架来做，并实例化<code>Future</code>，而不是自己来创建期物。<br>有几个概念具有相似的作用和语义：concurrent.futures.Future类、asyncio.Future类、Twisted中的Deffered类、Tornado中的Future类以及JavaScript中的Promise对象。</p>
+</blockquote>
+<ul>
+<li><p><strong>状态</strong><br>  并发框架在期物表示的延迟计算结束后会改变期物的状态，客户端不应该主动做修改，可以通过几个方法来获取状态：</p>
+<ul>
+<li><code>running()</code></li>
+<li><code>canceled</code></li>
+<li><p><code>done</code></p>
+<p>这个几个方法不会阻塞，返回布尔值，表明期物所处于的状态。对于客户端来说，一般不会主动来查询这个状态，而是通过<code>add_done_callback</code>来添加回调方法(参数为期物本身)，等待通知。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add_done_callback</span><span class="params">(self, fn)</span>:</span></span><br><span class="line">    <span class="keyword">with</span> self._condition:  <span class="comment"># 使用threading模块的Condition条件对象。</span></span><br><span class="line">        <span class="keyword">if</span> self._state <span class="keyword">not</span> <span class="keyword">in</span> [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:</span><br><span class="line">            self._done_callbacks.append(fn)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">    fn(self)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p><strong>Future.result()</strong></p>
+<p>  在期物代表的延迟计算运行结束后，<code>result()</code>方法将返回可调用对象的结果。如果期物没有运行完成，那么这个方法将会阻塞调用该方法的线程，可以接收可选的<code>timeout</code>参数。</p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">result</span><span class="params">(self, timeout=None)</span>:</span></span><br><span class="line">    <span class="keyword">with</span> self._condition:</span><br><span class="line">        <span class="keyword">if</span> self._state <span class="keyword">in</span> [CANCELLED, CANCELLED_AND_NOTIFIED]:</span><br><span class="line">            <span class="keyword">raise</span> CancelledError()</span><br><span class="line">        <span class="keyword">elif</span> self._state == FINISHED:</span><br><span class="line">            <span class="keyword">return</span> self.__get_result()</span><br><span class="line"></span><br><span class="line">        self._condition.wait(timeout)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> self._state <span class="keyword">in</span> [CANCELLED, CANCELLED_AND_NOTIFIED]:</span><br><span class="line">            <span class="keyword">raise</span> CancelledError()</span><br><span class="line">        <span class="keyword">elif</span> self._state == FINISHED:</span><br><span class="line">            <span class="keyword">return</span> self.__get_result()</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> TimeoutError()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="其他辅助函数"><a href="#其他辅助函数" class="headerlink" title="其他辅助函数"></a>其他辅助函数</h3><ul>
+<li><p><strong>as_completed()</strong></p>
+</li>
+<li><p><strong>wait()</strong></p>
+</li>
+</ul>
+<!-- 1). waiter 类。
+
+class _Waiter(object):
+class _AsCompletedWaiter(_Waiter):
+class _FirstCompletedWaiter(_Waiter):
+class _AllCompletedWaiter(_Waiter):
+
+_Waiter 类用来等待 Future 执行完，_Waiter 里定义了 threading.Event()，_AsCompletedWaiter 每个 Future 完成都会触发 event.set()，_FirstCompletedWaiter 每个 Future 完成也会触发，_AllCompletedWaiter 会等所有 Future 完成才触发 event.set()。
+
+另外，_AsCompletedWaiter 和 _AllCompletedWaiter 还有把锁 threading.Lock()。
+
+2). 辅助函数。
+
+def _create_and_install_waiters(fs, return_when):
+def as_completed(fs, timeout=None):
+def wait(fs, timeout=None, return_when=ALL_COMPLETED):
+
+_create_and_install_waiters 是对 Future 列表 fs 创建和安装 waiter，创建好响应的 waiter 之后，会对 fs 中的每一个 Future 增加此 waiter (Future 有个列表变量 _waiters，加入即可)，并且返回此 waiter；
+
+as_completed 是一个生成器，配合 for 使用可以循环得到已经完成的 Future，as_completed 使用了 _create_and_install_waiters；
+
+wait 用于等待 Future 列表依次完成。 -->
+<h2 id="协程"><a href="#协程" class="headerlink" title="协程"></a>协程</h2><p>在以往的Python并发编程中，大多使用多进程/多线程模型，<br>Python的多线程由于GIL的限制，无法发挥多核CPU的能力，并且python的线程是内核级线程，抢占锁和线程上下文切换存在大量的开销。对于IO密集性任务来说，还有一个更好的选择那就是协程。</p>
+<h3 id="协程-Coroutine-简介"><a href="#协程-Coroutine-简介" class="headerlink" title="协程(Coroutine)简介"></a>协程(Coroutine)简介</h3><blockquote>
+<p>Coroutines are computer program components that generalize subroutines for non-preemptive multitasking, by allowing multiple entry points for suspending and resuming execution at certain locations.</p>
+</blockquote>
+<p>从维基百科上的定义上看，协程可以理解为流程控制，能够在特定位置暂停和恢复执行协作式多任务编程。协程运行在单线程中，避免了线程上下文切换的开销，属于用户态线程。</p>
+<p>对于python生成器中的<code>yield</code>来说，具有<code>产出和让步</code>的语意：yield item产出一个值，提供next()的调用方，并且作出让步。</p>
+<p>协程的底层框架在“PEP 342”中定义，在生成器API中增加了<code>send()</code>方法，生成器的调用方可以使用<code>send(...)</code>发送数据，发送的数据将成为生成器函数yeild表达式的值，因此，生成器可以作为协程来使用。除此之外，还添加了<code>throw()</code>和<code>close()</code>方法，前者的作用是让调用方抛出异常，在生成器中处理，后者的作用是终止生成器。在“PEP 380”中对生成器函数做了两处改动以更好的支持协程：</p>
+<ul>
+<li>生成器函数可以返回一个值。以前在生成器函数中给return语句提供值，会抛出<code>SyntaxError</code>异常。</li>
+<li>引入<code>yeild from</code>语法，可以把复杂生成器重构为小型的生成器。</li>
+</ul>
+<h3 id="一个基本的协程演示"><a href="#一个基本的协程演示" class="headerlink" title="一个基本的协程演示"></a>一个基本的协程演示</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">simple_coroutine</span><span class="params">()</span>:</span></span><br><span class="line"><span class="meta">... </span>    print(<span class="string">"coroutine started..."</span>)</span><br><span class="line"><span class="meta">... </span>    x = <span class="keyword">yield</span></span><br><span class="line"><span class="meta">... </span>    print(<span class="string">'coroutine received:'</span>, x)</span><br><span class="line"><span class="meta">... </span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>my_coro = simple_coroutine()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>next(my_coro)</span><br><span class="line">coroutine started...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>my_coro.send(<span class="number">42</span>)</span><br><span class="line">coroutine received: <span class="number">42</span></span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">StopIteration</span><br></pre></td></tr></table></figure>
+<p>可以使用<code>inspect.getgenratorstate()</code>，查看当前处于的状态：</p>
+<ul>
+<li><code>GEN_CREATED</code>等待开始执行</li>
+<li><code>GEN_RUNNING</code>解释器正在执行</li>
+<li><code>GEN_SUSPENDED</code>在yield表达式处暂停</li>
+<li><code>GEN_CLOSED</code>执行结束</li>
+</ul>
+<p>调用方可以使用<code>send()</code>方法发送数据给生成器，参数将成为暂停yield表达式的值。只有暂停状态下的生成器才可以发送数据。<br>最先使用<code>next(my_coro)</code>”预激“协程，使生成器运行到yield处，作为活跃的协程使用。</p>
+<h3 id="抛出异常和停止"><a href="#抛出异常和停止" class="headerlink" title="抛出异常和停止"></a>抛出异常和停止</h3><ul>
+<li>如果协程中抛出的异常，没有在协程内部处理掉，那么异常将会向上冒泡给<code>next()</code>或<code>send()</code>调用方。</li>
+<li><code>throw</code>方法。致使生成器在<code>暂停yield表达式处</code>抛出指定异常。如果生成器处理了异常，代码将继续执行到下一个yield表达式处，并且产生的值作为<code>throw()</code>的返回值；若没有处理异常，那么异常将向上冒泡到调用处。</li>
+<li><code>close</code>方法。致使生成器在<code>暂停的yield表达式</code>处抛出<code>Generator</code>异常。如果生成器没有处理这个异常，或者抛出了<code>StopInteration</code>异常，那么调用方不会报错；如果生成器处理了这个异常，那么一定不能返回值，不然会抛出<code>RuntimeError</code>；生成器产生的其他异常将会向上冒泡传给调用方。</li>
+</ul>
+<h3 id="协程返回值"><a href="#协程返回值" class="headerlink" title="协程返回值"></a>协程返回值</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> namedtuple</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Result = namedtuple(<span class="string">'Result'</span>, <span class="string">'count average'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">averager</span><span class="params">()</span>:</span></span><br><span class="line"><span class="meta">... </span>    total = <span class="number">0</span></span><br><span class="line"><span class="meta">... </span>    count = <span class="number">0</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line"><span class="meta">... </span>        item = <span class="keyword">yield</span></span><br><span class="line"><span class="meta">... </span>        <span class="keyword">if</span> item == <span class="keyword">None</span>:</span><br><span class="line"><span class="meta">... </span>            <span class="keyword">break</span></span><br><span class="line"><span class="meta">... </span>        total = item + total</span><br><span class="line"><span class="meta">... </span>        count += <span class="number">1</span></span><br><span class="line"><span class="meta">... </span>    average = total / count</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">return</span> Result(count=count, average=average)</span><br><span class="line"><span class="meta">... </span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>avg_coro = averager()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>next(avg_coro)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>avg_coro.send(<span class="number">10</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>avg_coro.send(<span class="number">20</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>avg_coro.send(<span class="number">45</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>avg_coro.send(<span class="keyword">None</span>)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">StopIteration: Result(count=<span class="number">3</span>, average=<span class="number">25.0</span>)</span><br></pre></td></tr></table></figure>
+<p>Python3.3实现的”PEP 380“改动中，生成器可以使用<code>return</code>返回值。从上面可以看到，<code>yield</code>所处的循环中，<code>yield</code>产生None值(所以交互式解释器没有打印)，接受一个<code>None</code>标志位结束循环，结束协程执行。一如既往，生成器结束将抛出<code>StopInteration</code>异常，并将生成器返回值作为异常的<code>value</code>属性。</p>
+<p>此外，添加的<code>yield from</code>结构能够内部处理<code>StopInteration</code>异常(这种处理方式和<code>for</code>循环处理<code>StopInteration</code>异常一样：循环机制使用用户易于理解的方式处理异常)，并将<code>value</code>属性的值作为<code>yield from</code>表达式的值。</p>
+<h3 id="yield-from"><a href="#yield-from" class="headerlink" title="yield from"></a>yield from</h3><p>一个简单了案例，接受数据生成男生和女生的身高和体重报告：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> namedtuple</span><br><span class="line"></span><br><span class="line">Result = namedtuple(<span class="string">'Result'</span>, <span class="string">'count average'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 子生成器</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">averager</span><span class="params">()</span>:</span></span><br><span class="line">    total = <span class="number">0</span></span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        item = <span class="keyword">yield</span> <span class="string">'tmp'</span></span><br><span class="line">        <span class="keyword">if</span> item <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        total = total + item</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">    average = total / count</span><br><span class="line">    <span class="keyword">return</span> Result(count=count, average=average)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 委派生成器</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">grouper</span><span class="params">(results, key)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        results[key] = <span class="keyword">yield</span> <span class="keyword">from</span> averager()</span><br><span class="line">        </span><br><span class="line"><span class="comment"># 数据报表</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">report</span><span class="params">(results)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> key, result <span class="keyword">in</span> sorted(results.items()):</span><br><span class="line">        group, unit = key.split(<span class="string">';'</span>)</span><br><span class="line">        print(<span class="string">'&#123;:2&#125; &#123;:5&#125; averaging &#123;:.2f&#125;&#123;&#125;'</span>.format(result.count, group, result.average, unit))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(data)</span>:</span></span><br><span class="line">    results = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> key, values <span class="keyword">in</span> data.items():</span><br><span class="line">        group = grouper(results, key)</span><br><span class="line">        next(group)</span><br><span class="line">        <span class="keyword">for</span> value <span class="keyword">in</span> values:</span><br><span class="line">            tmp = group.send(value)</span><br><span class="line"><span class="comment">#             print(tmp)</span></span><br><span class="line">        group.send(<span class="keyword">None</span>)</span><br><span class="line">        print(results)</span><br><span class="line">    report(results)</span><br><span class="line">        </span><br><span class="line">data = &#123;</span><br><span class="line">    <span class="string">'girls;kg'</span>: [<span class="number">40.9</span>, <span class="number">38.5</span>, <span class="number">44.3</span>, <span class="number">43.2</span>, <span class="number">45.2</span>, <span class="number">41.7</span>, <span class="number">44.5</span>, <span class="number">38.0</span>, <span class="number">40.6</span>, <span class="number">44.5</span>],</span><br><span class="line">    <span class="string">'gils;m'</span>: [<span class="number">1.6</span>, <span class="number">1.51</span>, <span class="number">1.4</span>, <span class="number">1.3</span>, <span class="number">1.41</span>, <span class="number">1.39</span>, <span class="number">1.33</span>, <span class="number">1.46</span>, <span class="number">1.45</span>, <span class="number">1.43</span>],</span><br><span class="line">    <span class="string">'boys;kg'</span>: [<span class="number">39.0</span>, <span class="number">40.8</span>, <span class="number">43.2</span>, <span class="number">40.8</span>, <span class="number">43.1</span>, <span class="number">38.6</span>, <span class="number">41.4</span>, <span class="number">40.6</span>, <span class="number">36.3</span>],</span><br><span class="line">    <span class="string">'boys;m'</span>: [<span class="number">1.38</span>, <span class="number">1.5</span>, <span class="number">1.32</span>, <span class="number">1.25</span>, <span class="number">1.37</span>, <span class="number">1.48</span>, <span class="number">1.25</span>, <span class="number">1.49</span>, <span class="number">1.46</span>]</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    main(data)</span><br></pre></td></tr></table></figure>
+<p>运行结果：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;&apos;girls;kg&apos;: Result(count=10, average=42.14)&#125;</span><br><span class="line">&#123;&apos;girls;kg&apos;: Result(count=10, average=42.14), &apos;gils;m&apos;: Result(count=10, average=1.4279999999999997)&#125;</span><br><span class="line">&#123;&apos;girls;kg&apos;: Result(count=10, average=42.14), &apos;gils;m&apos;: Result(count=10, average=1.4279999999999997), &apos;boys;kg&apos;: Result(count=9, average=40.422222222222224)&#125;</span><br><span class="line">&#123;&apos;girls;kg&apos;: Result(count=10, average=42.14), &apos;gils;m&apos;: Result(count=10, average=1.4279999999999997), &apos;boys;kg&apos;: Result(count=9, average=40.422222222222224), &apos;boys;m&apos;: Result(count=9, average=1.3888888888888888)&#125;</span><br><span class="line"> 9 boys  averaging 40.42kg</span><br><span class="line"> 9 boys  averaging 1.39m</span><br><span class="line">10 gils  averaging 1.43m</span><br><span class="line">10 girls averaging 42.14kg</span><br></pre></td></tr></table></figure></p>
+<p>在这里使用了一个新的语言结构<code>yield from</code>，在说明之前，先了解”PEP 380“引进的几个新的术语：</p>
+<ul>
+<li>委派生成器：包含<code>yield from &lt;iterable&gt;</code>表达式的生成器，上面的<code>grouper()</code>函数。</li>
+<li>子生成器：从<code>yield from &lt;iterable&gt;</code>表达式中的<code>iterable</code>获取的生成器。</li>
+<li>调用方：客户端调用委派生成器的代码。</li>
+</ul>
+<p><img src="/images/coroutine.png" alt="yield from结构用法"></p>
+<p>使用<code>yield from</code>结构可以打开管道，把调用方和子生成器连接起来。</p>
+<ol>
+<li>调用方可以发送数据到委派生成器，值通过管道传递到子生成器的<code>yield</code>位置。</li>
+<li>此时，委派生成器会在<code>yield from</code>处暂停，子生成器等待接受客户端发来的值，并通过<code>yield</code>产生值，使用管道直接传给调用方。</li>
+<li>当子生成器执行完毕，返回的值将作为<code>yield from</code>表达式的值，绑定到<code>results[key]</code>上，委派生成器再次激活执行。</li>
+</ol>
+<p>在上面的例子中，已经见识到了<code>yield from</code>能够在自动内部处理子生成器返回值和抛出的<code>StopIteration</code>异常。除此之外，<code>yield from</code>还需要处理，<code>throw()</code>和<code>close()</code>以及子生成器只是一个普通的迭代器的情况。</p>
+<p><code>RESULT = yield from EXPR</code>语句的具体理解可以参考”PEP 380“伪代码的实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">The statement</span><br><span class="line"></span><br><span class="line">RESULT = <span class="keyword">yield</span> <span class="keyword">from</span> EXPR</span><br><span class="line"><span class="keyword">is</span> semantically equivalent to</span><br><span class="line"></span><br><span class="line">_i = iter(EXPR)</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    _y = next(_i)</span><br><span class="line"><span class="keyword">except</span> StopIteration <span class="keyword">as</span> _e:</span><br><span class="line">    _r = _e.value</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="keyword">while</span> <span class="number">1</span>:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            _s = <span class="keyword">yield</span> _y</span><br><span class="line">        <span class="keyword">except</span> GeneratorExit <span class="keyword">as</span> _e:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                _m = _i.close</span><br><span class="line">            <span class="keyword">except</span> AttributeError:</span><br><span class="line">                <span class="keyword">pass</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                _m()</span><br><span class="line">            <span class="keyword">raise</span> _e</span><br><span class="line">        <span class="keyword">except</span> BaseException <span class="keyword">as</span> _e:</span><br><span class="line">            _x = sys.exc_info()</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                _m = _i.throw</span><br><span class="line">            <span class="keyword">except</span> AttributeError:</span><br><span class="line">                <span class="keyword">raise</span> _e</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">try</span>:</span><br><span class="line">                    _y = _m(*_x)</span><br><span class="line">                <span class="keyword">except</span> StopIteration <span class="keyword">as</span> _e:</span><br><span class="line">                    _r = _e.value</span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="keyword">if</span> _s <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">                    _y = next(_i)</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    _y = _i.send(_s)</span><br><span class="line">            <span class="keyword">except</span> StopIteration <span class="keyword">as</span> _e:</span><br><span class="line">                _r = _e.value</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">RESULT = _r</span><br></pre></td></tr></table></figure>
+<h2 id="asyncio"><a href="#asyncio" class="headerlink" title="asyncio"></a>asyncio</h2><h2 id="gevent"><a href="#gevent" class="headerlink" title="gevent"></a>gevent</h2><h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><code>&gt;&gt;&gt;</code> <a href="https://www.rddoc.com/doc/Python/3.6.0/zh/library/threading/" target="_blank" rel="noopener">threading RD文档</a></p>
+<p><code>&gt;&gt;&gt;</code> <a href="https://yangwenbo.com/articles/python-thread-cancel.html" target="_blank" rel="noopener">Python不支持杀死子线程</a></p>
+<p><code>&gt;&gt;&gt;</code> <a href="http://zhuoqiang.me/python-thread-gil-and-ctypes.html" target="_blank" rel="noopener">python 线程，GIL 和 ctypes</a></p>
+<p><code>&gt;&gt;&gt;</code> <a href="http://cenalulu.github.io/python/gil-in-python/" target="_blank" rel="noopener">Python的GIL是什么鬼，多线程性能究竟如何</a></p>
+<p><code>&gt;&gt;&gt;</code> <a href="https://www.rddoc.com/doc/Python/3.6.0/zh/library/multiprocessing/" target="_blank" rel="noopener">multiprocessing RD文档</a></p>
+<p><code>&gt;&gt;&gt;</code> <a href="https://www.python.org/dev/peps/pep-0380/" target="_blank" rel="noopener">PEP 380</a></p>
+<p><code>&gt;&gt;&gt;</code> <a href="https://lightless.me/archives/python-coroutine-from-start-to-boom.html" target="_blank" rel="noopener">Python协程从零开始到放弃</a></p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/7a7167a/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/d317e8c4/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

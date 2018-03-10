@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>进程管理工具Supervisor | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Linux," />
+  
+
+  <meta name="description" content="Supervisor简介   官方文档  Supervisor是一个用 Python 写的进程管理工具，可以很方便的用来启动、重启、关闭进程。能够将命令行进程变为后台守护进程，并监控进程状态，在意外崩溃时重启进程。Supervisor采用 C/S 架构，有几个部分组成:  supervisord: 服务守护进程 supervisorctl: 命令行客户端 Web Server: 提供相当于supe">
+<meta name="keywords" content="Linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="进程管理工具Supervisor">
+<meta property="og:url" content="http://shawnz.me/posts/779b7ee0/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="Supervisor简介   官方文档  Supervisor是一个用 Python 写的进程管理工具，可以很方便的用来启动、重启、关闭进程。能够将命令行进程变为后台守护进程，并监控进程状态，在意外崩溃时重启进程。Supervisor采用 C/S 架构，有几个部分组成:  supervisord: 服务守护进程 supervisorctl: 命令行客户端 Web Server: 提供相当于supe">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.030Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="进程管理工具Supervisor">
+<meta name="twitter:description" content="Supervisor简介   官方文档  Supervisor是一个用 Python 写的进程管理工具，可以很方便的用来启动、重启、关闭进程。能够将命令行进程变为后台守护进程，并监控进程状态，在意外崩溃时重启进程。Supervisor采用 C/S 架构，有几个部分组成:  supervisord: 服务守护进程 supervisorctl: 命令行客户端 Web Server: 提供相当于supe">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Supervisor简介"><span class="toc-text">Supervisor简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#安装"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#配置"><span class="toc-text">配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#supervisord配置"><span class="toc-text">supervisord配置:</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#program配置"><span class="toc-text">program配置</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#启动"><span class="toc-text">启动</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#使用supervisorctl"><span class="toc-text">使用supervisorctl</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Supervisor管理进程" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">进程管理工具Supervisor</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.08.29</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Linux/">Linux</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h1 id="Supervisor简介"><a href="#Supervisor简介" class="headerlink" title="Supervisor简介"></a>Supervisor简介</h1><blockquote>
+<p>  <a href="&#39;http://supervisord.org/installing.html#installing-a-distribution-package&#39;">官方文档</a></p>
+</blockquote>
+<p>Supervisor是一个用 Python 写的进程管理工具，可以很方便的用来启动、重启、关闭进程。能够将命令行进程变为后台守护进程，并监控进程状态，在意外崩溃时重启进程。Supervisor采用 C/S 架构，有几个部分组成:</p>
+<ul>
+<li>supervisord: 服务守护进程</li>
+<li>supervisorctl: 命令行客户端</li>
+<li>Web Server: 提供相当于supervisorctl功能的WEB操作界面</li>
+<li>XML-RPC Interface: XML-RPC接口</li>
+</ul>
+<a id="more"></a>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p>Debian/Ubuntu 通过apt安装:</p>
+<pre><code># apt-get install supervisor
+</code></pre><p>Pyhon 2　通过pip 安装</p>
+<pre><code># pip install supervisor
+</code></pre><h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>Supervisor配置分为两个部分:supervisord(服务端，对应客户端supervisorctl)和应用程序配置。<br>安装完supervisor后，运行echo_supervisord_conf命令生成默认的配置文件，也可以重定向到一个指定文件:</p>
+<pre><code>echo_supervisord_conf &gt; /etc/supervisord.conf
+</code></pre><h2 id="supervisord配置"><a href="#supervisord配置" class="headerlink" title="supervisord配置:"></a>supervisord配置:</h2><figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[unix_http_server]</span></span><br><span class="line"><span class="attr">file</span>=/tmp/supervisor.sock   ; UNIX socket 文件，supervisorctl 会使用</span><br><span class="line"><span class="comment">;chmod=0700                 ; socket 文件的 mode，默认是 0700</span></span><br><span class="line"><span class="comment">;chown=nobody:nogroup       ; socket 文件的 owner，格式： uid:gid</span></span><br><span class="line"></span><br><span class="line"><span class="comment">;[inet_http_server]         ; HTTP 服务器，提供 web 管理界面</span></span><br><span class="line"><span class="comment">;port=127.0.0.1:9001        ; Web 管理后台运行的 IP 和端口，如果开放到公网，需要注意安全性</span></span><br><span class="line"><span class="comment">;username=user              ; 登录管理后台的用户名</span></span><br><span class="line"><span class="comment">;password=123               ; 登录管理后台的密码</span></span><br><span class="line"></span><br><span class="line"><span class="section">[supervisord]</span></span><br><span class="line"><span class="attr">logfile</span>=/tmp/supervisord.log ; 日志文件，默认是 <span class="variable">$CWD</span>/supervisord.log</span><br><span class="line"><span class="attr">logfile_maxbytes</span>=<span class="number">50</span>MB        ; 日志文件大小，超出会 rotate，默认 <span class="number">50</span>MB</span><br><span class="line"><span class="attr">logfile_backups</span>=<span class="number">10</span>           ; 日志文件保留备份数量默认 <span class="number">10</span></span><br><span class="line"><span class="attr">loglevel</span>=info                ; 日志级别，默认 info，其它: debug,warn,trace</span><br><span class="line"><span class="attr">pidfile</span>=/tmp/supervisord.pid ; pid 文件</span><br><span class="line"><span class="attr">nodaemon</span>=<span class="literal">false</span>               ; 是否在前台启动，默认是 <span class="literal">false</span>，即以 daemon 的方式启动</span><br><span class="line"><span class="attr">minfds</span>=<span class="number">1024</span>                  ; 可以打开的文件描述符的最小值，默认 <span class="number">1024</span></span><br><span class="line"><span class="attr">minprocs</span>=<span class="number">200</span>                 ; 可以打开的进程数的最小值，默认 <span class="number">200</span></span><br><span class="line"></span><br><span class="line"><span class="comment">; the below section must remain in the config file for RPC</span></span><br><span class="line"><span class="comment">; (supervisorctl/web interface) to work, additional interfaces may be</span></span><br><span class="line"><span class="comment">; added by defining them in separate rpcinterface: sections</span></span><br><span class="line"><span class="section">[rpcinterface:supervisor]</span></span><br><span class="line">supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface</span><br><span class="line"></span><br><span class="line"><span class="section">[supervisorctl]</span></span><br><span class="line"><span class="attr">serverurl</span>=unix:///tmp/supervisor.sock ; 通过 UNIX socket 连接 supervisord，路径与 unix_http_server 部分的 file 一致</span><br><span class="line"><span class="comment">;serverurl=http://127.0.0.1:9001 ; 通过 HTTP 的方式连接 supervisord</span></span><br><span class="line"></span><br><span class="line"><span class="comment">; 包含其他的配置文件</span></span><br><span class="line"><span class="section">[include]</span></span><br><span class="line"><span class="attr">files</span> = relative/directory/*.ini    ; 可以是 *.conf 或 *.ini</span><br></pre></td></tr></table></figure>
+<h2 id="program配置"><a href="#program配置" class="headerlink" title="program配置"></a>program配置</h2><p>这部分是supervisord要管理的进程的配置文件。这里有两种方式:</p>
+<ol>
+<li>把所有配置文件都放在supervisord.conf配置文件里面</li>
+<li>通过include的方式把不同程序写到不同的配置文件里</li>
+</ol>
+<p><strong>示例</strong>:<br>新建目录/etc/supervisor/存放不同程序的配置文件，修改/etc/supervisord.conf:</p>
+<pre><code>[include]
+files = /etc/supervisor/*.conf
+</code></pre><p>以uwsgi的方式部署FLASK应用:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[program:your appname]</span><br><span class="line">command=/path/to/virtual/env/bin/uwsgi -s /tmp/uwsgi.sock -w flask_file_name:app -H /path/to/virtual/env --chmod-socket 666</span><br><span class="line">directory=/path/to/app</span><br><span class="line">autostart=true</span><br><span class="line">autorestart=true</span><br><span class="line">stdout_logfile=/path/to/app/logs/uwsgi.log</span><br><span class="line">redirect_stderr=true</span><br><span class="line">stopsignal=QUIT</span><br></pre></td></tr></table></figure>
+<p>一份supervisord配置文件至少需要一个[program:x]部分的部署，x表示program name，会在supervisorctl或Web管理界面显示，在supervisorctl中通过这个值对程序进行start、stop、restart等操作</p>
+<h1 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h1><p>supervisord启动配置文件的默认查找顺序为:$CWD/supervisord.conf, $CWD/etc/supervisord.conf, /etc/supervisord.conf。也可以通过 -c 选项指定配置文件路径:<br>    supervisord -c /etc/supervisord.conf</p>
+<h1 id="使用supervisorctl"><a href="#使用supervisorctl" class="headerlink" title="使用supervisorctl"></a>使用supervisorctl</h1><p>supervisorctl是supervisord的一个命令行管理客户端工具、启动是需要和supervisord一样指定配置文件、否则按照与supervisord一样的顺序查找配置文件。<br>    supervisorctl -c /etc/supervisord.conf<br>supervisorctl命令会启动Shell界面，然后可以执行各种命令:<br>    &gt; status    # 查看程序状态<br>    &gt; stop usercenter   # 关闭 usercenter 程序<br>    &gt; start usercenter  # 启动 usercenter 程序<br>    &gt; restart usercenter    # 重启 usercenter 程序<br>    &gt; reread    ＃ 读取有更新（增加）的配置文件，不会启动新添加的程序<br>    &gt; update    ＃ 重启配置文件修改过的程序<br>除了进入Shell界面，也可以直接在Bash终端运行:<br>    $ supervisorctl status<br>    $ supervisorctl stop usercenter<br>    $ supervisorctl start usercenter<br>    $ supervisorctl restart usercenter<br>    $ supervisorctl reread<br>    $ supervisorctl update<br>另外也可以登入WEB管理界面进行操作，除了单进程管理，supervisor还具备配置group，进行分组管理等功能</p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/8eda3648/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/d356139b/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

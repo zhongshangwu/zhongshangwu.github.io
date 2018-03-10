@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>动态规划(Dynamic Programming) | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="算法,动态规划," />
+  
+
+  <meta name="description" content="动态规划动态规划（英语：Dynamic programming，简称DP）通常用来求解最优化问题（optimization problem）。适用于具有重复子问题（overlapping subproblems）和最优子结构（optimal substructure）特点的问题，所耗时间往往远少于朴素解法。">
+<meta name="keywords" content="算法,动态规划">
+<meta property="og:type" content="article">
+<meta property="og:title" content="动态规划(Dynamic Programming)">
+<meta property="og:url" content="http://shawnz.me/posts/a80d0031/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="动态规划动态规划（英语：Dynamic programming，简称DP）通常用来求解最优化问题（optimization problem）。适用于具有重复子问题（overlapping subproblems）和最优子结构（optimal substructure）特点的问题，所耗时间往往远少于朴素解法。">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.046Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="动态规划(Dynamic Programming)">
+<meta name="twitter:description" content="动态规划动态规划（英语：Dynamic programming，简称DP）通常用来求解最优化问题（optimization problem）。适用于具有重复子问题（overlapping subproblems）和最优子结构（optimal substructure）特点的问题，所耗时间往往远少于朴素解法。">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#动态规划"><span class="toc-text">动态规划</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拆分问题"><span class="toc-text">拆分问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#问题实例"><span class="toc-text">问题实例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#数塔问题"><span class="toc-text">数塔问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#背包问题"><span class="toc-text">背包问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最长公共子序列问题"><span class="toc-text">最长公共子序列问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最长公共子串问题"><span class="toc-text">最长公共子串问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最长递增序列问题"><span class="toc-text">最长递增序列问题</span></a></li></ol></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-动态规划" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">动态规划(Dynamic Programming)</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2017.12.19</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/算法/">算法</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h2 id="动态规划"><a href="#动态规划" class="headerlink" title="动态规划"></a>动态规划</h2><p>动态规划（英语：Dynamic programming，简称DP）通常用来求解最优化问题（optimization problem）。适用于具有重复子问题（overlapping subproblems）和最优子结构（optimal substructure）特点的问题，所耗时间往往远少于朴素解法。<br><a id="more"></a></p>
+<p><code>最优子结构性质：</code>在自顶向下的递归求解中，往往会反复求解相同的子问题。动态规划可以仔细的安排求解顺序，对每个子问题只计算一次，并将结果保存下来。</p>
+<p><code>最优子结构：</code>一个问题的最优解包含其子问题的最优解。使用动态规划时，我们用子问题的最优解来构造原问题的最优解。</p>
+<p><code>无后效性：</code>将各阶段按照一定的次序排列好之后，对于某个给定的阶段状态，它以前各阶段的状态无法直接影响它未来的决策，而只能通过当前的这个状态。换句话说，每个状态都是过去历史的一个完整总结。这就是无后向性，又称为无后效性。</p>
+<h2 id="拆分问题"><a href="#拆分问题" class="headerlink" title="拆分问题"></a>拆分问题</h2><p>如何拆分问题，才是动态规划的核心。而拆分问题，靠的就是状态的定义和状态转移方程的定义。</p>
+<p><code>问题状态：</code>问题在某一时刻的情况的抽象。</p>
+<p><code>状态转移方程：</code>问题从当前状态到下一状态（通常更接近我们要求解的状态，即目标状态）所经历步骤的抽象。</p>
+<p>动态规划的核心就是拆分问题，依靠状态的定义和状态转移方程，使得问题能够以递推的方式得以解决。</p>
+<p>通常按如下４个步骤来设计动态规划算法：</p>
+<ol>
+<li>刻画最优解的结构特征（寻找最优子结构）</li>
+<li>递归地定义最优解的值（确定状态转移方程）</li>
+<li>计算最优解的值（带备忘的自顶向下实现和自底向上的实现）</li>
+<li>利用计算出来的信息构造一个最优解</li>
+</ol>
+<h2 id="问题实例"><a href="#问题实例" class="headerlink" title="问题实例"></a>问题实例</h2><h3 id="数塔问题"><a href="#数塔问题" class="headerlink" title="数塔问题"></a>数塔问题</h3><p><strong>问题描述</strong><br>给定一个三角形，从上到下找到最小路径和。每一步你都可以移动到下一行的相邻数字。</p>
+<blockquote>
+<p>[<br><br>     [2],<br><br>    [3,4],<br><br>   [6,5,7],<br><br>  [4,1,8,3]<br><br>]</p>
+</blockquote>
+<p>从顶到底部的最小路径和为 <code>11</code> (i.e., 2 + 3 + 5 + 1 = 11)</p>
+<p><strong>状态转移方程</strong></p>
+<p>用子问题定义状态：$F_{k,i}$为：数塔中第k行第i项的最小路径和</p>
+<p>那么，状态转移方程(其中 $A_{k,i}$ 为第k行第i项的值)：</p>
+<blockquote>
+<p>$F_{k,i} = max(F_{k+1, i}, F_{k+1, i+1}) + A_{k,i}$</p>
+</blockquote>
+<p><strong>实现</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">minimumTotal</span><span class="params">(self, triangle)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    :type triangle: List[List[int]]</span></span><br><span class="line"><span class="string">    :rtype: int</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> triangle:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    res = triangle[<span class="number">-1</span>]  <span class="comment"># 优化空间</span></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> range(len(triangle)<span class="number">-2</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>, len(triangle[k]), <span class="number">1</span>):</span><br><span class="line">            res[i] = min(res[i], res[i+<span class="number">1</span>]) + triangle[k][i]</span><br><span class="line">    <span class="keyword">return</span> res[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>
+<h3 id="背包问题"><a href="#背包问题" class="headerlink" title="背包问题"></a>背包问题</h3><p><strong>问题描述</strong></p>
+<p>给出n个物品的重量W[i]和其价值V[i]，背包的容量为w磅，问最多能装入的总价值有多大？</p>
+<p><strong>状态转移</strong></p>
+<p>用子问题定义状态：F[i][w]表示前i件物品恰放入一个容量为w的背包可以获得最大价值。</p>
+<p>那么状态转移方程：</p>
+<blockquote>
+<p>$$F[i][w] = \begin{cases}<br>0, &amp;if\ i=0\ or\ w=0\<br>F[i-1][w], &amp;if\ W[i] &gt; w\<br>max(F[i-1][w-W[i]]+V[i], F[i-1][w]), &amp;if\ W[i] &lt;= w\<br>\end{cases}$$</p>
+</blockquote>
+<p><strong>实现</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">backPackII</span><span class="params">(self, w, W, V)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    :type w: An integer m denotes the size of a backpack</span></span><br><span class="line"><span class="string">    :type W: Given n items with size W[i]</span></span><br><span class="line"><span class="string">    :type V: Given n items with value V[i]</span></span><br><span class="line"><span class="string">    :rtype: int</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    res = [<span class="number">0</span>] * (w+<span class="number">1</span>)  <span class="comment"># 空间优化</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, len(W)+<span class="number">1</span>):</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> reversed(range(W[i<span class="number">-1</span>], w+<span class="number">1</span>)):</span><br><span class="line">            res[j] = max(res[j], res[j-A[i<span class="number">-1</span>]]+V[i<span class="number">-1</span>])</span><br><span class="line">    <span class="keyword">return</span> res[w]</span><br></pre></td></tr></table></figure>
+<h3 id="最长公共子序列问题"><a href="#最长公共子序列问题" class="headerlink" title="最长公共子序列问题"></a>最长公共子序列问题</h3><p><strong>问题描述</strong></p>
+<p>给定两个序列$X=[x_1, x_2, …, x_m]$和$Y=[y_1, y_2, …, y_n]$，求X和Y的最长公共子序列。</p>
+<blockquote>
+<p>X=[A, B, C, B, D, A, B], Y=[B, D, C, A, B, A]</p>
+</blockquote>
+<p>那么<code>[B, C, B, A]</code>和<code>[B, D, A, B]</code>都是X和Y的最长公共子序列，长度为<code>4</code>。</p>
+<p><strong>状态描述</strong></p>
+<blockquote>
+<p>$$<br>C[i, j]= \begin{cases}<br>0, &amp;\text {if i = 0 or j = 0}\<br>C[i-1, j-1] + 1, &amp;\text {if i,j &gt; 0 and $x_i=y_j$} \<br>max(C[i-1, j], C[i, j-1]), &amp; \text {if i,j &gt; 0 and $x_i \neq y_j$}<br>\end{cases} $$</p>
+</blockquote>
+<p><strong>实现</strong><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">longestCommonSubsequence</span><span class="params">(A, B)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    @param: A: A string</span></span><br><span class="line"><span class="string">    @param: B: A string</span></span><br><span class="line"><span class="string">    @return: The length of longest common subsequence of A and B</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    m = len(A)</span><br><span class="line">    n = len(B)</span><br><span class="line">    c = [[<span class="number">0</span>] * (n+<span class="number">1</span>) <span class="keyword">for</span> i <span class="keyword">in</span> range(m+<span class="number">1</span>)]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, m+<span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(<span class="number">1</span>, n+<span class="number">1</span>):</span><br><span class="line">            <span class="keyword">if</span> A[i<span class="number">-1</span>] == B[j<span class="number">-1</span>]:</span><br><span class="line">                c[i][j] = c[i<span class="number">-1</span>][j<span class="number">-1</span>] + <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                c[i][j] = max(c[i<span class="number">-1</span>][j], c[i][j<span class="number">-1</span>])</span><br><span class="line">    <span class="keyword">return</span> c[m][n]</span><br></pre></td></tr></table></figure></p>
+<h3 id="最长公共子串问题"><a href="#最长公共子串问题" class="headerlink" title="最长公共子串问题"></a>最长公共子串问题</h3><p><strong>问题描述</strong></p>
+<p>最大公共字串要求的字串是连续的。</p>
+<blockquote>
+<p>A=”ABCD”，B=”CBCE”</p>
+</blockquote>
+<p>那么最长公共子串为<code>BC</code>，长度为<code>2</code></p>
+<p><strong>状态转移</strong></p>
+<p>和最长公共子序列类似的，只是在$A[i] \neq B[j]$时，长度为0，而不是求$max(C[i-1][j], C[i][j-1])$<br>状态转移方程为：</p>
+<blockquote>
+<p>$$<br>C[i, j]= \begin{cases}<br>0, &amp;\text {if i = 0 or j = 0}\<br>C[i-1, j-1] + 1, &amp;\text {if i,j &gt; 0 and $x_i=y_j$} \<br>C[i-1, j-1], &amp; \text {if i,j &gt; 0 and $x_i \neq y_j$}<br>\end{cases}<br>$$</p>
+</blockquote>
+<p><strong>实现</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">longestCommonSubstring</span><span class="params">(self, A, B)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    @param: A: A string</span></span><br><span class="line"><span class="string">    @param: B: A string</span></span><br><span class="line"><span class="string">    @return: the length of the longest common substring.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    m = len(A)</span><br><span class="line">    n = len(B)</span><br><span class="line">    c = [[<span class="number">0</span>] * (n+<span class="number">1</span>) <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>)]</span><br><span class="line">    ans = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, m+<span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(<span class="number">1</span>, n+<span class="number">1</span>):</span><br><span class="line">            <span class="keyword">if</span> A[i<span class="number">-1</span>] == B[j<span class="number">-1</span>]:</span><br><span class="line">                c[<span class="number">1</span>][j] = c[<span class="number">0</span>][j<span class="number">-1</span>] + <span class="number">1</span></span><br><span class="line">                ans = max(ans, c[<span class="number">1</span>][j])</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                c[<span class="number">1</span>][j] =<span class="number">0</span></span><br><span class="line">        c[<span class="number">0</span>], c[<span class="number">1</span>] = c[<span class="number">1</span>], c[<span class="number">0</span>]</span><br><span class="line">    <span class="keyword">return</span> ans</span><br></pre></td></tr></table></figure>
+<h3 id="最长递增序列问题"><a href="#最长递增序列问题" class="headerlink" title="最长递增序列问题"></a>最长递增序列问题</h3><p><strong>问题描述</strong></p>
+<p>最长递增子序列（Longest Increasing Subsequence）是指找到一个给定序列的最长子序列的长度，使得子序列中的所有元素单调递增。</p>
+<blockquote>
+<p>[10, 9, 2, 5, 3, 7, 101, 18]</p>
+</blockquote>
+<p>其最长递增子序列为：<code>[2, 3, 7, 101]]</code>，长度为<code>4</code>。注意可能不只一个最长子序列。</p>
+<p><strong>解法一</strong></p>
+<p>其实可以把 求最长递增子序列问题 转化为 求最长公共子序列的问题：</p>
+<ul>
+<li>设原数组[10, 9, 2, 5, 3, 7, 101, 18]为A</li>
+<li>对数组排序过后，得到B=[2, 3, 5, 7, 9, 10, 18, 101]</li>
+<li>求数组A和B的最长公共子序列</li>
+</ul>
+<p><strong>解法二</strong></p>
+<p>设F[i]表示以i结尾的子序列中LIS的长度。用$F<a href="0&lt;=j&lt;i">j</a>$来表示在i之前的LIS的长度。</p>
+<p>所以状态转移方程为：</p>
+<blockquote>
+<p>$F[i]=\mathop{max}\limits_{0 \le j\lt i}(F[j])+(a[i]&gt;a[j])?1:0$</p>
+</blockquote>
+<p>代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lengthOfLIS</span><span class="params">(self, nums)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    :type nums: List[int]</span></span><br><span class="line"><span class="string">    :rtype: int</span></span><br><span class="line"><span class="string">    :O(n) = n^2</span></span><br><span class="line"><span class="string">    """</span>        </span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> nums:</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">    n = len(nums)</span><br><span class="line">    c = [<span class="number">1</span>] * n</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, n):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(<span class="number">0</span>, i):</span><br><span class="line">            <span class="keyword">if</span> nums[i] &gt; nums[j] <span class="keyword">and</span> c[i] &lt; c[j] + <span class="number">1</span>:</span><br><span class="line">                c[i] = c[j] + <span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> max(c)</span><br></pre></td></tr></table></figure>
+<p><strong>解法三</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lengthOfLIS</span><span class="params">(self, nums)</span>:</span></span><br><span class="line">    tails = [<span class="number">0</span>] * len(nums)</span><br><span class="line">    size = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> x <span class="keyword">in</span> nums:</span><br><span class="line">        i, j = <span class="number">0</span>, size</span><br><span class="line">        <span class="keyword">while</span> i != j:</span><br><span class="line">            m = (i + j) // <span class="number">2</span></span><br><span class="line">            <span class="keyword">if</span> tails[m] &lt; x:</span><br><span class="line">                i = m + <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                j = m</span><br><span class="line">        tails[i] = x</span><br><span class="line">        size = max(i + <span class="number">1</span>, size)</span><br><span class="line">    <span class="keyword">return</span> size</span><br></pre></td></tr></table></figure>
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/735e5788/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/51aeee82/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>

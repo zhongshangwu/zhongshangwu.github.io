@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>理解asyncio | Shawn&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="Python,异步编程," />
+  
+
+  <meta name="description" content="在本篇文章, 我试图从三个方面: 协程, Python对协程的语法支持以及asyncio库, 来理解事件驱动的异步编程.">
+<meta name="keywords" content="Python,异步编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="理解asyncio">
+<meta property="og:url" content="http://shawnz.me/posts/cc755aee/index.html">
+<meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:description" content="在本篇文章, 我试图从三个方面: 协程, Python对协程的语法支持以及asyncio库, 来理解事件驱动的异步编程.">
+<meta property="og:image" content="http://shawnz.me/images/tulip_coro.png">
+<meta property="og:updated_time" content="2018-03-10T06:20:54.218Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="理解asyncio">
+<meta name="twitter:description" content="在本篇文章, 我试图从三个方面: 协程, Python对协程的语法支持以及asyncio库, 来理解事件驱动的异步编程.">
+<meta name="twitter:image" content="http://shawnz.me/images/tulip_coro.png">
+
+  
+
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/custom.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+    <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  
+
+  
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile">盒子</span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text">盒子</span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            博客
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            分类
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/tag/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            标签
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            友链
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/about/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            关于
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/atom.xml"
+            rel="noopener noreferrer"
+            target="_blank"
+            >
+            RSS
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#概念"><span class="toc-text">概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#协程和线程"><span class="toc-text">协程和线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#事件循环"><span class="toc-text">事件循环</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#协程和回调"><span class="toc-text">协程和回调</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Python语法"><span class="toc-text">Python语法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#yield和yield-from"><span class="toc-text">yield和yield from</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#async和await"><span class="toc-text">async和await</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#出租车运营仿真"><span class="toc-text">出租车运营仿真</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#asyncio"><span class="toc-text">asyncio</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Coroutine-Future-Task"><span class="toc-text">Coroutine, Future, Task</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Event-Loop-Policy"><span class="toc-text">Event Loop [Policy]</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Tansport-Protocol"><span class="toc-text">Tansport, Protocol</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#References"><span class="toc-text">References</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-理解Asyncio" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">理解asyncio</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.01.30</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>Shawn Zhong</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </span>
+
+
+
+      
+
+      
+      <i class="fa fa-eye"></i> 
+        <span id="busuanzi_container_page_pv">
+           &nbsp热度 <span id="busuanzi_value_page_pv">
+           <i class="fa fa-spinner fa-spin"></i></span>℃
+        </span>
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <p>在本篇文章, 我试图从三个方面: 协程, Python对协程的语法支持以及<code>asyncio</code>库, 来理解事件驱动的异步编程.</p>
+<a id="more"></a>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>我们先给协程一个正式的定义: <strong>“协程是为非抢占式多任务产生子程序的计算机程序组件, 协程允许不同入口点在不同位置暂停或开始执行程序”</strong>(来自维基百科).</p>
+<h3 id="协程和线程"><a href="#协程和线程" class="headerlink" title="协程和线程"></a>协程和线程</h3><p>从协程的定义, 我们可以很好的区分协程和线程行为上的区别: 协程由应用程序提供机制提供, 属于”协作式多任务”; 而线程一般由操作系统提供, CPU负责调度, 属于”抢占式多任务”. </p>
+<p>尽管协程和线程都能用来”并发”编程, 但需要考虑到使用多线程会有以下几个问题:</p>
+<ul>
+<li>线程在计算和资源消耗的角度是较为昂贵的;</li>
+<li>在使用线程进行”并发”编程时, 需要考虑访问共享资源时, “竞态条件”和”锁机制”带来的复杂性和安全性问题;</li>
+<li>由于<code>GIL</code>的存在, Python的多线程无法发挥多核CPU的计算能力, 只有在遇到I/O阻塞的时, 才会释放<code>GIL</code>锁.</li>
+<li>既然Python的多线程更适用于”I/O”密集的场景, 那么在这种情形下, 使用协程替代线程应该能得到更好的性能.</li>
+</ul>
+<h3 id="事件循环"><a href="#事件循环" class="headerlink" title="事件循环"></a>事件循环</h3><p>在继续学习协程之前, 我们弄明白什么是事件循环?</p>
+<p>比如大部分的网络服务器框架, 诸如<code>werkzeug</code>,<code>Django</code>等实现的<code>HTTPServer</code>, 在底层都是使用I/O多路复用机制处理客户端连接的:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> QUIT:</span><br><span class="line">        events = selector.select(events_to_listen, timeout)</span><br><span class="line">        <span class="keyword">for</span> event <span class="keyword">in</span> events:</span><br><span class="line">            process_request(events)</span><br></pre></td></tr></table></figure>
+<p>这里的<code>loop</code>就相当于是一个事件循环, 它等待操作系统的事件通知, 并执行相应请求处理函数(回调函数).</p>
+<p>这里的<code>select</code>会阻塞直到请求的到来(或超时), 其实<code>select</code>底层的实现也是一个事件循环, 轮询监听的文件描述符<code>fd</code>, 在<code>fd</code>数据准备好时, 返回文件描述符, 不过我们先不关心这些. 尽管这里会发生阻塞, 但是其好处是在有大量并发连接的情况下, 使用IO多路复用不会造成: 阻塞在单个IO下, 而导致无法处理其他请求. 它会在有任何连接准备好的时候, 返回文件描述符.</p>
+<p>(PS: 不知道我这里理解的事件循环有没有问题…)</p>
+<p>事件循环: “是一种等待程序分配事件或消息的编程架构”(来自wiki). 简单来讲, 事件循环是一种循环机制, 监听哪些事件发生了, 并关心事件发生时做什么处理, 让你可以在”A发生时, 执行B”. </p>
+<p>然而, 要想设计健壮的WEB 服务框架, 单单这点还不够, 目前请求的处理都发生在单个线程中, 像<code>socket.recv()</code>、访问数据库以及读写文件等都会发生阻塞, 导致阻塞整个事件循环. 所以, 一般的WEB服务器还提供了多线程/多进程的选项, 能够以线程或进程的方式处理请求. 另外一种思路是, 将事件循环放在一个单独的子线程里, 事件的处理都放在主线程中.</p>
+<p>事件循环机制是理解异步编程的核心之一, 另一个核心就是协程.</p>
+<h3 id="协程和回调"><a href="#协程和回调" class="headerlink" title="协程和回调"></a>协程和回调</h3><p>回到事件驱动的主题上来, 当事件发生时, 事件循环机制需要找到相应的处理函数, 尽管WEB框架的处理函数一般就一个, 然后再做分派. 但是更一般的, 像<code>JS</code>中的事件就很多, 比如<code>OnClick</code>事件, 往往需要将回调函数绑定到相应的事件上, 这样才能在事件发生时执行对应的回调函数. 这就是异步机制.</p>
+<p>当回调发生时, 我们可能会碰到下面这种情况:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">stage_1</span><span class="params">(response_1)</span>:</span>  <span class="comment"># 回调函数1</span></span><br><span class="line">    request_2 = step_1(reponse_1) <span class="comment"># 对响应处理, 并生成新的请求2</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">stage_2</span><span class="params">(response_2)</span>:</span></span><br><span class="line">        request_3 = step_2(reponse_2)</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">stage_3</span><span class="params">(response_3)</span>:</span></span><br><span class="line">            step_3(reponse_3)</span><br><span class="line"></span><br><span class="line">        api_call_3(request_3, stage_3) <span class="comment"># 调用新的API函数3, 注册回调函数3</span></span><br><span class="line">    api_call_2(request_2, stage_2)  <span class="comment"># 调用新的API函数2, 注册回调函数2</span></span><br><span class="line"></span><br><span class="line">api_call_1(request_1, stage_1)  <span class="comment"># 调用API函数1, 注册回调函数1</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>代码结构不清晰: 同步的代码结构是从上往下, 而嵌套回调的结构会导致<code>callback hell</code>.</li>
+<li>上下文状态丢失: 执行下一个回调的时候, 无法获取上一步的<code>request_1</code>的信息. 如果需要那个值, 必须通过参数传递, 或者闭包实现.</li>
+<li>异常处理: 当<code>api_call_2</code>发生异常时, 无法在<code>stage_1</code>函数中捕获, 因为是<code>api_call_2</code>异步调用. <code>JS</code>针对这个问题的解决方案是, 注册两个回调函数, 其中有一个用作异常处理, 这样以来就变得更加复杂了.</li>
+</ul>
+<p>同样的代码逻辑, 我们可以用另外一种方式来重构:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@asyncio.coroutine</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">three_stages</span><span class="params">(request_1)</span>:</span></span><br><span class="line">    response_1 = <span class="keyword">yield</span> <span class="keyword">from</span> api_call_1(request_1) <span class="comment"># 第一步</span></span><br><span class="line"></span><br><span class="line">    request_2 = step(response_1) <span class="comment"># 第二步</span></span><br><span class="line">    reponse_2 = <span class="keyword">yield</span> <span class="keyword">from</span> api_call_2(request_2)</span><br><span class="line"></span><br><span class="line">    reqeust_3 = step(response_2) <span class="comment"># 第三步</span></span><br><span class="line">    response_3 = <span class="keyword">yield</span> <span class="keyword">from</span> api_call_3(request_3)</span><br><span class="line"></span><br><span class="line">loop.create_task(three_stages(request_1)) <span class="comment"># 必须显示调用</span></span><br></pre></td></tr></table></figure>
+<p>使用协程不会存在上面那些问题, 因为整个任务执行是顺序的, 并且在一个上下文中, 如果需要捕捉异常的话, 可以使用<code>try/catch</code>将<code>yield from</code>语句包裹起来.</p>
+<h2 id="Python语法"><a href="#Python语法" class="headerlink" title="Python语法"></a>Python语法</h2><h3 id="yield和yield-from"><a href="#yield和yield-from" class="headerlink" title="yield和yield from"></a>yield和yield from</h3><p>PEP 342 中定义了协程的底层架构, 并在Python2.5中实现了. 至此<code>yield</code>成为表达式, 能够暂停执行产生值.</p>
+<p>PEP 342 中为生成器API添加了<code>send()</code>方法, 可以将数据给暂停的的生成器, 发送的值成为<code>yield</code>表达式的值. 这样以来, 生成器就可以作为协程使用了.</p>
+<p>PEP 380 为Python3.3引入了<code>yield from</code>语法, 以便生成器能够更好地作为协程使用. 在生成器<code>gen</code>中调用<code>yield from subgen()</code>时, <code>subgen</code>会获得控制权, 把产生的值返回给调用方, 即调用方可以直接控制<code>subgen</code>. 与此同时, <code>gen</code>会挂起, 等待<code>subgen</code>返回值(终止). <code>yield from</code>可以把复杂的生成器重构为小型的嵌套生成器. 例如:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">subgen</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        x = <span class="keyword">yield</span> <span class="string">'subgen'</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">gen</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">yield</span> <span class="keyword">from</span> <span class="string">'AB'</span></span><br><span class="line">    <span class="keyword">yield</span> <span class="keyword">from</span> range(<span class="number">1</span>, <span class="number">3</span>)</span><br><span class="line">    <span class="keyword">yield</span> <span class="keyword">from</span> subgen()</span><br></pre></td></tr></table></figure>
+<p><code>yield from x</code>表达式对<code>x</code>所做的第一件事就是, 调用<code>iter(x)</code>, 从中获得迭代器. </p>
+<p>到现在为止, <code>yield</code>和<code>yield from</code>定义的生成器完全可以作为协程的实现. 仔细一点话, 我们可以发现两者的细微区别:</p>
+<ul>
+<li>生成器更注重保存状态和产生值;</li>
+<li>协程强调协同控制程序流, 是数据的消费者. (尽管使用生成器定义的协程也会<code>yield</code>产生值)</li>
+</ul>
+<h3 id="async和await"><a href="#async和await" class="headerlink" title="async和await"></a>async和await</h3><p>现在有个问题是, 在调用<code>yield from gen_or_cor()</code>时, 我们无法确定遍历的是生成器还是协程. </p>
+<p><code>asyncio.coroutine</code>和<code>types.coroutine</code>两个装饰器的作用就是: 为消除语法上的歧义. 前者是<code>asyncio</code>库的实现, 后者是Python3.5新加入的语言实现, 它会给函数的<code>__code__.co_flags</code>添加<code>CO_ITERABLE_COROUTINE</code>标识. </p>
+<p>随后Yury Selivanov提交的 “PEP 492—Coroutines with async and await syntax”, 在 Python3.5 中得以实现, 新加了两个关键字<code>async</code>和<code>await</code>. 使用<code>async def</code>定义的函数称为”原生协程”, 它会设置<code>CO_COROUTINE</code>标识. </p>
+<p>到现在为止, 协程和生成器很明确的区分开来了, 另外还有两个标识:</p>
+<ul>
+<li><code>CO_COROUTINE</code>: 标识的是原生协程, 使用<code>async def</code>定义;</li>
+<li><code>CO_ITERABLE_COROUTINE</code>: 基于迭代器的协程, 使用<code>types.coroutine</code>装饰.</li>
+</ul>
+<p>在定义了协程之后, PEP 492 引入了<code>await</code>来调用协程, 它只能在<code>async def</code>协程函数内部使用:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">read_data</span><span class="params">(db)</span>:</span></span><br><span class="line">    data = <span class="keyword">await</span> db.fetch(<span class="string">'SELECT ...'</span>)</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+<p><code>await</code>的用法和<code>yield from</code>相似, 暂停<code>read_data</code>协程的执行, 直到<code>db.fetch</code>完成并返回结果数据.</p>
+<p>实际上, <code>await</code>内部使用<code>yield from</code>实现, 不过它对参数进行了一些额外的验证, 接受一个<code>awaitable</code>对象:</p>
+<ul>
+<li>原生协程. <code>collections.abc.Coroutine</code>继承自<code>Awaitable</code>, 自然没有问题;</li>
+<li>基于迭代器的协程, 因为<code>inspect.isawaitable</code>内部会识别<code>CO_ITERABLE_COROUTINE</code>标识.</li>
+<li>实现了<code>__await__</code>方法(必须返回一个迭代器)的对象, 即<code>collections.abc.Awaitable</code>.</li>
+</ul>
+<p>我们再来看看这个讨论<a href="">《为什么只有基于生成器的协程可以真正的暂停执行并强制性返回给事件循环？》</a>.</p>
+<p>我的理解是真正暂停执行并让步, 将控制权交给事件循环的地方一定发生在<code>yield</code>处. 而<code>await/yield from</code>都没有交出控制权, 它们会进入到里层的协程, 直到碰到一个<code>yield</code>, 又或者是一个实现<code>__await__</code>方法的<code>awaitable</code>, 这个方法返回的也是一个迭代器.<br>而原生协程的语法是不允许使用<code>yield</code>的, 所以就会有上面那种说法.</p>
+<p>不过在实际使用中, 我们使用<code>await asyncio.sleep(1)</code>这些包装过的协程函数就OK了, 框架会帮我们处理底层的逻辑.</p>
+<hr>
+
+<p>除了协程函数外, PEP 492 还提出了<code>async for</code>和<code>async with</code>的用法:</p>
+<p><strong>异步上下文管理器和”async with”</strong></p>
+<p>异步上下文管理器指的是在<code>enter</code>和<code>exit</code>方法处能够暂停执行的上下文管理器.</p>
+<p>为了实现这样的功能, 需要加入两个新的<code>magic method</code>: <code>__aenter__</code>和<code>__aexit__</code>. 这两个方法都要返回一个<code>awaitable</code>对象.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AsyncContextManager</span>:</span> <span class="comment"># 定义一个上下文管理器</span></span><br><span class="line">    <span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">__aenter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">await</span> log(<span class="string">"entering context..."</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">__aexit__</span><span class="params">(self, exc_type, exc, tb)</span>:</span></span><br><span class="line">        <span class="keyword">await</span> log(<span class="string">"exiting context..."</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">commit</span><span class="params">(session, data)</span>:</span>  <span class="comment"># 实现一个数据库事务管理器</span></span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">with</span> session.transaction():</span><br><span class="line">        <span class="keyword">await</span> session.update(data)</span><br></pre></td></tr></table></figure>
+<p>和常规的<code>with</code>表达式一样, 可以在一个<code>async with</code>表达式中指定多个上下文管理器.</p>
+<p>如果向<code>async with</code>表达式传入的上下文管理器中没有<code>__aenter__</code>和<code>__aexit__</code>方法, 这将引起一个错误. 如果在<code>async def</code>函数外面使用<code>async with</code>，将引起一个<code>SyntaxError</code>.</p>
+<p><strong>异步迭代器和”async for”</strong></p>
+<p>一个异步可迭代对象(<code>asynchronous iterable</code>)能够在迭代过程中调用异步代码, 而异步迭代器就是能够在<code>next</code>方法中调用异步代码. 为了支持异步迭代:</p>
+<ol>
+<li>一个对象必须实现<code>__aiter__</code>方法, 该方法返回一个异步迭代器(<code>asynchronous iterator</code>)对象; </li>
+<li>一个异步迭代器对象必须实现<code>__anext__</code>方法，该方法返回一个<code>awaitable</code>对象;</li>
+<li>为了停止迭代, <code>__anext__</code>必须抛出一个<code>StopAsyncIteration</code>异常.</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AsyncIterable</span>:</span>  <span class="comment">## 定义一个异步迭代器</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__aiter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">__anext__</span><span class="params">(self)</span>:</span></span><br><span class="line">        data = <span class="keyword">await</span> self.fetch_data()</span><br><span class="line">        <span class="keyword">if</span> data:</span><br><span class="line">            <span class="keyword">return</span> data</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> StopAsyncIteration</span><br><span class="line"></span><br><span class="line">    <span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">fetch_data</span><span class="params">(self)</span>:</span></span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">cor</span><span class="params">()</span>:</span>  <span class="comment"># 使用异步迭代器</span></span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">for</span> data <span class="keyword">in</span> AsyncInterable():</span><br><span class="line">        <span class="keyword">await</span> process_data(data)</span><br></pre></td></tr></table></figure>
+<p>把一个没有<code>__aiter__</code>方法的迭代对象传递给<code>async for</code>将引起<code>TypeError</code>. </p>
+<p>和<code>async with</code>, <code>await</code>一样, 在<code>async def</code>函数外部使用<code>async for</code>将引起一个<code>SyntaxError</code>.</p>
+<p>和常规的<code>for</code>表达式一样, <code>async for</code>也有一个可选的<code>else</code>分支.</p>
+<p>和正常的生成器抛出<code>StopIteration</code>异常告知停止迭代一样, 异步迭代器抛出<code>StopAsyncIteration</code>告知外围代码迭代结束.</p>
+<p>另外在 “PEP 497–Change StopIteration handling inside generators” 中规定, 所有协程中抛出的<code>StopIteration</code>异常, 都被包装在<code>RuntimeError</code>中.</p>
+<hr>
+
+<p>在 PEP 525–Asynchronous Generators 中提出的异步生成器, 在Python3.6中实现了. 在这之前<code>async def</code>内部不允许出现<code>yield</code>表达式, 而在 Python3.6 中, 使用<code>yield</code>表达式可以定义一个异步生成器. 文档中提出: 经过测试, 异步生成器的性能是异步迭代器的2倍.</p>
+<p>文档中给出了一个”每次迭代延迟给定秒数并打印数字”的例子:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Ticker</span>:</span>  <span class="comment"># 异步迭代器版本</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, delay, to)</span>:</span></span><br><span class="line">        self.delay = delay</span><br><span class="line">        self.i = <span class="number">0</span></span><br><span class="line">        self.to = to</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__aiter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">__anext__</span><span class="params">(self)</span>:</span></span><br><span class="line">        i = self.i</span><br><span class="line">        <span class="keyword">if</span> i &gt;= self.to:</span><br><span class="line">            <span class="keyword">raise</span> StopAsyncIteration</span><br><span class="line">        self.i += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> i:</span><br><span class="line">            <span class="keyword">await</span> asyncio.sleep(self.delay)</span><br><span class="line">        <span class="keyword">return</span> i</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">ticker</span><span class="params">(delay, to)</span>:</span> <span class="comment"># 异步生成器版本</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(to):</span><br><span class="line">        <span class="keyword">yield</span> i</span><br><span class="line">        <span class="keyword">await</span> asyncio.sleep(delay)</span><br></pre></td></tr></table></figure>
+<p>异步生成器也实现了<code>__aiter__</code>和<code>__anext__</code>方法. 在异步生成器里面使用<code>return</code>语句将引起<code>SyntaxError</code>.</p>
+<h2 id="出租车运营仿真"><a href="#出租车运营仿真" class="headerlink" title="出租车运营仿真"></a>出租车运营仿真</h2><p>到这里, 我们已经大致了解了异步编程的一些概念性问题和Python对协程的语法支持. 在真正接触<code>asyncio</code>库之前, 我们从一个出租车运营仿真程序(参考”流畅的Python”的离散仿真)开始, 想想怎么实现一个基于事件的异步编程框架.</p>
+<p>假设有几辆出租车, 每辆车会拉几个乘客, 然后回家. 出租车首先驶离车库, 四处徘徊, 寻找乘客; 拉到乘客后, 行程开始; 行程结束, 乘客下车, 继续四处徘徊…</p>
+<p>开始动手之前, 我们先想想, 都需要实现些什么?</p>
+<ol>
+<li>我们可以协程的方式模拟出租车的生命周期, 这一步应该不难, 利用<code>async/await</code>等可以实现阻塞调用时让步. </li>
+<li>有N辆出租车, 如果不用线程实现并发, 那么我们需要一个事件循环, 来驱动协程执行.</li>
+<li>实现一个<code>sleep</code>函数, 模拟出租车耗时的阻塞操作, 这个函数必须是一个<code>generator-based coroutine</code>, 因为需要<code>yield</code>让步.</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> heapq</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@asyncio.coroutine</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sleep</span><span class="params">(seconds)</span>:</span></span><br><span class="line">    now = time.time()</span><br><span class="line">    wait_until = now + seconds</span><br><span class="line">    actual = <span class="keyword">yield</span> wait_until  <span class="comment"># 让步, 并产出下次唤醒的时间</span></span><br><span class="line">    <span class="keyword">return</span> actual - now  <span class="comment"># 返回实际等待了多长时间</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">taxi_coro</span><span class="params">(ident, trips, delay=<span class="number">0</span>)</span>:</span></span><br><span class="line">    print(<span class="string">"taxt &#123;ident&#125;: waiting &#123;delay&#125; seconds before leave garage..."</span>.</span><br><span class="line">          format(ident=ident, delay=delay))</span><br><span class="line">    detal = <span class="keyword">await</span> sleep(delay)  <span class="comment"># 每辆车延迟delay秒出发</span></span><br><span class="line">    print(<span class="string">"taxi &#123;ident&#125; leave from garage after &#123;detal&#125;"</span>.</span><br><span class="line">          format(ident=ident, detal=int(detal)))</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(trips):</span><br><span class="line">        print(<span class="string">"taxi &#123;ident&#125; hover around... "</span>.format(ident=ident))</span><br><span class="line">        detal = <span class="keyword">await</span> sleep(random.randint(<span class="number">0</span>, <span class="number">10</span>))</span><br><span class="line">        print(<span class="string">"taxi &#123;ident&#125; pick up passenger afer &#123;detal&#125;"</span>.format(ident=ident, detal=int(detal)))</span><br><span class="line">        detal = <span class="keyword">await</span> sleep(random.randint(<span class="number">0</span>, <span class="number">10</span>))</span><br><span class="line">        print(<span class="string">"taxi &#123;ident&#125; drop off passenger afer &#123;detal&#125;"</span>.format(ident=ident, detal=int(detal)))</span><br><span class="line"></span><br><span class="line">    print(<span class="string">"taxi &#123;ident&#125; going to home..."</span>.format(ident=ident))</span><br><span class="line">    detal = <span class="keyword">await</span> sleep(random.randint(<span class="number">0</span>, <span class="number">10</span>))</span><br><span class="line">    print(<span class="string">"taxi &#123;ident&#125; has arrived at home afer &#123;detal&#125;!"</span>.format(ident=ident, detal=int(detal)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Task</span><span class="params">()</span>:</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, wait_until, coro)</span>:</span></span><br><span class="line">        self.waiting_until = wait_until</span><br><span class="line">        self.coro = coro</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__eq__</span><span class="params">(self, other)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self.waiting_until == other.waiting_until</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__lt__</span><span class="params">(self, other)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self.waiting_until &lt; other.waiting_until</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EventLoop</span>:</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, *coros)</span>:</span></span><br><span class="line">        self._new = coros</span><br><span class="line">        self._waiting = []</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">run_until_complete</span><span class="params">(self)</span>:</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> coro <span class="keyword">in</span> self._new:</span><br><span class="line">            wait_until = coro.send(<span class="keyword">None</span>)  <span class="comment"># 协程预激</span></span><br><span class="line">            heapq.heappush(self._waiting, Task(wait_until, coro))  <span class="comment"># Task加入优先队列</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> self._waiting:</span><br><span class="line"></span><br><span class="line">            now = time.time()</span><br><span class="line"></span><br><span class="line">            task = heapq.heappop(self._waiting)  <span class="comment"># 获取最近需要执行的task</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> now &lt; task.waiting_until:  <span class="comment"># 还没到task的执行时间</span></span><br><span class="line">                detal = task.waiting_until - now  <span class="comment"># 还需要等待时间</span></span><br><span class="line">                time.sleep(detal)  <span class="comment"># 直接阻塞事件循环</span></span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                now = time.time()</span><br><span class="line">                wait_until = task.coro.send(now)</span><br><span class="line">                heapq.heappush(self._waiting, Task(wait_until, task.coro))</span><br><span class="line">            <span class="keyword">except</span> StopIteration <span class="keyword">as</span> e:</span><br><span class="line">                <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    loop = EventLoop(taxi_coro(<span class="string">'A'</span>, <span class="number">4</span>), taxi_coro(<span class="string">'B'</span>, <span class="number">3</span>, <span class="number">3</span>), taxi_coro(<span class="string">'C'</span>, <span class="number">2</span>, <span class="number">4</span>))</span><br><span class="line">    now = time.time()</span><br><span class="line">    loop.run_until_complete()</span><br><span class="line">    print(<span class="string">"Total elapsed time is &#123;&#125;"</span>.format(time.time - now))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>下面输出结果:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">taxt A: waiting 0 seconds before leave garage...</span><br><span class="line">taxt B: waiting 3 seconds before leave garage...</span><br><span class="line">taxt C: waiting 4 seconds before leave garage...</span><br><span class="line">taxi A leave from garage after 0</span><br><span class="line">taxi A hover around... </span><br><span class="line">taxi B leave from garage after 3</span><br><span class="line">taxi B hover around... </span><br><span class="line">taxi C leave from garage after 4</span><br><span class="line">taxi C hover around... </span><br><span class="line">taxi C pick up passenger afer 2</span><br><span class="line">taxi A pick up passenger afer 7</span><br><span class="line">taxi A drop off passenger afer 1</span><br><span class="line">taxi A hover around... </span><br><span class="line">taxi B pick up passenger afer 7</span><br><span class="line">taxi C drop off passenger afer 8</span><br><span class="line">taxi C hover around... </span><br><span class="line">taxi C pick up passenger afer 0</span><br><span class="line">taxi A pick up passenger afer 7</span><br><span class="line">taxi B drop off passenger afer 8</span><br><span class="line">taxi B hover around... </span><br><span class="line">taxi C drop off passenger afer 8</span><br><span class="line">taxi C going to home...</span><br><span class="line">taxi A drop off passenger afer 9</span><br><span class="line">taxi A hover around... </span><br><span class="line">taxi B pick up passenger afer 10</span><br><span class="line">taxi A pick up passenger afer 5</span><br><span class="line">taxi C has arrived at home, total elapsed 30!</span><br><span class="line">taxi B drop off passenger afer 4</span><br><span class="line">taxi B hover around... </span><br><span class="line">taxi A drop off passenger afer 6</span><br><span class="line">taxi A hover around... </span><br><span class="line">taxi A pick up passenger afer 5</span><br><span class="line">taxi A drop off passenger afer 1</span><br><span class="line">taxi A going to home...</span><br><span class="line">taxi B pick up passenger afer 10</span><br><span class="line">taxi A has arrived at home, total elapsed 43!</span><br><span class="line">taxi B drop off passenger afer 7</span><br><span class="line">taxi B going to home...</span><br><span class="line">taxi B has arrived at home, total elapsed 50!</span><br><span class="line">Total elapsed time is 50  <span class="comment"># 总耗时等于耗时最长的那辆的行程时间</span></span><br></pre></td></tr></table></figure></p>
+<p>从输出结果我们可以发现, 总的耗时时长和耗时最长的出租车的行驶时长相当. 在这个例子里面, 使用了<code>sleep</code>产出一个唤醒时间并作出让步, 来模拟异步的阻塞调用. 然而实际应用中这些阻塞调用, 往往涉及I/O, 网络等, 不可能产生一个唤醒时间给事件循环, 这是就需要引入一个概念”Future”(期物), 能够在任务完成时…</p>
+<h2 id="asyncio"><a href="#asyncio" class="headerlink" title="asyncio"></a>asyncio</h2><p><code>asyncio</code>是Python 3.4 引入的异步I/O框架(PEP 3156), 提供了使用协程编写单线程并发代码、通过sockets和其他方式进行多路I/O访问、运行网络客户端和服务端以及其他相关原语的基础设施. 正如文档中提出的, 提供的组件详细列表如下:</p>
+<ul>
+<li>一个包含各种特定系统实现的模块化事件循环(event loop);</li>
+<li>传输和协议抽象(类似于Twisted);</li>
+<li>对TCP、UDP、SSL、子进程管道(subprogress pipes)、延时调用以及其他的具体支持(有些可能是系统相关的);</li>
+<li>模仿concurrent.futures模块但适于事件循环(event loop)使用的Future类;</li>
+<li>基于yield from(PEP 380)的协程和任务，可以让你用顺序的方式编写并发代码;</li>
+<li>可以中止的Future和协程;</li>
+<li>模仿threading模块中的同步原语，可以用在单线程内的协程之间;</li>
+<li>当你不得不去使用一个将产生阻塞I/O的调用时，有接口可以把这个事件转移到线程池(threadpool).</li>
+</ul>
+<p>下面是官方文档中给出的一个例子:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">compute</span><span class="params">(x, y)</span>:</span></span><br><span class="line">    print(<span class="string">"Compute %s + %s ..."</span> % (x, y))</span><br><span class="line">    <span class="keyword">await</span> asyncio.sleep(<span class="number">1.0</span>)</span><br><span class="line">    <span class="keyword">return</span> x + y</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">print_sum</span><span class="params">(x, y)</span>:</span></span><br><span class="line">    result = <span class="keyword">await</span> compute(x, y)</span><br><span class="line">    print(<span class="string">"%s + %s = %s"</span> % (x, y, result))</span><br><span class="line"></span><br><span class="line">loop = asyncio.get_event_loop()</span><br><span class="line">loop.run_until_complete(print_sum(<span class="number">1</span>, <span class="number">2</span>))</span><br><span class="line">loop.close()</span><br></pre></td></tr></table></figure>
+<p>上面代码的执行流程如下:</p>
+<p><img src="/images/tulip_coro.png" alt=""></p>
+<p>执行过程概述如下:</p>
+<ul>
+<li>获取当前的事件循环</li>
+<li>加入</li>
+</ul>
+<p>未完待续…</p>
+<h3 id="Coroutine-Future-Task"><a href="#Coroutine-Future-Task" class="headerlink" title="Coroutine, Future, Task"></a>Coroutine, Future, Task</h3><h3 id="Event-Loop-Policy"><a href="#Event-Loop-Policy" class="headerlink" title="Event Loop [Policy]"></a>Event Loop [Policy]</h3><h3 id="Tansport-Protocol"><a href="#Tansport-Protocol" class="headerlink" title="Tansport, Protocol"></a>Tansport, Protocol</h3><h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><p><code>&gt;&gt;&gt;</code> <a href="https://www.python.org/dev/peps/pep-255/" target="_blank" rel="noopener">PEP 255 – Simple Generators</a><br><br><code>&gt;&gt;&gt;</code> <a href="https://www.python.org/dev/peps/pep-342/" target="_blank" rel="noopener">PEP 342 – Coroutines via Enhanced Generators</a><br><br><code>&gt;&gt;&gt;</code> <a href="https://www.python.org/dev/peps/pep-380/" target="_blank" rel="noopener">PEP 380 – Syntax for Delegating to a Subgenerator</a><br><br><code>&gt;&gt;&gt;</code> <a href="https://www.python.org/dev/peps/pep-0492/" target="_blank" rel="noopener">PEP 492 – Coroutines with async and await syntax</a><br><br><code>&gt;&gt;&gt;</code> <a href="https://www.python.org/dev/peps/pep-3156/" target="_blank" rel="noopener">PEP 3156 – Asynchronous IO Support Rebooted: the “asyncio” Module</a><br><br><code>&gt;&gt;&gt;</code> <a href="https://www.youtube.com/watch?v=1coLC-MUCJc" target="_blank" rel="noopener">Tulip: Async I/O for Python 3</a><br><br><code>&gt;&gt;&gt;</code> <a href="https://snarky.ca/how-the-heck-does-async-await-work-in-python-3-5/" target="_blank" rel="noopener">How the heck does async/await work in Python 3.5?</a><br><br><code>&gt;&gt;&gt;</code> <a href="http://www.aosabook.org/en/500L/a-web-crawler-with-asyncio-coroutines.html" target="_blank" rel="noopener">A Web Crawler With asyncio Coroutines</a><br><br><code>&gt;&gt;&gt;</code> <a href="https://www.kancloud.cn/kindjeff/asyncio-zh/217023" target="_blank" rel="noopener">Python3 asyncio官方文档中文版</a><br><br><code>&gt;&gt;&gt;</code> <a href="http://blog.dreamfever.me/the-magic-of-asyncio-1/" target="_blank" rel="noopener">异步的魔法 — asyncio 源码剖析</a></p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+  <div class="text-center donation">
+    <div class="inner-donation">
+      <span class="btn-donation">支持一下</span>
+      <div class="donation-body">
+        <div class="tip text-center">扫一扫，支持作者</div>
+        <ul>
+        
+          <li class="item">
+            <span>微信扫一扫</span>
+            <img src="/images/qr-wechat.png" alt="">
+          </li>
+        
+          <li class="item">
+            <span>支付宝扫一扫</span>
+            <img src="/images/qr-alipay.png" alt="">
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/posts/16764984/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="show pull-right" href="/posts/4a17b156/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">关闭</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              博客
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              分类
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/tag/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              标签
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              友链
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/about/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              关于
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/atom.xml"
+              rel="noopener noreferrer"
+              target="_blank"
+              >
+              RSS
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              搜索
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+
+    
+
+    
+    
+
+  <div id="gitment-comments"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    (function () {
+      var gitment = new Gitment({
+        owner: 'zhongshangwu',
+        repo: 'https://github.com/zhongshangwu/zhongshangwu.github.io',
+        oauth: {
+          client_id: 'ecb8413d71a24ae7e38a',
+          client_secret: '6aacbb72400e02734e754fce4b6204ae07ec9dc2'
+        },
+        
+        
+        
+        
+        
+        
+        
+        
+      })
+      gitment.render('gitment-comments')
+    })()
+  </script>
+
+
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>
