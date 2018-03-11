@@ -14,12 +14,18 @@
   
     <meta name="keywords" content="网络,TCP," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="keywords" content="网络,TCP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="TCP协议">
 <meta property="og:url" content="http://shawnz.me/posts/51aeee82/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://oufa7cuo5.bkt.clouddn.com/17-8-9/22804988.jpg">
 <meta property="og:image" content="http://shawnz.me/images/tcpslidingwindow.png">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.062Z">
@@ -233,8 +239,26 @@
       <!--  -->
 <a id="more"></a>
 <h2 id="面向连接的"><a href="#面向连接的" class="headerlink" title="面向连接的"></a>面向连接的</h2><p>TCP协议头部：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">0                   1                   2                   3</span><br><span class="line">0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|          Source Port          |       Destination Port        |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                        Sequence Number                        |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                    Acknowledgment Number                      |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|  Data |           |U|A|P|R|S|F|                               |</span><br><span class="line">| Offset| Reserved  |R|C|S|S|Y|I|            Window             |</span><br><span class="line">|       |           |G|K|H|T|N|N|                               |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|           Checksum            |         Urgent Pointer        |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                    Options                    |    Padding    |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|   .... data ....                                              |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
-<ul>
+<pre><code>0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          Source Port          |       Destination Port        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Sequence Number                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Acknowledgment Number                      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Data |           |U|A|P|R|S|F|                               |
+| Offset| Reserved  |R|C|S|S|Y|I|            Window             |
+|       |           |G|K|H|T|N|N|                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           Checksum            |         Urgent Pointer        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Options                    |    Padding    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   .... data ....                                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+</code></pre><ul>
 <li><code>SYN</code>:表示同步序号，用来建立连接。SYN和ACK标志位搭配使用，当请求连接的时候，SYN=1,ACK=0;当响应连接的时候，SYN=1,ACK=1;</li>
 <li><code>ACK</code>:表示应答域有效，有两个取值：0和１，为1的时候表示应答域有效，反之为0;</li>
 <li><code>FIN</code>:表示发送端已经到达数据末尾，发送FIN标志位的数据包后，连接将被断开;</li>
@@ -401,7 +425,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

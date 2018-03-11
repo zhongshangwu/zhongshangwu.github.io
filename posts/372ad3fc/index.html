@@ -12,16 +12,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   
-    <meta name="keywords" content="Python,源码,Django," />
+    <meta name="keywords" content="Python,Django,源码," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="创建一个项目Django 使用django-admin startproject [projectname]创建项目，并会在项目根目录下生成manage.py文件。从现在开始，我们有了两个Django命令行入口：">
-<meta name="keywords" content="Python,源码,Django">
+<meta name="keywords" content="Python,Django,源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Django源码阅读:命令行工具集">
 <meta property="og:url" content="http://shawnz.me/posts/372ad3fc/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="创建一个项目Django 使用django-admin startproject [projectname]创建项目，并会在项目根目录下生成manage.py文件。从现在开始，我们有了两个Django命令行入口：">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.082Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Django源码阅读:命令行工具集">
@@ -230,17 +236,99 @@
 
   <div class="article-content">
     
-      <h2 id="创建一个项目"><a href="#创建一个项目" class="headerlink" title="创建一个项目"></a>创建一个项目</h2><p><code>Django</code> 使用<code>django-admin startproject [projectname]</code>创建项目，并会在项目根目录下生成<code>manage.py</code>文件。从现在开始，我们有了两个<code>Django</code>命令行入口：<br><a id="more"></a><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ django-admin &lt;<span class="built_in">command</span>&gt; [options]</span><br><span class="line">$ ./manage.py &lt;<span class="built_in">command</span>&gt; [options]</span><br></pre></td></tr></table></figure></p>
-<h2 id="django-admin和manage-py"><a href="#django-admin和manage-py" class="headerlink" title="django-admin和manage.py"></a>django-admin和manage.py</h2><p><code>django-admin.py</code>源码：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="keyword">from</span> django.core <span class="keyword">import</span> management</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    management.execute_from_command_line()</span><br></pre></td></tr></table></figure></p>
+      <h2 id="创建一个项目"><a href="#创建一个项目" class="headerlink" title="创建一个项目"></a>创建一个项目</h2><p><code>Django</code> 使用<code>django-admin startproject [projectname]</code>创建项目，并会在项目根目录下生成<code>manage.py</code>文件。从现在开始，我们有了两个<code>Django</code>命令行入口：<br><a id="more"></a></p>
+<pre><code class="bash">$ django-admin &lt;command&gt; [options]
+$ ./manage.py &lt;command&gt; [options]
+</code></pre>
+<h2 id="django-admin和manage-py"><a href="#django-admin和manage-py" class="headerlink" title="django-admin和manage.py"></a>django-admin和manage.py</h2><p><code>django-admin.py</code>源码：</p>
+<pre><code class="python">#!/usr/bin/env python
+from django.core import management
+
+if __name__ == &quot;__main__&quot;:
+    management.execute_from_command_line()
+</code></pre>
 <p><code>manage.py</code>源码</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    os.environ.setdefault(<span class="string">"DJANGO_SETTINGS_MODULE"</span>, <span class="string">"djangodemo.settings"</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">from</span> django.core.management <span class="keyword">import</span> execute_from_command_line</span><br><span class="line">    <span class="keyword">except</span> ImportError <span class="keyword">as</span> exc:</span><br><span class="line">        <span class="keyword">raise</span> ImportError() <span class="keyword">from</span> exc</span><br><span class="line">    execute_from_command_line(sys.argv)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">#!/usr/bin/env python
+import os
+import sys
+
+if __name__ == &quot;__main__&quot;:
+    os.environ.setdefault(&quot;DJANGO_SETTINGS_MODULE&quot;, &quot;djangodemo.settings&quot;)
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError() from exc
+    execute_from_command_line(sys.argv)
+</code></pre>
 <p>两者的相同之处是：底层都使用<code>execute_from_command_line</code>方法执行命令。</p>
 <p>不同的之处是：<code>manage.py</code>设置了<code>DJANGO_SETTINGS_MODULE</code>这个环境变量为当期项目的配置文件(它告诉<code>Django</code>到哪找到配置文件)。</p>
 <p>这两种形式本质上一样的。如果环境变量<code>DJANGO_SETTINGS_MODULE</code>已经配置好了，我们也可以使用<code>django-admin</code>达到和<code>manage.py</code>相同的效果(前提是设置模块处于Python的<code>导入查找路径</code>中)：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">export</span> DJANGO_SETTINGS_MODULE=djangodemo.settings</span><br><span class="line">$ django-admin runserver</span><br></pre></td></tr></table></figure>
+<pre><code class="bash">$ export DJANGO_SETTINGS_MODULE=djangodemo.settings
+$ django-admin runserver
+</code></pre>
 <h2 id="Django-Management"><a href="#Django-Management" class="headerlink" title="Django Management"></a>Django Management</h2><p><code>execute_from_command_line()</code>方法在内部调用了<code>django.core.management.ManagementUtility</code>的入口方法<code>excute()</code>：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">execute_from_command_line</span><span class="params">(argv=None)</span>:</span></span><br><span class="line">    <span class="string">"""Run a ManagementUtility."""</span></span><br><span class="line">    utility = ManagementUtility(argv)</span><br><span class="line">    utility.execute()</span><br></pre></td></tr></table></figure>
-<p><code>ManagementUtility</code>是Django的命令行工具集的入口，读取命令行参数，解析出应该执行那个子命令，并创建合适的解析器来执行命令：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">execute</span><span class="params">(self)</span>:</span></span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       subcommand = self.argv[<span class="number">1</span>]  <span class="comment"># 获取子命令名称</span></span><br><span class="line">   <span class="keyword">except</span> IndexError:</span><br><span class="line">       subcommand = <span class="string">'help'</span>  <span class="comment"># 如果没有提供，默认help命令</span></span><br><span class="line"></span><br><span class="line">   <span class="comment"># CommandParser继承自ArgumentParser，一个内置的命令行解析工具</span></span><br><span class="line">   <span class="comment"># 在这里主要进行预处理选项配置</span></span><br><span class="line">   <span class="comment"># 我们可以直接从命令行设置settings和pythonpath</span></span><br><span class="line">   <span class="comment"># 这写参数会影响到可用命令，需要尽早处理</span></span><br><span class="line">   parser = CommandParser(<span class="keyword">None</span>, usage=<span class="string">"%(prog)s subcommand [options] [args]"</span>, add_help=<span class="keyword">False</span>)</span><br><span class="line">   parser.add_argument(<span class="string">'--settings'</span>)</span><br><span class="line">   parser.add_argument(<span class="string">'--pythonpath'</span>)</span><br><span class="line">   parser.add_argument(<span class="string">'args'</span>, nargs=<span class="string">'*'</span>)  <span class="comment"># catch-all</span></span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       options, args = parser.parse_known_args(self.argv[<span class="number">2</span>:])</span><br><span class="line">       handle_default_options(options)</span><br><span class="line">   <span class="keyword">except</span> CommandError:</span><br><span class="line">       <span class="keyword">pass</span>  <span class="comment"># Ignore any option errors at this point.</span></span><br><span class="line">   <span class="comment"># 这里setting是django.conf.LazySettings的一个实例</span></span><br><span class="line">   <span class="comment"># 如果尝试获取`INSTALLED_APPS`，而没有找到配置文件会抛出异常</span></span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       settings.INSTALLED_APPS</span><br><span class="line">   <span class="keyword">except</span> ImproperlyConfigured <span class="keyword">as</span> exc:</span><br><span class="line">       self.settings_exception = exc</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> settings.configured:</span><br><span class="line">       <span class="comment"># 这里会尝试启动服务器，无论如何都会保证setup已经调用过</span></span><br><span class="line">       <span class="comment"># setup负责初始化日志模块和应用加载</span></span><br><span class="line">       <span class="keyword">if</span> subcommand == <span class="string">'runserver'</span> <span class="keyword">and</span> <span class="string">'--noreload'</span> <span class="keyword">not</span> <span class="keyword">in</span> self.argv:</span><br><span class="line">           <span class="keyword">try</span>:</span><br><span class="line">               autoreload.check_errors(django.setup)()</span><br><span class="line">           <span class="keyword">except</span> Exception:</span><br><span class="line">               apps.all_models = defaultdict(OrderedDict)</span><br><span class="line">               apps.app_configs = OrderedDict()</span><br><span class="line">               apps.apps_ready = apps.models_ready = apps.ready = <span class="keyword">True</span></span><br><span class="line">       <span class="keyword">else</span>:</span><br><span class="line">           django.setup()</span><br><span class="line"></span><br><span class="line">   self.autocomplete()</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> subcommand == <span class="string">'help'</span>:</span><br><span class="line">       <span class="keyword">if</span> <span class="string">'--commands'</span> <span class="keyword">in</span> args:</span><br><span class="line">           sys.stdout.write(self.main_help_text(commands_only=<span class="keyword">True</span>) + <span class="string">'\n'</span>)</span><br><span class="line">       <span class="keyword">elif</span> len(options.args) &lt; <span class="number">1</span>:</span><br><span class="line">           sys.stdout.write(self.main_help_text() + <span class="string">'\n'</span>)</span><br><span class="line">       <span class="keyword">else</span>:</span><br><span class="line">           self.fetch_command(options.args[<span class="number">0</span>]).print_help(self.prog_name, options.args[<span class="number">0</span>])</span><br><span class="line">   <span class="keyword">elif</span> subcommand == <span class="string">'version'</span> <span class="keyword">or</span> self.argv[<span class="number">1</span>:] == [<span class="string">'--version'</span>]:</span><br><span class="line">       sys.stdout.write(django.get_version() + <span class="string">'\n'</span>)</span><br><span class="line">   <span class="keyword">elif</span> self.argv[<span class="number">1</span>:] <span class="keyword">in</span> ([<span class="string">'--help'</span>], [<span class="string">'-h'</span>]):</span><br><span class="line">       sys.stdout.write(self.main_help_text() + <span class="string">'\n'</span>)</span><br><span class="line">   <span class="keyword">else</span>:</span><br><span class="line">       <span class="comment"># 找到子命令并传入参数执行</span></span><br><span class="line">       self.fetch_command(subcommand).run_from_argv(self.argv)</span><br></pre></td></tr></table></figure></p>
+<pre><code class="python">def execute_from_command_line(argv=None):
+    &quot;&quot;&quot;Run a ManagementUtility.&quot;&quot;&quot;
+    utility = ManagementUtility(argv)
+    utility.execute()
+</code></pre>
+<p><code>ManagementUtility</code>是Django的命令行工具集的入口，读取命令行参数，解析出应该执行那个子命令，并创建合适的解析器来执行命令：</p>
+<pre><code class="python"> def execute(self):
+    try:
+        subcommand = self.argv[1]  # 获取子命令名称
+    except IndexError:
+        subcommand = &#39;help&#39;  # 如果没有提供，默认help命令
+
+    # CommandParser继承自ArgumentParser，一个内置的命令行解析工具
+    # 在这里主要进行预处理选项配置
+    # 我们可以直接从命令行设置settings和pythonpath
+    # 这写参数会影响到可用命令，需要尽早处理
+    parser = CommandParser(None, usage=&quot;%(prog)s subcommand [options] [args]&quot;, add_help=False)
+    parser.add_argument(&#39;--settings&#39;)
+    parser.add_argument(&#39;--pythonpath&#39;)
+    parser.add_argument(&#39;args&#39;, nargs=&#39;*&#39;)  # catch-all
+    try:
+        options, args = parser.parse_known_args(self.argv[2:])
+        handle_default_options(options)
+    except CommandError:
+        pass  # Ignore any option errors at this point.
+    # 这里setting是django.conf.LazySettings的一个实例
+    # 如果尝试获取`INSTALLED_APPS`，而没有找到配置文件会抛出异常
+    try:
+        settings.INSTALLED_APPS
+    except ImproperlyConfigured as exc:
+        self.settings_exception = exc
+
+    if settings.configured:
+        # 这里会尝试启动服务器，无论如何都会保证setup已经调用过
+        # setup负责初始化日志模块和应用加载
+        if subcommand == &#39;runserver&#39; and &#39;--noreload&#39; not in self.argv:
+            try:
+                autoreload.check_errors(django.setup)()
+            except Exception:
+                apps.all_models = defaultdict(OrderedDict)
+                apps.app_configs = OrderedDict()
+                apps.apps_ready = apps.models_ready = apps.ready = True
+        else:
+            django.setup()
+
+    self.autocomplete()
+
+    if subcommand == &#39;help&#39;:
+        if &#39;--commands&#39; in args:
+            sys.stdout.write(self.main_help_text(commands_only=True) + &#39;\n&#39;)
+        elif len(options.args) &lt; 1:
+            sys.stdout.write(self.main_help_text() + &#39;\n&#39;)
+        else:
+            self.fetch_command(options.args[0]).print_help(self.prog_name, options.args[0])
+    elif subcommand == &#39;version&#39; or self.argv[1:] == [&#39;--version&#39;]:
+        sys.stdout.write(django.get_version() + &#39;\n&#39;)
+    elif self.argv[1:] in ([&#39;--help&#39;], [&#39;-h&#39;]):
+        sys.stdout.write(self.main_help_text() + &#39;\n&#39;)
+    else:
+        # 找到子命令并传入参数执行
+        self.fetch_command(subcommand).run_from_argv(self.argv)
+</code></pre>
 <p>Django使用<code>fetch_command</code>从以下两个路径查找对应的<code>Command</code>类：</p>
 <ul>
 <li>django.core.management.commands模块下</li>
@@ -255,8 +343,17 @@
 <li><code>handle()</code>方法的执行结果就是命令的返回。</li>
 </ul>
 <h2 id="扩展自定义命令"><a href="#扩展自定义命令" class="headerlink" title="扩展自定义命令"></a>扩展自定义命令</h2><p>知道了Django的命令解析原理，扩展自定义<code>Command</code>就很容易了。我们可以创建一个<code>app</code>并加入<code>settings.INSTALLED_APPS</code>中，在<code>app</code>下面新建一个包<code>management.commands</code>，并创建一个模块<code>hello.py</code>。于是：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> django.core.management.base <span class="keyword">import</span> BaseCommand</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Command</span><span class="params">(BaseCommand)</span>:</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle</span><span class="params">(self, *args, **kwargs)</span>:</span></span><br><span class="line">        print(<span class="string">"Hello, World!"</span>)</span><br></pre></td></tr></table></figure>
-<p>运行：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ python manage.py hello</span><br><span class="line">Hello, World!</span><br></pre></td></tr></table></figure></p>
+<pre><code class="python">from django.core.management.base import BaseCommand
+
+class Command(BaseCommand):
+
+    def handle(self, *args, **kwargs):
+        print(&quot;Hello, World!&quot;)
+</code></pre>
+<p>运行：</p>
+<pre><code class="bash">$ python manage.py hello
+Hello, World!
+</code></pre>
 
     
   </div>
@@ -266,7 +363,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

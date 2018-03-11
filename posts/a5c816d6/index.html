@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="人类使用文本，计算机使用字节序列 —Esther Nam 和 Travis Fischer“Character Encoding and Unicode in Python”">
 <meta name="keywords" content="Python">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/a5c816d6/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="人类使用文本，计算机使用字节序列 —Esther Nam 和 Travis Fischer“Character Encoding and Unicode in Python”">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://shawnz.me/images/str和unicode.png">
 <meta property="og:image" content="http://shawnz.me/images/str和bytes.png">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
@@ -245,7 +251,11 @@
 <li>字节的具体表述取决于编码。</li>
 </ul>
 <h2 id="编码和解码"><a href="#编码和解码" class="headerlink" title="编码和解码"></a>编码和解码</h2><p>把码位转换成字节序列的过程是<code>编码</code>；<br>把字节序列转换成码位的过程是<code>解码</code>。</p>
-<p>由于Python2中的str和unicode对象存在隐式转换，所以会发现既可以对str进行<code>encode</code>，也可以对unicode进行<code>decode</code>，但是这种用法是不对的。<br>这种行为在Python3中得到了矫正，str对象只具备<code>encode</code>方法。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = <span class="string">'zhong'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a.encode(<span class="string">'utf8'</span>)</span><br><span class="line"><span class="string">b'zhong'</span></span><br></pre></td></tr></table></figure></p>
+<p>由于Python2中的str和unicode对象存在隐式转换，所以会发现既可以对str进行<code>encode</code>，也可以对unicode进行<code>decode</code>，但是这种用法是不对的。<br>这种行为在Python3中得到了矫正，str对象只具备<code>encode</code>方法。</p>
+<pre><code class="python">&gt;&gt;&gt; a = &#39;zhong&#39;
+&gt;&gt;&gt; a.encode(&#39;utf8&#39;)
+b&#39;zhong&#39;
+</code></pre>
 <p>那么既然<code>encode</code>得到的是bytes对象，那么<code>b&#39;zhong&#39;</code>和<code>&#39;zhong&#39;</code>看起来一样呢？<br>这是因为bytes的字面量表示法中有ASCII文本，因此会以下面三种方式显示：</p>
 <ul>
 <li>可打印的ASCII范围内的字节，使用ASCII字符本身；</li>
@@ -258,13 +268,32 @@
 <li><code>UnicodeDecodeError</code>，字节序列转换成字符串出错；</li>
 <li><code>SystaxError</code>，编码与预期的的不符。</li>
 </ul>
-<h2 id="Python编码问题"><a href="#Python编码问题" class="headerlink" title="Python编码问题"></a>Python编码问题</h2><h3 id="Python2中的str和unicode"><a href="#Python2中的str和unicode" class="headerlink" title="Python2中的str和unicode"></a>Python2中的str和unicode</h3><p>在Python2中str中存储的原始的字节序列，所以str更为合适的一种叫法”字节串“(Python2中的bytes相当于str的别名)，而真正意义上的字符串应该是unicode对象。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>str1 = <span class="string">'这是一个str'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[c <span class="keyword">for</span> c <span class="keyword">in</span> str1]</span><br><span class="line">[<span class="string">'\xe8'</span>, <span class="string">'\xbf'</span>, <span class="string">'\x99'</span>, <span class="string">'\xe6'</span>, <span class="string">'\x98'</span>, <span class="string">'\xaf'</span>, <span class="string">'\xe4'</span>, <span class="string">'\xb8'</span>, <span class="string">'\x80'</span>, <span class="string">'\xe4'</span>, <span class="string">'\xb8'</span>, <span class="string">'\xaa'</span>, <span class="string">'s'</span>, <span class="string">'t'</span>, <span class="string">'r'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>str1[<span class="number">0</span>]</span><br><span class="line"><span class="string">'\xe8'</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="Python编码问题"><a href="#Python编码问题" class="headerlink" title="Python编码问题"></a>Python编码问题</h2><h3 id="Python2中的str和unicode"><a href="#Python2中的str和unicode" class="headerlink" title="Python2中的str和unicode"></a>Python2中的str和unicode</h3><p>在Python2中str中存储的原始的字节序列，所以str更为合适的一种叫法”字节串“(Python2中的bytes相当于str的别名)，而真正意义上的字符串应该是unicode对象。</p>
+<pre><code class="python">&gt;&gt;&gt; str1 = &#39;这是一个str&#39;
+&gt;&gt;&gt; [c for c in str1]
+[&#39;\xe8&#39;, &#39;\xbf&#39;, &#39;\x99&#39;, &#39;\xe6&#39;, &#39;\x98&#39;, &#39;\xaf&#39;, &#39;\xe4&#39;, &#39;\xb8&#39;, &#39;\x80&#39;, &#39;\xe4&#39;, &#39;\xb8&#39;, &#39;\xaa&#39;, &#39;s&#39;, &#39;t&#39;, &#39;r&#39;]
+&gt;&gt;&gt; str1[0]
+&#39;\xe8&#39;
+</code></pre>
 <p>终端采用utf8编码，所以输入‘这是一个str’字面值，python解释器接收到<br>‘\xe8\xbf\x99\xe6\x98\xaf\xe4\xb8\x80\xe4\xb8\xaastr’，并存储到str1变量中；<br>输出也是相同的道理，str1中的字节会被终端使用utf8解码。</p>
 <p>可以对str对象进行迭代或者索引，发现str中存储的元素是字节。而unicode对象却不然：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>str2 = <span class="string">u'这是一个str'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[c <span class="keyword">for</span> c <span class="keyword">in</span> str2]</span><br><span class="line">[<span class="string">u'\u8fd9'</span>, <span class="string">u'\u662f'</span>, <span class="string">u'\u4e00'</span>, <span class="string">u'\u4e2a'</span>, <span class="string">u's'</span>, <span class="string">u't'</span>, <span class="string">u'r'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>str2[<span class="number">0</span>]</span><br><span class="line"><span class="string">u'\u8fd9'</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">&gt;&gt;&gt; str2 = u&#39;这是一个str&#39;
+&gt;&gt;&gt; [c for c in str2]
+[u&#39;\u8fd9&#39;, u&#39;\u662f&#39;, u&#39;\u4e00&#39;, u&#39;\u4e2a&#39;, u&#39;s&#39;, u&#39;t&#39;, u&#39;r&#39;]
+&gt;&gt;&gt; str2[0]
+u&#39;\u8fd9&#39;
+</code></pre>
 <p>在str和unicode之间的转换为:<br><img src="/images/str和unicode.png" alt="str和unicode转换"></p>
 <p>Python2采用的默认编码是<code>ascii</code>，所以在转换时如果不指定编码集，那么python默认使用<code>ascii</code>编解码。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>unicode(<span class="string">'中'</span>)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">UnicodeDecodeError: <span class="string">'ascii'</span> codec cant decode byte <span class="number">0xe4</span> <span class="keyword">in</span> position <span class="number">0</span>: ordinal <span class="keyword">not</span> <span class="keyword">in</span> range(<span class="number">128</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">'中'</span>.encode(<span class="string">'utf8'</span>)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">UnicodeDecodeError: <span class="string">'ascii'</span> codec cant decode byte <span class="number">0xe4</span> <span class="keyword">in</span> position <span class="number">0</span>: ordinal <span class="keyword">not</span> <span class="keyword">in</span> range(<span class="number">128</span>)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">&gt;&gt;&gt; unicode(&#39;中&#39;)
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+UnicodeDecodeError: &#39;ascii&#39; codec cant decode byte 0xe4 in position 0: ordinal not in range(128)
+&gt;&gt;&gt; &#39;中&#39;.encode(&#39;utf8&#39;)
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+UnicodeDecodeError: &#39;ascii&#39; codec cant decode byte 0xe4 in position 0: ordinal not in range(128)
+</code></pre>
 <p>在python源代码文件中，如果出现ASCII字符集之外的字符，在编译时解释器也会报错，一般有两种解决方案：</p>
 <ul>
 <li>Bad Way：修改内部默认编码方式 <code>import sys;reload(sys);sys.setdefaultencoding(&#39;utf-8&#39;)</code></li>
@@ -304,7 +333,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

@@ -14,12 +14,18 @@
   
     <meta name="keywords" content="Linux,Nignx," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="keywords" content="Linux,Nignx">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Nignx安装配置">
 <meta property="og:url" content="http://shawnz.me/posts/c2c092fa/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://shawnz.me/images/nignx-configuration.png">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.062Z">
 <meta name="twitter:card" content="summary">
@@ -247,21 +253,40 @@
 <li><p>确认安装<code>gcc</code></p>
 </li>
 <li><p>安装<code>pcre</code>(Perl Compatible Regular Expression), 这是由于nginx <code>rewrite</code>和<code>HTTP</code>模块会使用到正则</p>
- <figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">yum</span> list installed|grep pcre			<span class="comment">#确认pcre是否安装</span></span><br><span class="line">yum list installed|grep pcre-devel		<span class="comment">#确认pcre-devel是否安装</span></span><br><span class="line"></span><br><span class="line">yum install pcre						<span class="comment">#安装pcre </span></span><br><span class="line">yum install pcre-devel					<span class="comment">#安装pcre-devel</span></span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx"> yum list installed|grep pcre            #确认pcre是否安装
+ yum list installed|grep pcre-devel        #确认pcre-devel是否安装
+
+ yum install pcre                        #安装pcre 
+ yum install pcre-devel                    #安装pcre-devel
+</code></pre>
 </li>
 <li><p>安装<code>zlib</code></p>
- <figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">yum</span> list installed|grep zlib			<span class="comment">#确认zlib是否安装</span></span><br><span class="line">yum list installed|grep zlib-devel		<span class="comment">#确认zlib-devel是否安装</span></span><br><span class="line"></span><br><span class="line">yum install zlib						<span class="comment">#安装zlib</span></span><br><span class="line">yum install zlib-devel					<span class="comment">#安装zlib-devel</span></span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx"> yum list installed|grep zlib            #确认zlib是否安装
+ yum list installed|grep zlib-devel        #确认zlib-devel是否安装
+
+ yum install zlib                        #安装zlib
+ yum install zlib-devel                    #安装zlib-devel
+</code></pre>
 </li>
 <li><p>安装<code>openssl</code></p>
- <figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">yum</span> list installed|grep openssl			<span class="comment">#确认openssl是否安装</span></span><br><span class="line">yum list installed|grep openssl-devel	<span class="comment">#确认openssl-devel是否安装</span></span><br><span class="line"></span><br><span class="line">yum install openssl						<span class="comment">#安装openssl</span></span><br><span class="line">yum install openssl-devel				<span class="comment">#安装openssl-devel</span></span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx"> yum list installed|grep openssl            #确认openssl是否安装
+ yum list installed|grep openssl-devel    #确认openssl-devel是否安装
+
+ yum install openssl                        #安装openssl
+ yum install openssl-devel                #安装openssl-devel
+</code></pre>
 </li>
 <li><p>下载并解压缩nginx源码包, 这里使用的是 <code>nginx-1.8.0.tar.gz</code></p>
 </li>
 <li><p>配置(configuration), 编译(compilation)和安装(installation),这里我们采用默认方式</p>
- <figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./configure</span><br><span class="line"><span class="attribute">make</span> &amp;&amp; make install</span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx"> ./configure
+ make &amp;&amp; make install
+</code></pre>
 </li>
 <li><p>配置环境变量. 在/<code>etc/profile</code>文件中添加，nginx 默认安装在 <code>/usr/local/nginx</code>, 配置文件默认为 <code>$NGINX/conf/nginx.conf</code></p>
- <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">NGINX_HOME=/usr/local/nginx</span><br><span class="line">PATH=$PATH:$NGINX_HOME/sbin</span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx"> NGINX_HOME=/usr/local/nginx
+ PATH=$PATH:$NGINX_HOME/sbin
+</code></pre>
 </li>
 </ol>
 <h2 id="编译选项"><a href="#编译选项" class="headerlink" title="编译选项"></a>编译选项</h2><h3 id="通用配置选项"><a href="#通用配置选项" class="headerlink" title="通用配置选项"></a>通用配置选项</h3><table>
@@ -557,8 +582,10 @@
 </table>
 <p><strong>注意: nginx命令执行前都会解析配置文件,判断是否有效.因此当无效的情况下, nginx命令会执行不了. 比如停止命令如果配置文件有误则可能停止不了nginx, 这可以通过kill或killall命令来停止nginx进程</strong></p>
 <h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><h3 id="Nignx-配置文件"><a href="#Nignx-配置文件" class="headerlink" title="Nignx 配置文件"></a>Nignx 配置文件</h3><p>基本的Nginx配置文件由若干部分组成，每个部分都由下列方法定义：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;section&gt; &#123;</span><br><span class="line">    &lt;directive&gt; &lt;parameters&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Nginx配置是有一系列指令(Directive)组成的。指令以分号(;)分隔。指令可以被分块(block)，这被称为模块。模块用大括号包裹，模块可以递归包含模块 。<code>include</code>指令可以将配置分散到不同的文件中。指令可以继承和覆盖(即子模块可以继承父模块的指令, 也可以覆盖父模块的指令)</p>
+<pre><code>&lt;section&gt; {
+    &lt;directive&gt; &lt;parameters&gt;
+}
+</code></pre><p>Nginx配置是有一系列指令(Directive)组成的。指令以分号(;)分隔。指令可以被分块(block)，这被称为模块。模块用大括号包裹，模块可以递归包含模块 。<code>include</code>指令可以将配置分散到不同的文件中。指令可以继承和覆盖(即子模块可以继承父模块的指令, 也可以覆盖父模块的指令)</p>
 <p>nginx配置文件主要分为六个区域，每个部分都包含若干指令： </p>
 <ul>
 <li><code>main</code>：main部分设置的指令将影响其它所有部分的设置，相当于全局设置；</li>
@@ -575,7 +602,158 @@
 <p>同时每个部分还可以使用其他<code>http</code>模块指令，例如<code>http ssl</code>模块、<code>http gzip static</code>模块和<code>http addition</code>模块等。</p>
 <p><img src="/images/nignx-configuration.png" alt=""></p>
 <h3 id="通用"><a href="#通用" class="headerlink" title="通用"></a>通用</h3><p>配置文件样板<code>nginx.conf</code>：</p>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#定义Nginx运行的用户和用户组</span></span><br><span class="line"><span class="attribute">user</span> www www;</span><br><span class="line">    </span><br><span class="line"><span class="comment">#nginx进程数，建议设置为等于CPU总核心数。</span></span><br><span class="line"><span class="attribute">worker_processes</span> <span class="number">8</span>;</span><br><span class="line">    </span><br><span class="line"><span class="comment">#全局错误日志定义类型，[ debug | info | notice | warn | error | crit ]</span></span><br><span class="line"><span class="attribute">error_log</span> /var/log/nginx/error.log <span class="literal">info</span>;</span><br><span class="line">    </span><br><span class="line"><span class="comment">#进程文件</span></span><br><span class="line"><span class="attribute">pid</span> /var/run/nginx.pid;</span><br><span class="line">    </span><br><span class="line"><span class="comment">#一个nginx进程打开的最多文件描述符数目，</span></span><br><span class="line"><span class="comment">#理论值应该是最多打开文件数（系统的值ulimit -n）与nginx进程数相除，</span></span><br><span class="line"><span class="comment">#但是nginx分配请求并不均匀，所以建议与ulimit -n的值保持一致。</span></span><br><span class="line"><span class="attribute">worker_rlimit_nofile</span> <span class="number">65535</span>;</span><br><span class="line">    </span><br><span class="line"><span class="comment">#工作模式与连接数上限</span></span><br><span class="line">events</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">#参考事件模型，use [ kqueue | rtsig | epoll | /dev/poll | select | poll ];</span></span><br><span class="line">    <span class="comment">#epoll模型是Linux 2.6以上版本内核中的高性能网络I/O模型，如果跑在FreeBSD上面，就用kqueue模型。</span></span><br><span class="line">    <span class="attribute">use</span> <span class="literal">epoll</span>;</span><br><span class="line">    <span class="comment">#单个进程最大连接数（最大连接数=连接数*进程数）</span></span><br><span class="line">    <span class="attribute">worker_connections</span> <span class="number">65535</span>;</span><br><span class="line">&#125;</span><br><span class="line">    </span><br><span class="line"><span class="comment">#设定http服务器</span></span><br><span class="line">http</span><br><span class="line">&#123;</span><br><span class="line">    <span class="attribute">include</span> mime.types; <span class="comment">#文件扩展名与文件类型映射表</span></span><br><span class="line">    <span class="attribute">default_type</span> application/octet-stream; <span class="comment">#默认文件类型</span></span><br><span class="line">    <span class="comment">#charset utf-8; #默认编码</span></span><br><span class="line">    <span class="attribute">server_names_hash_bucket_size</span> <span class="number">128</span>; <span class="comment">#服务器名字的hash表大小</span></span><br><span class="line">    <span class="attribute">client_header_buffer_size</span> <span class="number">32k</span>; <span class="comment">#上传文件大小限制</span></span><br><span class="line">    <span class="attribute">large_client_header_buffers</span> <span class="number">4</span> <span class="number">64k</span>; <span class="comment">#设定请求缓</span></span><br><span class="line">    <span class="attribute">client_max_body_size</span> <span class="number">8m</span>; <span class="comment">#设定请求缓</span></span><br><span class="line">    <span class="comment">#开启高效文件传输模式，sendfile指令指定nginx是否调用sendfile函数来输出文件，对于普通应用设为 on，</span></span><br><span class="line">    <span class="comment">#如果用来进行下载等应用磁盘IO重负载应用，可设置为off，以平衡磁盘与网络I/O处理速度，降低系统的负载。</span></span><br><span class="line">    <span class="comment">#注意：如果图片显示不正常把这个改成off。</span></span><br><span class="line">    <span class="attribute">sendfile</span> <span class="literal">on</span>; </span><br><span class="line">    <span class="attribute">autoindex</span> <span class="literal">on</span>; <span class="comment">#开启目录列表访问，合适下载服务器，默认关闭。</span></span><br><span class="line">    <span class="attribute">tcp_nopush</span> <span class="literal">on</span>; <span class="comment">#防止网络阻塞</span></span><br><span class="line">    <span class="attribute">tcp_nodelay</span> <span class="literal">on</span>; <span class="comment">#防止网络阻塞</span></span><br><span class="line">    <span class="attribute">keepalive_timeout</span> <span class="number">120</span>; <span class="comment">#长连接超时时间，单位是秒</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">#FastCGI相关参数是为了改善网站的性能：减少资源占用，提高访问速度。下面参数看字面意思都能理解。</span></span><br><span class="line">    <span class="attribute">fastcgi_connect_timeout</span> <span class="number">300</span>;</span><br><span class="line">    <span class="attribute">fastcgi_send_timeout</span> <span class="number">300</span>;</span><br><span class="line">    <span class="attribute">fastcgi_read_timeout</span> <span class="number">300</span>;</span><br><span class="line">    <span class="attribute">fastcgi_buffer_size</span> <span class="number">64k</span>;</span><br><span class="line">    <span class="attribute">fastcgi_buffers</span> <span class="number">4</span> <span class="number">64k</span>;</span><br><span class="line">    <span class="attribute">fastcgi_busy_buffers_size</span> <span class="number">128k</span>;</span><br><span class="line">    <span class="attribute">fastcgi_temp_file_write_size</span> <span class="number">128k</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#gzip模块设置</span></span><br><span class="line">    <span class="attribute">gzip</span> <span class="literal">on</span>; <span class="comment">#开启gzip压缩输出</span></span><br><span class="line">    <span class="attribute">gzip_min_length</span> <span class="number">1k</span>; <span class="comment">#最小压缩文件大小</span></span><br><span class="line">    <span class="attribute">gzip_buffers</span> <span class="number">4</span> <span class="number">16k</span>; <span class="comment">#压缩缓冲区</span></span><br><span class="line">    <span class="attribute">gzip_http_version</span> <span class="number">1</span>.<span class="number">0</span>; <span class="comment">#压缩版本（默认1.1，前端如果是squid2.5请使用1.0）</span></span><br><span class="line">    <span class="attribute">gzip_comp_level</span> <span class="number">2</span>; <span class="comment">#压缩等级</span></span><br><span class="line">    <span class="attribute">gzip_types</span> text/plain application/x-javascript text/css application/xml;</span><br><span class="line">    <span class="comment">#压缩类型，默认就已经包含text/html，所以下面就不用再写了，写上去也不会有问题，但是会有一个warn。</span></span><br><span class="line">    <span class="attribute">gzip_vary</span> <span class="literal">on</span>;</span><br><span class="line">    <span class="comment">#limit_zone crawler $binary_remote_addr 10m; #开启限制IP连接数的时候需要使用</span></span><br><span class="line">    </span><br><span class="line">    <span class="attribute">upstream</span> opstrip.com &#123;</span><br><span class="line">        <span class="comment">#upstream的负载均衡，weight是权重，可以根据机器配置定义权重。</span></span><br><span class="line">        <span class="comment">#weigth参数表示权值，权值越高被分配到的几率越大。</span></span><br><span class="line">        <span class="attribute">server</span> <span class="number">10.12.80.121:80</span> weight=<span class="number">3</span>;</span><br><span class="line">        <span class="attribute">server</span> <span class="number">10.12.80.122:80</span> weight=<span class="number">2</span>;</span><br><span class="line">        <span class="attribute">server</span> <span class="number">10.12.80.123:80</span> weight=<span class="number">3</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#虚拟主机的配置</span></span><br><span class="line">    server</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">#监听端口</span></span><br><span class="line">        <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">        <span class="comment">#域名可以有多个，用空格隔开</span></span><br><span class="line">        <span class="attribute">server_name</span> opstrip.com www.opstrip.com;</span><br><span class="line">        <span class="attribute">index</span> index.html index.htm index.php;</span><br><span class="line">        <span class="attribute">root</span> /var/www/opstrip.com;</span><br><span class="line">        <span class="attribute">location</span> <span class="regexp">~ .*.(php|php5)?$</span></span><br><span class="line"><span class="regexp"></span>        &#123;</span><br><span class="line">            <span class="attribute">fastcgi_pass</span> <span class="number">127.0.0.1:9000</span>;</span><br><span class="line">            <span class="attribute">fastcgi_index</span> index.php;</span><br><span class="line">            <span class="attribute">include</span> fastcgi.conf;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">#图片缓存时间设置</span></span><br><span class="line">        <span class="attribute">location</span> <span class="regexp">~ .*.(gif|jpg|jpeg|png|bmp|swf)$</span></span><br><span class="line"><span class="regexp"></span>        &#123;</span><br><span class="line">            <span class="attribute">expires</span> <span class="number">10d</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">#JS和CSS缓存时间设置</span></span><br><span class="line">        <span class="attribute">location</span> <span class="regexp">~ .*.(js|css)?$</span></span><br><span class="line"><span class="regexp"></span>        &#123;</span><br><span class="line">            <span class="attribute">expires</span> <span class="number">1h</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">#日志格式设定</span></span><br><span class="line">        <span class="attribute">log_format</span> access <span class="string">'<span class="variable">$remote_addr</span> - <span class="variable">$remote_user</span> [<span class="variable">$time_local</span>] "<span class="variable">$request</span>" '</span></span><br><span class="line">        <span class="string">'<span class="variable">$status</span> <span class="variable">$body_bytes_sent</span> "<span class="variable">$http_referer</span>" '</span></span><br><span class="line">        <span class="string">'"<span class="variable">$http_user_agent</span>" <span class="variable">$http_x_forwarded_for</span>'</span>;</span><br><span class="line">        <span class="comment">#定义本虚拟主机的访问日志</span></span><br><span class="line">        <span class="attribute">access_log</span> /var/log/nginx/ha97access.log access;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">#对 "/" 启用反向代理</span></span><br><span class="line">        <span class="attribute">location</span> / &#123;</span><br><span class="line">            <span class="attribute">proxy_pass</span> http://127.0.0.1:88;</span><br><span class="line">            <span class="attribute">proxy_redirect</span> <span class="literal">off</span>;</span><br><span class="line">            <span class="attribute">proxy_set_header</span> X-Real-IP <span class="variable">$remote_addr</span>;</span><br><span class="line">            <span class="comment">#后端的Web服务器可以通过X-Forwarded-For获取用户真实IP</span></span><br><span class="line">            <span class="attribute">proxy_set_header</span> X-Forwarded-For <span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">            <span class="comment">#以下是一些反向代理的配置，可选。</span></span><br><span class="line">            <span class="attribute">proxy_set_header</span> Host <span class="variable">$host</span>;</span><br><span class="line">            <span class="attribute">client_max_body_size</span> <span class="number">10m</span>; <span class="comment">#允许客户端请求的最大单文件字节数</span></span><br><span class="line">            <span class="attribute">client_body_buffer_size</span> <span class="number">128k</span>; <span class="comment">#缓冲区代理缓冲用户端请求的最大字节数，</span></span><br><span class="line">            <span class="attribute">proxy_connect_timeout</span> <span class="number">90</span>; <span class="comment">#nginx跟后端服务器连接超时时间(代理连接超时)</span></span><br><span class="line">            <span class="attribute">proxy_send_timeout</span> <span class="number">90</span>; <span class="comment">#后端服务器数据回传时间(代理发送超时)</span></span><br><span class="line">            <span class="attribute">proxy_read_timeout</span> <span class="number">90</span>; <span class="comment">#连接成功后，后端服务器响应时间(代理接收超时)</span></span><br><span class="line">            <span class="attribute">proxy_buffer_size</span> <span class="number">4k</span>; <span class="comment">#设置代理服务器（nginx）保存用户头信息的缓冲区大小</span></span><br><span class="line">            <span class="attribute">proxy_buffers</span> <span class="number">4</span> <span class="number">32k</span>; <span class="comment">#proxy_buffers缓冲区，网页平均在32k以下的设置</span></span><br><span class="line">            <span class="attribute">proxy_busy_buffers_size</span> <span class="number">64k</span>; <span class="comment">#高负荷下缓冲大小（proxy_buffers*2）</span></span><br><span class="line">            <span class="attribute">proxy_temp_file_write_size</span> <span class="number">64k</span>;</span><br><span class="line">            <span class="comment">#设定缓存文件夹大小，大于这个值，将从upstream服务器传</span></span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">#设定查看Nginx状态的地址</span></span><br><span class="line">        <span class="attribute">location</span> /NginxStatus &#123;</span><br><span class="line">            <span class="attribute">stub_status</span> <span class="literal">on</span>;</span><br><span class="line">            <span class="attribute">access_log</span> <span class="literal">on</span>;</span><br><span class="line">            <span class="attribute">auth_basic</span> <span class="string">"NginxStatus"</span>;</span><br><span class="line">            <span class="attribute">auth_basic_user_file</span> conf/htpasswd;</span><br><span class="line">            <span class="comment">#htpasswd文件的内容可以用apache提供的htpasswd工具来产生。</span></span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">#本地动静分离反向代理配置</span></span><br><span class="line">        <span class="comment">#所有jsp的页面均交由tomcat或resin处理</span></span><br><span class="line">        <span class="attribute">location</span> <span class="regexp">~ .(jsp|jspx|do)?$</span> &#123;</span><br><span class="line">            <span class="attribute">proxy_set_header</span> Host <span class="variable">$host</span>;</span><br><span class="line">            <span class="attribute">proxy_set_header</span> X-Real-IP <span class="variable">$remote_addr</span>;</span><br><span class="line">            <span class="attribute">proxy_set_header</span> X-Forwarded-For <span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">            <span class="attribute">proxy_pass</span> http://127.0.0.1:8080;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">#所有静态文件由nginx直接读取不经过tomcat或resin</span></span><br><span class="line">        <span class="attribute">location</span> <span class="regexp">~ .*.(htm|html|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$</span></span><br><span class="line"><span class="regexp"></span>        &#123; <span class="attribute">expires</span> <span class="number">15d</span>; &#125;</span><br><span class="line">        <span class="attribute">location</span> <span class="regexp">~ .*.(js|css)?$</span></span><br><span class="line"><span class="regexp"></span>        &#123; <span class="attribute">expires</span> <span class="number">1h</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx">#定义Nginx运行的用户和用户组
+user www www;
+
+#nginx进程数，建议设置为等于CPU总核心数。
+worker_processes 8;
+
+#全局错误日志定义类型，[ debug | info | notice | warn | error | crit ]
+error_log /var/log/nginx/error.log info;
+
+#进程文件
+pid /var/run/nginx.pid;
+
+#一个nginx进程打开的最多文件描述符数目，
+#理论值应该是最多打开文件数（系统的值ulimit -n）与nginx进程数相除，
+#但是nginx分配请求并不均匀，所以建议与ulimit -n的值保持一致。
+worker_rlimit_nofile 65535;
+
+#工作模式与连接数上限
+events
+{
+    #参考事件模型，use [ kqueue | rtsig | epoll | /dev/poll | select | poll ];
+    #epoll模型是Linux 2.6以上版本内核中的高性能网络I/O模型，如果跑在FreeBSD上面，就用kqueue模型。
+    use epoll;
+    #单个进程最大连接数（最大连接数=连接数*进程数）
+    worker_connections 65535;
+}
+
+#设定http服务器
+http
+{
+    include mime.types; #文件扩展名与文件类型映射表
+    default_type application/octet-stream; #默认文件类型
+    #charset utf-8; #默认编码
+    server_names_hash_bucket_size 128; #服务器名字的hash表大小
+    client_header_buffer_size 32k; #上传文件大小限制
+    large_client_header_buffers 4 64k; #设定请求缓
+    client_max_body_size 8m; #设定请求缓
+    #开启高效文件传输模式，sendfile指令指定nginx是否调用sendfile函数来输出文件，对于普通应用设为 on，
+    #如果用来进行下载等应用磁盘IO重负载应用，可设置为off，以平衡磁盘与网络I/O处理速度，降低系统的负载。
+    #注意：如果图片显示不正常把这个改成off。
+    sendfile on; 
+    autoindex on; #开启目录列表访问，合适下载服务器，默认关闭。
+    tcp_nopush on; #防止网络阻塞
+    tcp_nodelay on; #防止网络阻塞
+    keepalive_timeout 120; #长连接超时时间，单位是秒
+
+    #FastCGI相关参数是为了改善网站的性能：减少资源占用，提高访问速度。下面参数看字面意思都能理解。
+    fastcgi_connect_timeout 300;
+    fastcgi_send_timeout 300;
+    fastcgi_read_timeout 300;
+    fastcgi_buffer_size 64k;
+    fastcgi_buffers 4 64k;
+    fastcgi_busy_buffers_size 128k;
+    fastcgi_temp_file_write_size 128k;
+
+    #gzip模块设置
+    gzip on; #开启gzip压缩输出
+    gzip_min_length 1k; #最小压缩文件大小
+    gzip_buffers 4 16k; #压缩缓冲区
+    gzip_http_version 1.0; #压缩版本（默认1.1，前端如果是squid2.5请使用1.0）
+    gzip_comp_level 2; #压缩等级
+    gzip_types text/plain application/x-javascript text/css application/xml;
+    #压缩类型，默认就已经包含text/html，所以下面就不用再写了，写上去也不会有问题，但是会有一个warn。
+    gzip_vary on;
+    #limit_zone crawler $binary_remote_addr 10m; #开启限制IP连接数的时候需要使用
+
+    upstream opstrip.com {
+        #upstream的负载均衡，weight是权重，可以根据机器配置定义权重。
+        #weigth参数表示权值，权值越高被分配到的几率越大。
+        server 10.12.80.121:80 weight=3;
+        server 10.12.80.122:80 weight=2;
+        server 10.12.80.123:80 weight=3;
+    }
+
+    #虚拟主机的配置
+    server
+    {
+        #监听端口
+        listen 80;
+        #域名可以有多个，用空格隔开
+        server_name opstrip.com www.opstrip.com;
+        index index.html index.htm index.php;
+        root /var/www/opstrip.com;
+        location ~ .*.(php|php5)?$
+        {
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index index.php;
+            include fastcgi.conf;
+        }
+        #图片缓存时间设置
+        location ~ .*.(gif|jpg|jpeg|png|bmp|swf)$
+        {
+            expires 10d;
+        }
+        #JS和CSS缓存时间设置
+        location ~ .*.(js|css)?$
+        {
+            expires 1h;
+        }
+        #日志格式设定
+        log_format access &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
+        &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
+        &#39;&quot;$http_user_agent&quot; $http_x_forwarded_for&#39;;
+        #定义本虚拟主机的访问日志
+        access_log /var/log/nginx/ha97access.log access;
+
+        #对 &quot;/&quot; 启用反向代理
+        location / {
+            proxy_pass http://127.0.0.1:88;
+            proxy_redirect off;
+            proxy_set_header X-Real-IP $remote_addr;
+            #后端的Web服务器可以通过X-Forwarded-For获取用户真实IP
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            #以下是一些反向代理的配置，可选。
+            proxy_set_header Host $host;
+            client_max_body_size 10m; #允许客户端请求的最大单文件字节数
+            client_body_buffer_size 128k; #缓冲区代理缓冲用户端请求的最大字节数，
+            proxy_connect_timeout 90; #nginx跟后端服务器连接超时时间(代理连接超时)
+            proxy_send_timeout 90; #后端服务器数据回传时间(代理发送超时)
+            proxy_read_timeout 90; #连接成功后，后端服务器响应时间(代理接收超时)
+            proxy_buffer_size 4k; #设置代理服务器（nginx）保存用户头信息的缓冲区大小
+            proxy_buffers 4 32k; #proxy_buffers缓冲区，网页平均在32k以下的设置
+            proxy_busy_buffers_size 64k; #高负荷下缓冲大小（proxy_buffers*2）
+            proxy_temp_file_write_size 64k;
+            #设定缓存文件夹大小，大于这个值，将从upstream服务器传
+        }
+
+        #设定查看Nginx状态的地址
+        location /NginxStatus {
+            stub_status on;
+            access_log on;
+            auth_basic &quot;NginxStatus&quot;;
+            auth_basic_user_file conf/htpasswd;
+            #htpasswd文件的内容可以用apache提供的htpasswd工具来产生。
+        }
+
+        #本地动静分离反向代理配置
+        #所有jsp的页面均交由tomcat或resin处理
+        location ~ .(jsp|jspx|do)?$ {
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_pass http://127.0.0.1:8080;
+        }
+        #所有静态文件由nginx直接读取不经过tomcat或resin
+        location ~ .*.(htm|html|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$
+        { expires 15d; }
+        location ~ .*.(js|css)?$
+        { expires 1h; }
+    }
+}
+</code></pre>
 <h3 id="main模块"><a href="#main模块" class="headerlink" title="main模块"></a>main模块</h3><p>main区域，他是一个全局的设置，这一部分应该放在<code>nginx.conf</code>最顶部。</p>
 <table>
 <thead>
@@ -818,7 +996,12 @@
 </tbody>
 </table>
 <h4 id="虚拟server部分"><a href="#虚拟server部分" class="headerlink" title="虚拟server部分"></a>虚拟server部分</h4><p>这部分称为“虚拟服务器”，描述的是一组根据<code>server_name</code>指令逻辑分割的资源。</p>
-<p>一个虚拟服务器由<code>listen</code>和<code>server_name</code>组合定义：<br><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> _;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>一个虚拟服务器由<code>listen</code>和<code>server_name</code>组合定义：</p>
+<pre><code class="Nginx">server {
+    listen 80;
+    server_name _;
+}
+</code></pre>
 <p><strong><code>listen</code></strong></p>
 <ul>
 <li>说明: 绑定IP地址和端口, 用于socket连接</li>
@@ -830,18 +1013,35 @@
 <li>proxy_protocol: 对所有连接激活PROXY协议</li>
 </ul>
 </li>
-<li>示例<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">listen</span> <span class="number">192.168.1.1:80</span>;</span><br><span class="line"><span class="attribute">listen</span> <span class="number">127.0.0.1</span>;</span><br><span class="line"><span class="attribute">listen</span> <span class="number">80</span> default;</span><br><span class="line"><span class="attribute">listen</span> [:::a8c9:<span class="number">1234</span>]:<span class="number">80</span>; <span class="comment"># IPv6 addresses must be put between square brackets</span></span><br><span class="line"><span class="attribute">listen</span> <span class="number">443</span> ssl;</span><br></pre></td></tr></table></figure>
+<li>示例<pre><code class="Nginx">listen 192.168.1.1:80;
+listen 127.0.0.1;
+listen 80 default;
+listen [:::a8c9:1234]:80; # IPv6 addresses must be put between square brackets
+listen 443 ssl;
+</code></pre>
 </li>
 </ul>
 <p><strong><code>server_name</code></strong></p>
 <ul>
-<li><p>说明: 配置虚拟主机名称，支持正则表达式配置，默认值为“”。如果没有一个server_name和请求域名匹配. 则根据listen指令的配置找到第一个匹配项，比如如下的配置项:</p>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">server&#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> www.aaa.com;</span><br><span class="line">&#125;</span><br><span class="line">server&#123;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span> www.bbb.com;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>  请求为 <a href="http://www.ccc.com:80/index.html" target="_blank" rel="noopener">http://www.ccc.com:80/index.html</a>, 按照上面说明, 匹配第一个虚拟主机</p>
-</li>
+<li>说明: 配置虚拟主机名称，支持正则表达式配置，默认值为“”。如果没有一个server_name和请求域名匹配. 则根据listen指令的配置找到第一个匹配项，比如如下的配置项:<pre><code class="Nginx">server{
+  listen 80;
+  server_name www.aaa.com;
+}
+server{
+  listen 80;
+  server_name www.bbb.com;
+}
+</code></pre>
+  请求为 <a href="http://www.ccc.com:80/index.html" target="_blank" rel="noopener">http://www.ccc.com:80/index.html</a>, 按照上面说明, 匹配第一个虚拟主机</li>
 <li>范围: server</li>
 <li>格式: server_name hostname1 [hostname2…];</li>
-<li>示例：<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">server_name</span> www.website.com;</span><br><span class="line"><span class="attribute">server_name</span> www.website.com website.com;</span><br><span class="line"><span class="attribute">server_name</span> <span class="regexp">*.website.com</span>;</span><br><span class="line"><span class="attribute">server_name</span> .website.com; <span class="comment"># combines both *.website.com and website.com</span></span><br><span class="line"><span class="attribute">server_name</span> <span class="regexp">*.website</span>.*;</span><br><span class="line"><span class="attribute">server_name</span> ~^(www)\.example\.com$; <span class="comment"># $1 = www</span></span><br></pre></td></tr></table></figure>
+<li>示例：<pre><code class="Nginx">server_name www.website.com;
+server_name www.website.com website.com;
+server_name *.website.com;
+server_name .website.com; # combines both *.website.com and website.com
+server_name *.website.*;
+server_name ~^(www)\.example\.com$; # $1 = www
+</code></pre>
 </li>
 </ul>
 <p>对于一个特定的请求，确定哪些虚拟服务器提供该请求的服务时，应该遵循下面的逻辑：</p>
@@ -856,8 +1056,15 @@
 </ol>
 <h4 id="location部分"><a href="#location部分" class="headerlink" title="location部分"></a>location部分</h4><p><code>location</code>指令可以用在虚拟服务器<code>server</code>部分，并意味着提供来自客户端的URL或者内部重定向。</p>
 <p>定义：</p>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">location</span> [modifier] uri &#123;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>或者命名location，用于内部重定向：<br><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">location</span> <span class="variable">@name</span> &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<pre><code class="Nginx">location [modifier] uri {
+
+}
+</code></pre>
+<p>或者命名location，用于内部重定向：</p>
+<pre><code class="Nginx">location @name {
+
+}
+</code></pre>
 <p>location修饰符：</p>
 <table>
 <thead>
@@ -914,7 +1121,14 @@
 </tbody>
 </table>
 <p>location指令一般搭配try_files指令使用：</p>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">location</span> / &#123;</span><br><span class="line">    <span class="attribute">try_files</span> <span class="variable">$uri</span> <span class="variable">$uri</span>/ <span class="variable">@mongrel</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="attribute">location</span> <span class="variable">@mongrel</span> &#123;</span><br><span class="line">    <span class="attribute">proxy_pass</span> http://appserver;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx">location / {
+    try_files $uri $uri/ @mongrel;
+}
+
+location @mongrel {
+    proxy_pass http://appserver;
+}
+</code></pre>
 <p>这里有一个隐含的目录索引：<br>如果给定的URI作为一个文件没有找到，那么将会通过代理被传递到appserver。</p>
 <p>除以下前缀外，location可以被嵌套：</p>
 <ul>
@@ -960,7 +1174,30 @@
 <li>检测路径是否存在 使用 <code>-d</code>(存在) 和 <code>!-d</code>(不存在) 后面判断可以是字符串也可是变量</li>
 <li>检测文件、路径、或者链接文件是否存在 使用 <code>-e</code>(存在) 和 <code>!-e</code>(不存在) 后面判断可以是字符串也可是变量</li>
 <li><p>检测文件是否为可执行文件 使用 <code>-x</code>(可执行) 和 <code>!-x</code>(不可执行) 后面判断可以是字符串也可是变量</p>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">set</span> <span class="variable">$variable</span> <span class="string">"0"</span>; </span><br><span class="line"><span class="attribute">if</span> (<span class="variable">$variable</span>) &#123;</span><br><span class="line">    <span class="comment"># 不会执行，因为 "0" 为 false</span></span><br><span class="line">    break;            </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用变量与正则表达式匹配 没有问题</span></span><br><span class="line"><span class="attribute">if</span> ( <span class="variable">$http_host</span> <span class="regexp">~ "^star\.igrow\.cn$"</span> ) &#123;</span><br><span class="line">    break;            </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 字符串与正则表达式匹配 报错</span></span><br><span class="line"><span class="attribute">if</span> ( <span class="string">"star"</span> <span class="regexp">~ "^star\.igrow\.cn$"</span> ) &#123;</span><br><span class="line">    break;            </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 检查文件类的 字符串与变量均可</span></span><br><span class="line"><span class="attribute">if</span> ( !-f <span class="string">"/data.log"</span> ) &#123;</span><br><span class="line">    break;            </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="attribute">if</span> ( !-f <span class="variable">$filename</span> ) &#123;</span><br><span class="line">    break;            </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx">set $variable &quot;0&quot;; 
+if ($variable) {
+  # 不会执行，因为 &quot;0&quot; 为 false
+  break;            
+}
+
+# 使用变量与正则表达式匹配 没有问题
+if ( $http_host ~ &quot;^star\.igrow\.cn$&quot; ) {
+  break;            
+}
+
+# 字符串与正则表达式匹配 报错
+if ( &quot;star&quot; ~ &quot;^star\.igrow\.cn$&quot; ) {
+  break;            
+}
+# 检查文件类的 字符串与变量均可
+if ( !-f &quot;/data.log&quot; ) {
+  break;            
+}
+
+if ( !-f $filename ) {
+  break;            
+}
+</code></pre>
 </li>
 </ul>
 </li>
@@ -969,7 +1206,21 @@
 <p>  停止处理并将指定的code码返回给客户端。 非标准code码 444 关闭连接而不发送响应报头。</p>
 <p>  从0.8.42版本开始， <code>return</code> 语句可以指定重定向 url (状态码可以为如下几种 301,302,303,307),<br>  也可以为其他状态码指定响应的文本内容，并且重定向的url和响应的文本可以包含变量。</p>
 <p>  有一种特殊情况，就是重定向的url可以指定为此服务器本地的url，这样的话，nginx会依据请求的协议<code>$scheme</code>， <code>server_name_in_redirect</code> 和 <code>port_in_redirect</code>自动生成完整的 url。</p>
-  <figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># return code [text]; 返回 ok 给客户端</span></span><br><span class="line"><span class="attribute">location</span> = /ok &#123;</span><br><span class="line">    <span class="attribute">return</span> <span class="number">200</span> <span class="string">"ok"</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># return code URL; 临时重定向到 百度</span></span><br><span class="line"><span class="attribute">location</span> = /redirect &#123;</span><br><span class="line">    <span class="attribute">return</span> <span class="number">302</span> http://www.baidu.com;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># return URL; 和上面一样 默认也是临时重定向</span></span><br><span class="line"><span class="attribute">location</span> = /redirect &#123;</span><br><span class="line">    <span class="attribute">return</span> http://www.baidu.com;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx">  # return code [text]; 返回 ok 给客户端
+  location = /ok {
+      return 200 &quot;ok&quot;;
+  }
+
+  # return code URL; 临时重定向到 百度
+  location = /redirect {
+      return 302 http://www.baidu.com;
+  }
+
+  # return URL; 和上面一样 默认也是临时重定向
+  location = /redirect {
+      return http://www.baidu.com;
+  }
+</code></pre>
 </li>
 <li><p><strong>rewrite</strong></p>
 <p>  范围：server，location，if</p>
@@ -983,7 +1234,41 @@
 <li><p><code>permanent</code>：返回301永久重定向。</p>
 <p><code>last</code>和<code>break</code>的区别：</p>
 <p><code>last</code> 和 <code>break</code>一样 它们都会终止此 <code>location</code> 中其他它<code>rewrite</code>模块指令的执行，<br>但是 <code>last</code> 立即发起新一轮的 <code>location</code> 匹配 而 <code>break</code> 则不会</p>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">location</span> / &#123;</span><br><span class="line">    <span class="attribute">rewrite</span><span class="regexp"> ^/test1</span> /test2;</span><br><span class="line">    <span class="attribute">rewrite</span><span class="regexp"> ^/test2</span> /test3 <span class="literal">last</span>;  <span class="comment"># 此处发起新一轮location匹配 uri为/test3</span></span><br><span class="line">    <span class="attribute">rewrite</span><span class="regexp"> ^/test3</span> /test4;</span><br><span class="line">    <span class="attribute">proxy_pass</span> http://www.baidu.com;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="attribute">location</span> = /test2 &#123;</span><br><span class="line">    <span class="attribute">return</span> <span class="number">200</span> <span class="string">"/test2"</span>;</span><br><span class="line">&#125;  </span><br><span class="line"></span><br><span class="line"><span class="attribute">location</span> = /test3 &#123;</span><br><span class="line">    <span class="attribute">return</span> <span class="number">200</span> <span class="string">"/test3"</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="attribute">location</span> = /test4 &#123;</span><br><span class="line">    <span class="attribute">return</span> <span class="number">200</span> <span class="string">"/test4"</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 发送如下请求</span></span><br><span class="line"><span class="comment"># curl 127.0.0.1:8080/test1</span></span><br><span class="line"><span class="comment"># /test3 </span></span><br><span class="line"></span><br><span class="line">当如果将上面的 location / 改成如下代码</span><br><span class="line"><span class="attribute">location</span> / &#123;</span><br><span class="line">    <span class="attribute">rewrite</span><span class="regexp"> ^/test1</span> /test2;</span><br><span class="line">    <span class="comment"># 此处 不会 发起新一轮location匹配；当是会终止执行后续rewrite模块指令 重写后的uri为 /more/index.html</span></span><br><span class="line">    <span class="attribute">rewrite</span><span class="regexp"> ^/test2</span> /more/index.html <span class="literal">break</span>;  </span><br><span class="line">    <span class="attribute">rewrite</span> /more/index\.html /test4; <span class="comment"># 这条指令会被忽略</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 因为 proxy_pass 不是rewrite模块的指令 所以它不会被 break终止</span></span><br><span class="line">    <span class="attribute">proxy_pass</span> https://www.baidu.com;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 发送如下请求</span></span><br><span class="line"><span class="comment"># 浏览器输入 127.0.0.1:8080/test1 </span></span><br><span class="line"><span class="comment"># 代理到 百度产品大全页面 https://www.baidu.com/more/index.html;</span></span><br></pre></td></tr></table></figure>
+<pre><code class="Nginx">location / {
+  rewrite ^/test1 /test2;
+  rewrite ^/test2 /test3 last;  # 此处发起新一轮location匹配 uri为/test3
+  rewrite ^/test3 /test4;
+  proxy_pass http://www.baidu.com;
+}
+
+location = /test2 {
+  return 200 &quot;/test2&quot;;
+}  
+
+location = /test3 {
+  return 200 &quot;/test3&quot;;
+}
+location = /test4 {
+  return 200 &quot;/test4&quot;;
+}
+# 发送如下请求
+# curl 127.0.0.1:8080/test1
+# /test3 
+
+当如果将上面的 location / 改成如下代码
+location / {
+  rewrite ^/test1 /test2;
+  # 此处 不会 发起新一轮location匹配；当是会终止执行后续rewrite模块指令 重写后的uri为 /more/index.html
+  rewrite ^/test2 /more/index.html break;  
+  rewrite /more/index\.html /test4; # 这条指令会被忽略
+
+  # 因为 proxy_pass 不是rewrite模块的指令 所以它不会被 break终止
+  proxy_pass https://www.baidu.com;
+}
+# 发送如下请求
+# 浏览器输入 127.0.0.1:8080/test1 
+# 代理到 百度产品大全页面 https://www.baidu.com/more/index.html;
+</code></pre>
 </li>
 </ul>
 </li>
@@ -1003,7 +1288,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

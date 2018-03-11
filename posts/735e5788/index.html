@@ -14,12 +14,18 @@
   
     <meta name="keywords" content="算法,排序," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="keywords" content="算法,排序">
 <meta property="og:type" content="article">
 <meta property="og:title" content="排序算法">
 <meta property="og:url" content="http://shawnz.me/posts/735e5788/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.046Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="排序算法">
@@ -233,7 +239,21 @@
 <p>首先，找到数组中最小的那个元素，其次，将他和数组中的第一个元素交换位置（如果第一个元素就是最小那个元素那么它就和自己交换）。再次，在剩余的元素中找到最小的元素，将它与第二个元素交换位置。如此往复，直到整个数组有序。</p>
 <p><strong>时间复杂度：</strong>$O(n^2)$</p>
 <p><strong>算法分析:</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">selection_sort</span><span class="params">(collection)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; selection_sort([4, -2, 10, 7]) </span></span><br><span class="line"><span class="string">    [-2, 4, 7, 10]</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(len(collection)):</span><br><span class="line">        least = i</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(i+<span class="number">1</span>, len(collection)):</span><br><span class="line">            <span class="keyword">if</span> collection[j] &lt; collection[least]:</span><br><span class="line">                least = j</span><br><span class="line"></span><br><span class="line">        collection[i], collection[least] = collection[least], collection[i]</span><br><span class="line">    <span class="keyword">return</span> collection</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def selection_sort(collection):
+    &#39;&#39;&#39;
+    &gt;&gt;&gt; selection_sort([4, -2, 10, 7]) 
+    [-2, 4, 7, 10]
+    &#39;&#39;&#39;
+
+    for i in range(len(collection)):
+        least = i
+        for j in range(i+1, len(collection)):
+            if collection[j] &lt; collection[least]:
+                least = j
+
+        collection[i], collection[least] = collection[least], collection[i]
+    return collection
+</code></pre>
 <p><strong>特点：</strong></p>
 <ul>
 <li>运行时间与输入无关。为了找出最小元素而扫描一遍数组并不能为下一次找到最小值提供有用信息，会发现一个有序数组或者元素全部相等的数组和一个随机数组的排序时间是一样的。而其他的算法能更好的利用输入的初始状态。</li>
@@ -243,7 +263,21 @@
 <p>插入排序通过把元素插入到一个已经有序数组中的合适位置来达到排序目的.从第二个元素开始,假设左边的元素都是有序的,通过比较找到合适的位置,插入该元素.重复这个步骤,知道索引达到数组最右边,这是整个数组已经排序完成.</p>
 <p><strong>时间复杂度:</strong>$O(n^2)$</p>
 <p><strong>代码实现:</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">insertration_sort</span><span class="params">(collection)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; insertration_sort([-4, 45, 5, -10])</span></span><br><span class="line"><span class="string">    [-10, -4, 5, 45]</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    <span class="keyword">if</span> len(collection) &lt; <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> collection</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, len(collection)):</span><br><span class="line">        <span class="keyword">while</span> i &gt;    <span class="number">0</span> <span class="keyword">and</span> (collection[i] &lt; collection[i<span class="number">-1</span>]):</span><br><span class="line">            collection[i], collection[i<span class="number">-1</span>] = collection[i<span class="number">-1</span>], collection[i]</span><br><span class="line">            i -= <span class="number">1</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> collection</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def insertration_sort(collection):
+    &#39;&#39;&#39;
+    &gt;&gt;&gt; insertration_sort([-4, 45, 5, -10])
+    [-10, -4, 5, 45]
+    &#39;&#39;&#39;
+    if len(collection) &lt; 2:
+        return collection
+
+    for i in range(1, len(collection)):
+        while i &gt;    0 and (collection[i] &lt; collection[i-1]):
+            collection[i], collection[i-1] = collection[i-1], collection[i]
+            i -= 1
+
+    return collection
+</code></pre>
 <p><strong>特点:</strong><br>插入排序对于基本有序数组十分高效,也适用于小规模数组.经常出现其他高级排序算法的中间过程.</p>
 <h2 id="希尔排序"><a href="#希尔排序" class="headerlink" title="希尔排序"></a>希尔排序</h2><p><strong>基本思想:</strong></p>
 <p>希尔排序是对插入排序的一种高效率实现,因为插入排序只能把小元素一个一个的从一端移到另一端.</p>
@@ -251,7 +285,35 @@
 <p>希尔排序的一种方法是:先将整个待排记录序列分割成为h个子序列,用插入排序将h个子数组独立地排序,待整个序列中的记录基本有序时再对全体记录进行一次直接插入排序。</p>
 <p><strong>时间复杂度:</strong> 希尔排序的分析是复杂的，时间复杂度是所取增量的函数，这涉及一些数学上的难题。但是在大量实验的基础上推出当n在某个范围内时，时间复杂度可以达到$O(n^{1.3})$</p>
 <p><strong>代码实现:</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">shell_sort</span><span class="params">(collections)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; shell_sort([0, 5, 3, 2, 2])</span></span><br><span class="line"><span class="string">    [0, 2, 2, 3, 5]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; shell_sort([])</span></span><br><span class="line"><span class="string">    []</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; shell_sort([-2, -5, -45])</span></span><br><span class="line"><span class="string">    [-45, -5, -2]</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">shell_insert_sort</span><span class="params">(arr, d)</span>:</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(d, len(arr)):</span><br><span class="line">            <span class="keyword">while</span> i &gt; <span class="number">0</span> <span class="keyword">and</span> arr[i] &lt; arr[i-d]:</span><br><span class="line">                arr[i], arr[i-d] = arr[i-d], arr[i]</span><br><span class="line">                i -= d</span><br><span class="line"></span><br><span class="line">    n = len(collections)</span><br><span class="line">    d = n // <span class="number">2</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> d &gt;= <span class="number">1</span>:</span><br><span class="line">        shell_insert_sort(collections, d)</span><br><span class="line">        d = d // <span class="number">2</span></span><br><span class="line">    </span><br><span class="line">    print(collections)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">
+def shell_sort(collections):
+    &#39;&#39;&#39;
+    &gt;&gt;&gt; shell_sort([0, 5, 3, 2, 2])
+    [0, 2, 2, 3, 5]
+
+    &gt;&gt;&gt; shell_sort([])
+    []
+
+    &gt;&gt;&gt; shell_sort([-2, -5, -45])
+    [-45, -5, -2]
+    &#39;&#39;&#39;
+
+    def shell_insert_sort(arr, d):
+
+        for i in range(d, len(arr)):
+            while i &gt; 0 and arr[i] &lt; arr[i-d]:
+                arr[i], arr[i-d] = arr[i-d], arr[i]
+                i -= d
+
+    n = len(collections)
+    d = n // 2
+
+    while d &gt;= 1:
+        shell_insert_sort(collections, d)
+        d = d // 2
+
+    print(collections)
+</code></pre>
 <p><strong>特点:</strong></p>
 <p>对于中等大小的数组,希尔排序的运行时间是可以接受的,代码量小,而且不需要额外的内存空间.</p>
 <h2 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h2><p><strong>基本思想：</strong></p>
@@ -259,7 +321,43 @@
 <p>要将一个数组排序，可以（递归地）先将它分为两半分别排序，然后将结果归并起来．</p>
 <p><strong>时间复杂度：</strong>　归并排序是一种渐近最优的基于比较排序的算法, 意即: 其在最坏情况下的比较次数和任意基于比较的排序算法所需的最少比较次数都是~NlgN。其主要的优点是可以保证将任意长度为 N 的数组排序的时间复杂度为 O(NlgN); 其主要缺点是空间复杂度为 O(N)</p>
 <p><strong>代码实现:</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">merge_sort</span><span class="params">(collections)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    Examples:</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; merge_sort([0, 5, 3, 2, 2])</span></span><br><span class="line"><span class="string">    [0, 2, 2, 3, 5]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; merge_sort([])</span></span><br><span class="line"><span class="string">    []</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; merge_sort([-2, -5, -45])</span></span><br><span class="line"><span class="string">    [-45, -5, -2]</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    n = len(collections)</span><br><span class="line">    <span class="keyword">if</span> n &gt; <span class="number">1</span>:</span><br><span class="line">        mid = n // <span class="number">2</span></span><br><span class="line">        left_half = merge_sort(collections[:mid])</span><br><span class="line">        right_half = merge_sort(collections[mid:])</span><br><span class="line"></span><br><span class="line">        i = <span class="number">0</span></span><br><span class="line">        j = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> k <span class="keyword">in</span> range(n):</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> i &gt;= mid:</span><br><span class="line">                collections[k] = right_half[j]</span><br><span class="line">                j += <span class="number">1</span></span><br><span class="line">            <span class="keyword">elif</span> j &gt;= n-mid:</span><br><span class="line">                collections[k] = left_half[i]</span><br><span class="line">                i += <span class="number">1</span></span><br><span class="line">            <span class="keyword">elif</span> left_half[i] &lt; right_half[j]:</span><br><span class="line">                collections[k] = left_half[i]</span><br><span class="line">                i += <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                collections[k] = right_half[j]</span><br><span class="line">                j += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> collections</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def merge_sort(collections):
+    &#39;&#39;&#39;
+    Examples:
+    &gt;&gt;&gt; merge_sort([0, 5, 3, 2, 2])
+    [0, 2, 2, 3, 5]
+
+    &gt;&gt;&gt; merge_sort([])
+    []
+
+    &gt;&gt;&gt; merge_sort([-2, -5, -45])
+    [-45, -5, -2]
+    &#39;&#39;&#39;
+    n = len(collections)
+    if n &gt; 1:
+        mid = n // 2
+        left_half = merge_sort(collections[:mid])
+        right_half = merge_sort(collections[mid:])
+
+        i = 0
+        j = 0
+        for k in range(n):
+
+            if i &gt;= mid:
+                collections[k] = right_half[j]
+                j += 1
+            elif j &gt;= n-mid:
+                collections[k] = left_half[i]
+                i += 1
+            elif left_half[i] &lt; right_half[j]:
+                collections[k] = left_half[i]
+                i += 1
+            else:
+                collections[k] = right_half[j]
+                j += 1
+
+    return collections
+</code></pre>
 <p><strong>算法分析：</strong></p>
 <ul>
 <li><p>优化一: 对小规模子数组使用插入排序</p>
@@ -288,7 +386,51 @@
 </ul>
 <p><strong>时间复杂度：</strong>快速排序是不稳定的,平均时间复杂度为$O(NlgN)$ 最坏情况是$O(n^2)$</p>
 <p><strong>代码实现:</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sort</span><span class="params">(a, lo, hi)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> hi &lt;= lo:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    p = partition(a, lo, hi)</span><br><span class="line">    sort(a, lo, p<span class="number">-1</span>)  <span class="comment"># 将左半部分[lo, p-1]排序</span></span><br><span class="line">    sort(a, p+<span class="number">1</span>, hi)  <span class="comment"># 将右半部分[p+1, hi]排序</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">partition</span><span class="params">(a, lo, hi)</span>:</span></span><br><span class="line">    <span class="string">''' 将数组a切分为a[lo..i-1] a[i] a[i+1..hi] '''</span></span><br><span class="line">    pivot = a[lo]</span><br><span class="line">    i = lo + <span class="number">1</span></span><br><span class="line">    j = hi</span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        <span class="keyword">while</span> a[i] &lt; pivot:</span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> i == hi:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">while</span> a[j] &gt; pivot:</span><br><span class="line">            j -= <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> j == lo:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">if</span> (i &gt;= j):</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        a[i], a[j] = a[j], a[i]</span><br><span class="line">    a[lo], a[j] = a[j], a[lo]</span><br><span class="line">    <span class="keyword">return</span> j</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">quick_sort</span><span class="params">(collections)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    Examples:</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; quick_sort([0, 5, 3, 2, 2])</span></span><br><span class="line"><span class="string">    [0, 2, 2, 3, 5]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; quick_sort([])</span></span><br><span class="line"><span class="string">    []</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; quick_sort([-2, -5, -45])</span></span><br><span class="line"><span class="string">    [-45, -5, -2]</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    sort(collections, <span class="number">0</span>, len(collections)<span class="number">-1</span>)</span><br><span class="line">    <span class="keyword">return</span> collections</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def sort(a, lo, hi):
+    if hi &lt;= lo:
+        return
+    p = partition(a, lo, hi)
+    sort(a, lo, p-1)  # 将左半部分[lo, p-1]排序
+    sort(a, p+1, hi)  # 将右半部分[p+1, hi]排序
+
+
+def partition(a, lo, hi):
+    &#39;&#39;&#39; 将数组a切分为a[lo..i-1] a[i] a[i+1..hi] &#39;&#39;&#39;
+    pivot = a[lo]
+    i = lo + 1
+    j = hi
+    while True:
+        while a[i] &lt; pivot:
+            i += 1
+            if i == hi:
+                break
+        while a[j] &gt; pivot:
+            j -= 1
+            if j == lo:
+                break
+        if (i &gt;= j):
+            break
+        a[i], a[j] = a[j], a[i]
+    a[lo], a[j] = a[j], a[lo]
+    return j
+
+
+def quick_sort(collections):
+    &#39;&#39;&#39;
+    Examples:
+    &gt;&gt;&gt; quick_sort([0, 5, 3, 2, 2])
+    [0, 2, 2, 3, 5]
+
+    &gt;&gt;&gt; quick_sort([])
+    []
+
+    &gt;&gt;&gt; quick_sort([-2, -5, -45])
+    [-45, -5, -2]
+    &#39;&#39;&#39;
+    sort(collections, 0, len(collections)-1)
+    return collections
+
+</code></pre>
 <p><strong>算法分析：</strong></p>
 <p>在大多数情况下,快速排序都是高效的.有几个改进快速排序性能的方法:</p>
 <ul>
@@ -304,10 +446,23 @@
 </code></pre><p><code>堆的有序化</code>(HEAPIFY):</p>
 <ul>
 <li><p>由下至上的堆有序化<br>  如果堆的有序化状态因为某个结点的值变得比它的父结点大而被打破时,需要交换它和它的父结点来修复堆.<br>  由下至上的堆有序化当一个结点太大时,需要上浮(swim)到堆的更高层.</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">swim</span><span class="params">(A, k)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> k &gt; <span class="number">1</span> <span class="keyword">and</span> A[k//<span class="number">2</span>] &lt; A[k]:</span><br><span class="line">        A[k//<span class="number">2</span>], A[k] = A[k], A[k//<span class="number">2</span>]  </span><br><span class="line">        k = k // <span class="number">2</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">  def swim(A, k):
+      while k &gt; 1 and A[k//2] &lt; A[k]:
+          A[k//2], A[k] = A[k], A[k//2]  
+          k = k // 2
+</code></pre>
 </li>
 <li><p>由上至下的堆有序化<br>  如果堆的有序状态由于某个结点变得比它的两个子结点或者其中之一小而打破,那么可以将它和两个子结点中较大的值交换来修复堆.<br>  由上至下的堆有序化当一个结点太小时,需要下沉(sink)到堆的更底层.</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sink</span><span class="params">(A, i)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> (<span class="number">2</span> * k &lt; N):</span><br><span class="line">        j = <span class="number">2</span> * k</span><br><span class="line">        <span class="keyword">if</span> (j &lt; N <span class="keyword">and</span> A[j] &lt; A[j+<span class="number">1</span>]):</span><br><span class="line">            j = j + <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> A[k] &gt;= A[j]:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        A[k], A[j] = A[j], A[k]</span><br><span class="line">        k = j</span><br></pre></td></tr></table></figure>
+<pre><code class="python">  def sink(A, i):
+      while (2 * k &lt; N):
+          j = 2 * k
+          if (j &lt; N and A[j] &lt; A[j+1]):
+              j = j + 1
+          if A[k] &gt;= A[j]:
+              break
+          A[k], A[j] = A[j], A[k]
+          k = j
+</code></pre>
 </li>
 </ul>
 <p><code>堆排序</code> 堆排序可以分为两个阶段:</p>
@@ -322,7 +477,48 @@
 </li>
 </ul>
 <p><strong>时间复杂度:</strong></p>
-<p><strong>代码实现:</strong><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sink</span><span class="params">(A, k, n)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    :params :A 待排序数组</span></span><br><span class="line"><span class="string">    :params :k 被调节元素的位置</span></span><br><span class="line"><span class="string">    :params :n 堆的大小</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    <span class="keyword">while</span> (<span class="number">2</span> * k + <span class="number">1</span> &lt; n):</span><br><span class="line">        j = <span class="number">2</span> * k + <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> j &lt; n - <span class="number">1</span> <span class="keyword">and</span> A[j] &lt; A[j + <span class="number">1</span>]:</span><br><span class="line">            j = j + <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> A[k] &gt;= A[j]:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        A[j], A[k] = A[k], A[j]</span><br><span class="line">        k = j</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">heap_sort</span><span class="params">(collections)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    Examples:</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; heap_sort([0, 5, 3, 2, 2])</span></span><br><span class="line"><span class="string">    [0, 2, 2, 3, 5]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; heap_sort([])</span></span><br><span class="line"><span class="string">    []</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; heap_sort([-2, -5, -45])</span></span><br><span class="line"><span class="string">    [-45, -5, -2]</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    n = len(collections)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">1</span>:</span><br><span class="line">        <span class="keyword">return</span> collections</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(n<span class="number">-1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">        sink(collections, i, n)</span><br><span class="line">    <span class="keyword">while</span> (n &gt; <span class="number">0</span>):</span><br><span class="line">        collections[<span class="number">0</span>], collections[n<span class="number">-1</span>] = collections[n<span class="number">-1</span>], collections[<span class="number">0</span>]</span><br><span class="line">        n = n - <span class="number">1</span></span><br><span class="line">        sink(collections, <span class="number">0</span>, n)</span><br><span class="line">    <span class="keyword">return</span> collections</span><br></pre></td></tr></table></figure></p>
+<p><strong>代码实现:</strong></p>
+<pre><code class="python">def sink(A, k, n):
+    &#39;&#39;&#39;
+    :params :A 待排序数组
+    :params :k 被调节元素的位置
+    :params :n 堆的大小
+    &#39;&#39;&#39;
+    while (2 * k + 1 &lt; n):
+        j = 2 * k + 1
+        if j &lt; n - 1 and A[j] &lt; A[j + 1]:
+            j = j + 1
+        if A[k] &gt;= A[j]:
+            break
+        A[j], A[k] = A[k], A[j]
+        k = j
+
+
+def heap_sort(collections):
+    &#39;&#39;&#39;
+    Examples:
+    &gt;&gt;&gt; heap_sort([0, 5, 3, 2, 2])
+    [0, 2, 2, 3, 5]
+
+    &gt;&gt;&gt; heap_sort([])
+    []
+
+    &gt;&gt;&gt; heap_sort([-2, -5, -45])
+    [-45, -5, -2]
+    &#39;&#39;&#39;
+    n = len(collections)
+
+    if n &lt; 1:
+        return collections
+
+    for i in range(n-1, -1, -1):
+        sink(collections, i, n)
+    while (n &gt; 0):
+        collections[0], collections[n-1] = collections[n-1], collections[0]
+        n = n - 1
+        sink(collections, 0, n)
+    return collections
+</code></pre>
 <p><strong>算法分析:</strong></p>
 <h2 id="计数排序"><a href="#计数排序" class="headerlink" title="计数排序"></a>计数排序</h2><p><strong>基本思想：</strong></p>
 <p>虽然基于比较的排序算法，其下限是$O(nlgn)$.但确实有许多线性时间复杂度排序，不过待排序的元素需要满足一定条件．</p>
@@ -330,14 +526,47 @@
 <p>其思想是：对于每个输入的元素ｘ，确定小于ｘ的元素个数．利用这一点可以直接把ｘ放到数组正确的位置上，不过对于有相同元素时，这一方案需要略做修改．</p>
 <p><strong>时间复杂度：</strong>$O(n)$</p>
 <p><strong>代码实现：</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">counting_sort</span><span class="params">(collection)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    Examples:</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; counting_sort([0, 5, 3, 2, 2])</span></span><br><span class="line"><span class="string">    [0, 2, 2, 3, 5]</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; counting_sort([])</span></span><br><span class="line"><span class="string">    []</span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; counting_sort([-2, -5, -45])</span></span><br><span class="line"><span class="string">    [-45, -5, -2]</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> collection:</span><br><span class="line">        <span class="keyword">return</span> collection</span><br><span class="line"></span><br><span class="line">    collection_max = max(collection)</span><br><span class="line">    collection_min = min(collection)</span><br><span class="line">    collection_len = len(collection)</span><br><span class="line">    counting_arr_len = collection_max - collection_min + <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    counting_arr = [<span class="number">0</span>] * counting_arr_len</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> collection:</span><br><span class="line">        counting_arr[i-collection_min] += <span class="number">1</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, counting_arr_len):</span><br><span class="line">        counting_arr[i] = counting_arr[i] + counting_arr[i<span class="number">-1</span>]</span><br><span class="line"></span><br><span class="line">    ordered = [<span class="number">0</span>] * collection_len</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(collection_len - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">        ordered[counting_arr[collection[i]-collection_min]<span class="number">-1</span>] = collection[i]</span><br><span class="line">        counting_arr[collection[i]-collection_min] -= <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ordered</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def counting_sort(collection):
+    &#39;&#39;&#39;
+    Examples:
+    &gt;&gt;&gt; counting_sort([0, 5, 3, 2, 2])
+    [0, 2, 2, 3, 5]
+    &gt;&gt;&gt; counting_sort([])
+    []
+    &gt;&gt;&gt; counting_sort([-2, -5, -45])
+    [-45, -5, -2]
+    &#39;&#39;&#39;
+    if not collection:
+        return collection
+
+    collection_max = max(collection)
+    collection_min = min(collection)
+    collection_len = len(collection)
+    counting_arr_len = collection_max - collection_min + 1
+
+    counting_arr = [0] * counting_arr_len
+    for i in collection:
+        counting_arr[i-collection_min] += 1
+
+    for i in range(1, counting_arr_len):
+        counting_arr[i] = counting_arr[i] + counting_arr[i-1]
+
+    ordered = [0] * collection_len
+
+    for i in range(collection_len - 1, -1, -1):
+        ordered[counting_arr[collection[i]-collection_min]-1] = collection[i]
+        counting_arr[collection[i]-collection_min] -= 1
+
+    return ordered
+</code></pre>
 <p><strong>算法分析：</strong></p>
 <p>计数排序的一个重要性质就是它是<strong>稳定的</strong>：具有相同值的元素在输出数组中的相对次序和在输入数组中的相对次序相同．这一性质也是计数排序经常用于基数排序的一个子过程的原因．</p>
 <h2 id="基数排序"><a href="#基数排序" class="headerlink" title="基数排序"></a>基数排序</h2><h2 id="桶排序"><a href="#桶排序" class="headerlink" title="桶排序"></a>桶排序</h2><p><strong>基本思想：</strong></p>
 <p>桶排序假设输入数据服从均匀分布．</p>
 <p>对于一组长度为N的待排关键字序列Ａ[1….n]。首先将这个序列划分成M个的子区间(桶) 。然后基于某种映射函数 ，将待排序列的关键字Ａ映射到第i个桶中(即桶数组B的下标 i) ，那么该关键字A就作为B[i]中的元素(每个桶B[i]都是一组大小为N/M的序列)。接着对每个桶B[i]中的所有元素进行比较排序(可以使用插入排序)。然后依次枚举输出B[0]….B[M]中的全部内容即是一个有序序列。</p>
 <p><strong>代码实现：</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<pre><code class="python">
+</code></pre>
 <p><strong>算法分析：</strong></p>
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -367,7 +596,6 @@ MathJax.Hub.Queue(function() {
   
 
 </article>
-
 
    
   <div class="text-center donation">

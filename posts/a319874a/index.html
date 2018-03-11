@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python,实战," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="在学习Python socket时候，通过动手实现一个命令行在线聊天室项目，加深对socket编程和网络编程的理解。主要使用到了socket和select模块来监听多客户端接入。">
 <meta name="keywords" content="Python,实战">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/a319874a/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="在学习Python socket时候，通过动手实现一个命令行在线聊天室项目，加深对socket编程和网络编程的理解。主要使用到了socket和select模块来监听多客户端接入。">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://shawnz.me/images/聊天室架构.png">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.046Z">
 <meta name="twitter:card" content="summary">
@@ -258,8 +264,17 @@
 <li>客户端把好友，聊天室以及聊天记录存放到内存中，可以查看。</li>
 </ol>
 <h2 id="聊天协议"><a href="#聊天协议" class="headerlink" title="聊天协议"></a>聊天协议</h2><p>在Socket API上包装了一套简单的应用层协议：采用分层设计，先发送长度后发送内容以及AES数据加密的原则。</p>
-<p>数据包格式：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">| Length of Message Body(4Bytes)| AES padding_n(1Bytes)| AES IV(16Bytes)|</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                        Command(4Bytes)                                |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|     Type of Parameter(1Bytes)     |     Length of Body(4Bytes)        |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|         int/str/bool/loat类型的字节序列    list和dict特殊处理             |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure></p>
-<ul>
+<p>数据包格式：</p>
+<pre><code>+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Length of Message Body(4Bytes)| AES padding_n(1Bytes)| AES IV(16Bytes)|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Command(4Bytes)                                |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Type of Parameter(1Bytes)     |     Length of Body(4Bytes)        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         int/str/bool/loat类型的字节序列    list和dict特殊处理             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+</code></pre><ul>
 <li>对于list类型的参数：每个item都相当于处理第三层的数据包。</li>
 <li>对于dict类型的参数：<ul>
 <li>key格式为：<code>|--Length of Key(1Byte)--|--Key--|</code>；</li>
@@ -281,7 +296,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

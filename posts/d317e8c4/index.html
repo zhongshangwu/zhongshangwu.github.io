@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python,Socket," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="Socket(套接字)通常指”通信端点“，用于进程间通信。">
 <meta name="keywords" content="Python,Socket">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/d317e8c4/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="Socket(套接字)通常指”通信端点“，用于进程间通信。">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Python网络编程">
@@ -234,7 +240,23 @@
 <p>Socket(套接字)通常指”通信端点“，用于进程间通信。<br><a id="more"></a></p>
 </blockquote>
 <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Socket API 是由操作系统提供的一个编程接口，让应用程序可以控制使用 socket 技术。</p>
-<p>在TCP/IP五层架构中，Socket API 不属于TCP/IP协议簇，只是操作系统提供的一个用于网络编程的接口，工作在应用层与传输层之间：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">   +----------------+</span><br><span class="line">   |  Application   | &lt;+</span><br><span class="line">   +----------------+  |</span><br><span class="line">   +----------------+  |</span><br><span class="line">+&gt; |   Socket API   | &lt;+</span><br><span class="line">|  +----------------+  |</span><br><span class="line">|  +----------------+  |</span><br><span class="line">|  |   Transport    | &lt;+</span><br><span class="line">|  +----------------+</span><br><span class="line">|  +----------------+</span><br><span class="line">+&gt; |    Internet    |</span><br><span class="line">   +----------------+</span><br><span class="line">   +----------------+</span><br><span class="line">   | Network Access |</span><br><span class="line">   +----------------+</span><br></pre></td></tr></table></figure></p>
+<p>在TCP/IP五层架构中，Socket API 不属于TCP/IP协议簇，只是操作系统提供的一个用于网络编程的接口，工作在应用层与传输层之间：</p>
+<pre><code class="code">     +----------------+
+     |  Application   | &lt;+
+     +----------------+  |
+     +----------------+  |
+  +&gt; |   Socket API   | &lt;+
+  |  +----------------+  |
+  |  +----------------+  |
+  |  |   Transport    | &lt;+
+  |  +----------------+
+  |  +----------------+
+  +&gt; |    Internet    |
+     +----------------+
+     +----------------+
+     | Network Access |
+     +----------------+
+</code></pre>
 <p>一个socket包含两个必要组成部分：</p>
 <ul>
 <li>地址，由ip和端口组成，例如192.168.1.10：80。</li>
@@ -252,10 +274,123 @@
 <li>INET套接字：面向网络，创建时使用<code>AF_INET</code>,或<code>AF_INET6</code>作为地址家族。</li>
 </ol>
 <h2 id="Python中的Socket编程"><a href="#Python中的Socket编程" class="headerlink" title="Python中的Socket编程"></a>Python中的Socket编程</h2><p>在Python中提供了socket和SocketServer模块可以面向套接字编程。</p>
-<h3 id="TCP-Socket通信"><a href="#TCP-Socket通信" class="headerlink" title="TCP Socket通信"></a>TCP Socket通信</h3><p><a href="">tcp_echo_server.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">from</span> time <span class="keyword">import</span> ctime</span><br><span class="line"></span><br><span class="line">tcp_server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">tcp_server_sock.bind((<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line">tcp_server_sock.listen(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_message</span><span class="params">(client_sock, addr)</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        data = client_sock.recv(<span class="number">1024</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        print(<span class="string">'[from %s:%s] %s'</span> % (addr + (data.decode(<span class="string">'utf-8'</span>),)))</span><br><span class="line">        client_sock.\</span><br><span class="line">            send(bytes(<span class="string">"[%s] %s"</span> % (ctime(), data.decode(<span class="string">'utf-8'</span>)), <span class="string">'utf-8'</span>))</span><br><span class="line">    client_sock.close()</span><br><span class="line">    print(<span class="string">'client[%s:%s] socket closed'</span> % addr)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forever</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            print(<span class="string">"waiting for connection..."</span>)</span><br><span class="line">            tcp_client_sock, addr = tcp_server_sock.accept()</span><br><span class="line">            print(<span class="string">"connected from:%s:%s"</span>, addr)</span><br><span class="line">            handle_message(tcp_client_sock, addr)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        tcp_server_sock.close()</span><br><span class="line">        print(<span class="string">'server socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forever()</span><br></pre></td></tr></table></figure></p>
-<p><a href="">tcp_echo_client.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line">tcp_client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">tcp_client_sock.connect((<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forver</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            data = input(<span class="string">'&gt; '</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            tcp_client_sock.send(bytes(data, <span class="string">'utf-8'</span>))</span><br><span class="line">            data = tcp_client_sock.recv(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            print(data.decode(<span class="string">'utf-8'</span>))</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        tcp_client_sock.close()</span><br><span class="line">        print(<span class="string">'client socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forver()</span><br></pre></td></tr></table></figure></p>
-<h3 id="UDP-Socke通信"><a href="#UDP-Socke通信" class="headerlink" title="UDP Socke通信"></a>UDP Socke通信</h3><p><a href="">udp_server.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">from</span> time <span class="keyword">import</span> ctime</span><br><span class="line"></span><br><span class="line">udp_server_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line">udp_server_sock.bind((<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forever</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            print(<span class="string">"waiting for message..."</span>)</span><br><span class="line">            data, addr = udp_server_sock.recvfrom(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            print(<span class="string">'[from %s:%s] %s'</span> % (addr + (data.decode(<span class="string">'utf-8'</span>),)))</span><br><span class="line">            udp_server_sock.\</span><br><span class="line">                sendto(bytes(<span class="string">"[%s] %s"</span> % (ctime(),</span><br><span class="line">                             data.decode(<span class="string">'utf-8'</span>)), <span class="string">'utf-8'</span>), addr)</span><br><span class="line">            print(<span class="string">'...received from and returned to:%s:%s'</span> % addr)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        udp_server_sock.close()</span><br><span class="line">        print(<span class="string">'server socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forever()</span><br></pre></td></tr></table></figure></p>
-<p><a href="">udp_client.py</a><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line">udp_client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loop_forver</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            data = input(<span class="string">'&gt; '</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            udp_client_sock.sendto(bytes(data, <span class="string">'utf-8'</span>), (<span class="string">''</span>, <span class="number">1024</span>))</span><br><span class="line">            data, addr = udp_client_sock.recvfrom(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> data:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            print(data.decode(<span class="string">'utf-8'</span>))</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        udp_client_sock.close()</span><br><span class="line">        print(<span class="string">'client socket closed...'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    loop_forver()</span><br></pre></td></tr></table></figure></p>
+<h3 id="TCP-Socket通信"><a href="#TCP-Socket通信" class="headerlink" title="TCP Socket通信"></a>TCP Socket通信</h3><p><a href="">tcp_echo_server.py</a></p>
+<pre><code class="python">import socket
+from time import ctime
+
+tcp_server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp_server_sock.bind((&#39;&#39;, 1024))
+tcp_server_sock.listen(5)
+
+
+def handle_message(client_sock, addr):
+    while True:
+        data = client_sock.recv(1024)
+        if not data:
+            break
+        print(&#39;[from %s:%s] %s&#39; % (addr + (data.decode(&#39;utf-8&#39;),)))
+        client_sock.\
+            send(bytes(&quot;[%s] %s&quot; % (ctime(), data.decode(&#39;utf-8&#39;)), &#39;utf-8&#39;))
+    client_sock.close()
+    print(&#39;client[%s:%s] socket closed&#39; % addr)
+
+
+def loop_forever():
+    try:
+        while True:
+            print(&quot;waiting for connection...&quot;)
+            tcp_client_sock, addr = tcp_server_sock.accept()
+            print(&quot;connected from:%s:%s&quot;, addr)
+            handle_message(tcp_client_sock, addr)
+    finally:
+        tcp_server_sock.close()
+        print(&#39;server socket closed...&#39;)
+
+
+if __name__ == &#39;__main__&#39;:
+    loop_forever()
+</code></pre>
+<p><a href="">tcp_echo_client.py</a></p>
+<pre><code class="python">import socket
+
+tcp_client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp_client_sock.connect((&#39;&#39;, 1024))
+
+
+def loop_forver():
+    try:
+        while True:
+            data = input(&#39;&gt; &#39;)
+            if not data:
+                break
+            tcp_client_sock.send(bytes(data, &#39;utf-8&#39;))
+            data = tcp_client_sock.recv(1024)
+            if not data:
+                break
+            print(data.decode(&#39;utf-8&#39;))
+    finally:
+        tcp_client_sock.close()
+        print(&#39;client socket closed...&#39;)
+
+
+if __name__ == &#39;__main__&#39;:
+    loop_forver()
+</code></pre>
+<h3 id="UDP-Socke通信"><a href="#UDP-Socke通信" class="headerlink" title="UDP Socke通信"></a>UDP Socke通信</h3><p><a href="">udp_server.py</a></p>
+<pre><code class="python">import socket
+from time import ctime
+
+udp_server_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+udp_server_sock.bind((&#39;&#39;, 1024))
+
+
+def loop_forever():
+    try:
+        while True:
+            print(&quot;waiting for message...&quot;)
+            data, addr = udp_server_sock.recvfrom(1024)
+            if not data:
+                break
+            print(&#39;[from %s:%s] %s&#39; % (addr + (data.decode(&#39;utf-8&#39;),)))
+            udp_server_sock.\
+                sendto(bytes(&quot;[%s] %s&quot; % (ctime(),
+                             data.decode(&#39;utf-8&#39;)), &#39;utf-8&#39;), addr)
+            print(&#39;...received from and returned to:%s:%s&#39; % addr)
+    finally:
+        udp_server_sock.close()
+        print(&#39;server socket closed...&#39;)
+
+
+if __name__ == &#39;__main__&#39;:
+    loop_forever()
+
+</code></pre>
+<p><a href="">udp_client.py</a></p>
+<pre><code class="python">import socket
+
+udp_client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+
+def loop_forver():
+    try:
+        while True:
+            data = input(&#39;&gt; &#39;)
+            if not data:
+                break
+            udp_client_sock.sendto(bytes(data, &#39;utf-8&#39;), (&#39;&#39;, 1024))
+            data, addr = udp_client_sock.recvfrom(1024)
+            if not data:
+                break
+            print(data.decode(&#39;utf-8&#39;))
+    finally:
+        udp_client_sock.close()
+        print(&#39;client socket closed...&#39;)
+
+
+if __name__ == &#39;__main__&#39;:
+    loop_forver()
+
+</code></pre>
 <p>###</p>
 <blockquote>
 <font face="Sans Serif"><em><strong>最简单的socket通信</strong></em></font>
@@ -274,7 +409,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

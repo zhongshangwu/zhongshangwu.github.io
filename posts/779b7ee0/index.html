@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Linux," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="Supervisor简介   官方文档  Supervisor是一个用 Python 写的进程管理工具，可以很方便的用来启动、重启、关闭进程。能够将命令行进程变为后台守护进程，并监控进程状态，在意外崩溃时重启进程。Supervisor采用 C/S 架构，有几个部分组成:  supervisord: 服务守护进程 supervisorctl: 命令行客户端 Web Server: 提供相当于supe">
 <meta name="keywords" content="Linux">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/779b7ee0/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="Supervisor简介   官方文档  Supervisor是一个用 Python 写的进程管理工具，可以很方便的用来启动、重启、关闭进程。能够将命令行进程变为后台守护进程，并监控进程状态，在意外崩溃时重启进程。Supervisor采用 C/S 架构，有几个部分组成:  supervisord: 服务守护进程 supervisorctl: 命令行客户端 Web Server: 提供相当于supe">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.030Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="进程管理工具Supervisor">
@@ -247,7 +253,40 @@
 <pre><code># pip install supervisor
 </code></pre><h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>Supervisor配置分为两个部分:supervisord(服务端，对应客户端supervisorctl)和应用程序配置。<br>安装完supervisor后，运行echo_supervisord_conf命令生成默认的配置文件，也可以重定向到一个指定文件:</p>
 <pre><code>echo_supervisord_conf &gt; /etc/supervisord.conf
-</code></pre><h2 id="supervisord配置"><a href="#supervisord配置" class="headerlink" title="supervisord配置:"></a>supervisord配置:</h2><figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[unix_http_server]</span></span><br><span class="line"><span class="attr">file</span>=/tmp/supervisor.sock   ; UNIX socket 文件，supervisorctl 会使用</span><br><span class="line"><span class="comment">;chmod=0700                 ; socket 文件的 mode，默认是 0700</span></span><br><span class="line"><span class="comment">;chown=nobody:nogroup       ; socket 文件的 owner，格式： uid:gid</span></span><br><span class="line"></span><br><span class="line"><span class="comment">;[inet_http_server]         ; HTTP 服务器，提供 web 管理界面</span></span><br><span class="line"><span class="comment">;port=127.0.0.1:9001        ; Web 管理后台运行的 IP 和端口，如果开放到公网，需要注意安全性</span></span><br><span class="line"><span class="comment">;username=user              ; 登录管理后台的用户名</span></span><br><span class="line"><span class="comment">;password=123               ; 登录管理后台的密码</span></span><br><span class="line"></span><br><span class="line"><span class="section">[supervisord]</span></span><br><span class="line"><span class="attr">logfile</span>=/tmp/supervisord.log ; 日志文件，默认是 <span class="variable">$CWD</span>/supervisord.log</span><br><span class="line"><span class="attr">logfile_maxbytes</span>=<span class="number">50</span>MB        ; 日志文件大小，超出会 rotate，默认 <span class="number">50</span>MB</span><br><span class="line"><span class="attr">logfile_backups</span>=<span class="number">10</span>           ; 日志文件保留备份数量默认 <span class="number">10</span></span><br><span class="line"><span class="attr">loglevel</span>=info                ; 日志级别，默认 info，其它: debug,warn,trace</span><br><span class="line"><span class="attr">pidfile</span>=/tmp/supervisord.pid ; pid 文件</span><br><span class="line"><span class="attr">nodaemon</span>=<span class="literal">false</span>               ; 是否在前台启动，默认是 <span class="literal">false</span>，即以 daemon 的方式启动</span><br><span class="line"><span class="attr">minfds</span>=<span class="number">1024</span>                  ; 可以打开的文件描述符的最小值，默认 <span class="number">1024</span></span><br><span class="line"><span class="attr">minprocs</span>=<span class="number">200</span>                 ; 可以打开的进程数的最小值，默认 <span class="number">200</span></span><br><span class="line"></span><br><span class="line"><span class="comment">; the below section must remain in the config file for RPC</span></span><br><span class="line"><span class="comment">; (supervisorctl/web interface) to work, additional interfaces may be</span></span><br><span class="line"><span class="comment">; added by defining them in separate rpcinterface: sections</span></span><br><span class="line"><span class="section">[rpcinterface:supervisor]</span></span><br><span class="line">supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface</span><br><span class="line"></span><br><span class="line"><span class="section">[supervisorctl]</span></span><br><span class="line"><span class="attr">serverurl</span>=unix:///tmp/supervisor.sock ; 通过 UNIX socket 连接 supervisord，路径与 unix_http_server 部分的 file 一致</span><br><span class="line"><span class="comment">;serverurl=http://127.0.0.1:9001 ; 通过 HTTP 的方式连接 supervisord</span></span><br><span class="line"></span><br><span class="line"><span class="comment">; 包含其他的配置文件</span></span><br><span class="line"><span class="section">[include]</span></span><br><span class="line"><span class="attr">files</span> = relative/directory/*.ini    ; 可以是 *.conf 或 *.ini</span><br></pre></td></tr></table></figure>
+</code></pre><h2 id="supervisord配置"><a href="#supervisord配置" class="headerlink" title="supervisord配置:"></a>supervisord配置:</h2><pre><code class="ini">[unix_http_server]
+file=/tmp/supervisor.sock   ; UNIX socket 文件，supervisorctl 会使用
+;chmod=0700                 ; socket 文件的 mode，默认是 0700
+;chown=nobody:nogroup       ; socket 文件的 owner，格式： uid:gid
+
+;[inet_http_server]         ; HTTP 服务器，提供 web 管理界面
+;port=127.0.0.1:9001        ; Web 管理后台运行的 IP 和端口，如果开放到公网，需要注意安全性
+;username=user              ; 登录管理后台的用户名
+;password=123               ; 登录管理后台的密码
+
+[supervisord]
+logfile=/tmp/supervisord.log ; 日志文件，默认是 $CWD/supervisord.log
+logfile_maxbytes=50MB        ; 日志文件大小，超出会 rotate，默认 50MB
+logfile_backups=10           ; 日志文件保留备份数量默认 10
+loglevel=info                ; 日志级别，默认 info，其它: debug,warn,trace
+pidfile=/tmp/supervisord.pid ; pid 文件
+nodaemon=false               ; 是否在前台启动，默认是 false，即以 daemon 的方式启动
+minfds=1024                  ; 可以打开的文件描述符的最小值，默认 1024
+minprocs=200                 ; 可以打开的进程数的最小值，默认 200
+
+; the below section must remain in the config file for RPC
+; (supervisorctl/web interface) to work, additional interfaces may be
+; added by defining them in separate rpcinterface: sections
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///tmp/supervisor.sock ; 通过 UNIX socket 连接 supervisord，路径与 unix_http_server 部分的 file 一致
+;serverurl=http://127.0.0.1:9001 ; 通过 HTTP 的方式连接 supervisord
+
+; 包含其他的配置文件
+[include]
+files = relative/directory/*.ini    ; 可以是 *.conf 或 *.ini
+</code></pre>
 <h2 id="program配置"><a href="#program配置" class="headerlink" title="program配置"></a>program配置</h2><p>这部分是supervisord要管理的进程的配置文件。这里有两种方式:</p>
 <ol>
 <li>把所有配置文件都放在supervisord.conf配置文件里面</li>
@@ -257,8 +296,15 @@
 <pre><code>[include]
 files = /etc/supervisor/*.conf
 </code></pre><p>以uwsgi的方式部署FLASK应用:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[program:your appname]</span><br><span class="line">command=/path/to/virtual/env/bin/uwsgi -s /tmp/uwsgi.sock -w flask_file_name:app -H /path/to/virtual/env --chmod-socket 666</span><br><span class="line">directory=/path/to/app</span><br><span class="line">autostart=true</span><br><span class="line">autorestart=true</span><br><span class="line">stdout_logfile=/path/to/app/logs/uwsgi.log</span><br><span class="line">redirect_stderr=true</span><br><span class="line">stopsignal=QUIT</span><br></pre></td></tr></table></figure>
-<p>一份supervisord配置文件至少需要一个[program:x]部分的部署，x表示program name，会在supervisorctl或Web管理界面显示，在supervisorctl中通过这个值对程序进行start、stop、restart等操作</p>
+<pre><code>[program:your appname]
+command=/path/to/virtual/env/bin/uwsgi -s /tmp/uwsgi.sock -w flask_file_name:app -H /path/to/virtual/env --chmod-socket 666
+directory=/path/to/app
+autostart=true
+autorestart=true
+stdout_logfile=/path/to/app/logs/uwsgi.log
+redirect_stderr=true
+stopsignal=QUIT
+</code></pre><p>一份supervisord配置文件至少需要一个[program:x]部分的部署，x表示program name，会在supervisorctl或Web管理界面显示，在supervisorctl中通过这个值对程序进行start、stop、restart等操作</p>
 <h1 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h1><p>supervisord启动配置文件的默认查找顺序为:$CWD/supervisord.conf, $CWD/etc/supervisord.conf, /etc/supervisord.conf。也可以通过 -c 选项指定配置文件路径:<br>    supervisord -c /etc/supervisord.conf</p>
 <h1 id="使用supervisorctl"><a href="#使用supervisorctl" class="headerlink" title="使用supervisorctl"></a>使用supervisorctl</h1><p>supervisorctl是supervisord的一个命令行管理客户端工具、启动是需要和supervisord一样指定配置文件、否则按照与supervisord一样的顺序查找配置文件。<br>    supervisorctl -c /etc/supervisord.conf<br>supervisorctl命令会启动Shell界面，然后可以执行各种命令:<br>    &gt; status    # 查看程序状态<br>    &gt; stop usercenter   # 关闭 usercenter 程序<br>    &gt; start usercenter  # 启动 usercenter 程序<br>    &gt; restart usercenter    # 重启 usercenter 程序<br>    &gt; reread    ＃ 读取有更新（增加）的配置文件，不会启动新添加的程序<br>    &gt; update    ＃ 重启配置文件修改过的程序<br>除了进入Shell界面，也可以直接在Bash终端运行:<br>    $ supervisorctl status<br>    $ supervisorctl stop usercenter<br>    $ supervisorctl start usercenter<br>    $ supervisorctl restart usercenter<br>    $ supervisorctl reread<br>    $ supervisorctl update<br>另外也可以登入WEB管理界面进行操作，除了单进程管理，supervisor还具备配置group，进行分组管理等功能</p>
 
@@ -270,7 +316,6 @@ files = /etc/supervisor/*.conf
   
 
 </article>
-
 
    
   <div class="text-center donation">

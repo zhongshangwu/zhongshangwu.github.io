@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="在区分这两种方式之前，先要理解所有的对象或者说是基本数据类型，都有两样东西：  值 指向内存地址的引用假设有foo = &amp;quot;hello world!&amp;quot; Passing by Value指将值的副本传递给被调用的函数，意味着有了两个独立的变量，互不干扰。传递的就是hello world Passing by Reference指将变量或者说是引用传递给函数，对引用的实体的修改将改变">
 <meta name="keywords" content="Python">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/e40cacb6/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="在区分这两种方式之前，先要理解所有的对象或者说是基本数据类型，都有两样东西：  值 指向内存地址的引用假设有foo = &amp;quot;hello world!&amp;quot; Passing by Value指将值的副本传递给被调用的函数，意味着有了两个独立的变量，互不干扰。传递的就是hello world Passing by Reference指将变量或者说是引用传递给函数，对引用的实体的修改将改变">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.030Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Passing Arguments by Reference or Value">
@@ -242,7 +248,16 @@
 <a id="more"></a>
 <p>在这里介绍了一下Java和Python关于参数传递的过程和机制：</p>
 <h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><p>在大多java的书籍中都强调：<strong>只有值传递</strong>。v<br>像这样：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Dog myDog = <span class="keyword">new</span> Dog(<span class="string">"Bailey"</span>)  <span class="comment">// 内存地址&amp;42</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">foo</span><span class="params">(Dog someDog)</span></span>&#123;</span><br><span class="line">    someDog.setName(<span class="string">"Max"</span>);  <span class="comment">// Line A</span></span><br><span class="line">    someDog = <span class="keyword">new</span> Dog(<span class="string">"Buddy"</span>);  <span class="comment">// Line B</span></span><br><span class="line">    someDog.setName(<span class="string">"Rocky"</span>);  <span class="comment">// Line C</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo(myDog)</span><br></pre></td></tr></table></figure>
+<pre><code class="java">Dog myDog = new Dog(&quot;Bailey&quot;)  // 内存地址&amp;42
+
+public void foo(Dog someDog){
+    someDog.setName(&quot;Max&quot;);  // Line A
+    someDog = new Dog(&quot;Buddy&quot;);  // Line B
+    someDog.setName(&quot;Rocky&quot;);  // Line C
+}
+
+foo(myDog)
+</code></pre>
 <p>看看都发生些什么：</p>
 <ul>
 <li><code>foo</code>方法中的参数<code>someDog</code>，接收到<code>Dog Bailey</code>的引用的值的副本<code>&amp;42</code></li>
@@ -272,7 +287,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

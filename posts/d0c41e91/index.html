@@ -14,12 +14,18 @@
   
     <meta name="keywords" content="Linux,Nignx," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="keywords" content="Linux,Nignx">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Nignx工作原理">
 <meta property="og:url" content="http://shawnz.me/posts/d0c41e91/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://shawnz.me/images/nignx.png">
 <meta property="og:image" content="http://shawnz.me/images/nignx-struct.png">
 <meta property="og:image" content="http://shawnz.me/images/nignx-modules.png">
@@ -278,7 +284,29 @@
 <h4 id="定时器"><a href="#定时器" class="headerlink" title="定时器"></a>定时器</h4><p>在Nginx事件循环中除了要处理所有的从epoll中获取的事件之外，还要处理一些timer事件。</p>
 <p>Nignx通过红黑树来维护所有的timer节点，在worker进程的每一次循环中都会调用<code>ngx_process_events_and_timers</code>函数，在该函数中就会调用处理定时器的函数<code>ngx_event_expire_timers</code>，每次该函数都不断的从红黑树中取出时间值最小的，获取超时时间。如果超时则执行他们的函数，若没有超时则对epoll_wait加上超时时间，防止阻塞过长时间，妨碍定时器执行。直到取出的节点的时间没有超时为止。</p>
 <p>Nignx在处理事件循环的时候，总是先判断是否超时，然后在处理网络请求。可以用一段伪代码描述Nignx事件处理模型：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">while (true) &#123;</span><br><span class="line">    for t in run_tasks:</span><br><span class="line">        t.handler();</span><br><span class="line">    update_time(&amp;now);</span><br><span class="line">    timeout = ETERNITY;</span><br><span class="line">    for t in wait_tasks: /* sorted already */</span><br><span class="line">        if (t.time &lt;= now) &#123;</span><br><span class="line">            t.timeout_handler();</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            timeout = t.time - now;</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line">    nevents = poll_function(events, timeout);</span><br><span class="line">    for i in nevents:</span><br><span class="line">        task t;</span><br><span class="line">        if (events[i].type == READ) &#123;</span><br><span class="line">            t.handler = read_handler;</span><br><span class="line">        &#125; else &#123; /* events[i].type == WRITE */</span><br><span class="line">            t.handler = write_handler;</span><br><span class="line">        &#125;</span><br><span class="line">        run_tasks_add(t);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="code">while (true) {
+    for t in run_tasks:
+        t.handler();
+    update_time(&amp;now);
+    timeout = ETERNITY;
+    for t in wait_tasks: /* sorted already */
+        if (t.time &lt;= now) {
+            t.timeout_handler();
+        } else {
+            timeout = t.time - now;
+            break;
+        }
+    nevents = poll_function(events, timeout);
+    for i in nevents:
+        task t;
+        if (events[i].type == READ) {
+            t.handler = read_handler;
+        } else { /* events[i].type == WRITE */
+            t.handler = write_handler;
+        }
+        run_tasks_add(t);
+}
+</code></pre>
 <h3 id="Nignx-模块化体系"><a href="#Nignx-模块化体系" class="headerlink" title="Nignx 模块化体系"></a>Nignx 模块化体系</h3><p>Nginx的内部结构是由核心部分和一系列功能模块组成的，这样可以使得每个模块的功能相对简单，便于对系统进行功能扩展，各模块之间的关系如下图：</p>
 <p><img src="/images/nignx-modules.png" alt=""></p>
 <p>Nginx 将各功能模块组织成一条链，当有请求到达的时候，请求依次经过这条链上的部分或者全部模块，进行处理。</p>
@@ -350,7 +378,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

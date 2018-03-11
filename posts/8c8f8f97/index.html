@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python,源码," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="GIL与线程调度GIL(Global Interpreter Lock), 限制线程对共享资源的访问，同一时间只会有一个获得GIL的线程在跑，其他线程则处于等待状态. Python的线程是原生操作系统线程, 它使用的线程的调度模型主要需要解决两个问题:  在何时挂起当前线程, 选择处理等待状态的线程? 在众多的等待线程中, 选择激活哪个线程?">
 <meta name="keywords" content="Python,源码">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/8c8f8f97/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="GIL与线程调度GIL(Global Interpreter Lock), 限制线程对共享资源的访问，同一时间只会有一个获得GIL的线程在跑，其他线程则处于等待状态. Python的线程是原生操作系统线程, 它使用的线程的调度模型主要需要解决两个问题:  在何时挂起当前线程, 选择处理等待状态的线程? 在众多的等待线程中, 选择激活哪个线程?">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.130Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Python源码阅读-多线程机制">
@@ -243,22 +249,98 @@
 </ul>
 <p>至于选择激活哪个线程, 完全由操作系统系统决定. 这一点至关重要, Python的线程就是操作系统的原生线程, 只不过在Python维护着这些线程的状态<code>PyThreadState</code>对象, 以及在这些线程上面实现一层抽象, 提供统一的编程接口, 例如: <code>thread</code>和<code>threading</code>等.</p>
 <h2 id="线程创建"><a href="#线程创建" class="headerlink" title="线程创建"></a>线程创建</h2><p>我们来看一个简单的例子:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<pre><code class="python">
+</code></pre>
 <p>在Python中我们可以使用<code>thread</code>模块或<code>threading</code>模块创建线程. <code>threading</code>模块是对<code>_thread</code>模块的封装, <code>_thread</code>是一个內建模块, 它的实现在<code>_threadmodule.c</code>:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[_threadmodule.c]</span><br><span class="line"><span class="keyword">static</span> PyMethodDef thread_methods[] = &#123;</span><br><span class="line">    &#123;<span class="string">"start_new_thread"</span>,        (PyCFunction)thread_PyThread_start_new_thread,</span><br><span class="line">     METH_VARARGS, start_new_doc&#125;,</span><br><span class="line">    &#123;<span class="string">"start_new"</span>,               (PyCFunction)thread_PyThread_start_new_thread,</span><br><span class="line">     METH_VARARGS, start_new_doc&#125;,</span><br><span class="line">    &#123;<span class="string">"allocate_lock"</span>,           (PyCFunction)thread_PyThread_allocate_lock,</span><br><span class="line">     METH_NOARGS, allocate_doc&#125;,</span><br><span class="line">    &#123;<span class="string">"allocate"</span>,                (PyCFunction)thread_PyThread_allocate_lock,</span><br><span class="line">     METH_NOARGS, allocate_doc&#125;,</span><br><span class="line">    &#123;<span class="string">"exit_thread"</span>,             (PyCFunction)thread_PyThread_exit_thread,</span><br><span class="line">     METH_NOARGS, exit_doc&#125;,</span><br><span class="line">    ......</span><br><span class="line">    &#123;<span class="literal">NULL</span>,                      <span class="literal">NULL</span>&#125;           <span class="comment">/* sentinel */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[_threadmodule.c]
+static PyMethodDef thread_methods[] = {
+    {&quot;start_new_thread&quot;,        (PyCFunction)thread_PyThread_start_new_thread,
+     METH_VARARGS, start_new_doc},
+    {&quot;start_new&quot;,               (PyCFunction)thread_PyThread_start_new_thread,
+     METH_VARARGS, start_new_doc},
+    {&quot;allocate_lock&quot;,           (PyCFunction)thread_PyThread_allocate_lock,
+     METH_NOARGS, allocate_doc},
+    {&quot;allocate&quot;,                (PyCFunction)thread_PyThread_allocate_lock,
+     METH_NOARGS, allocate_doc},
+    {&quot;exit_thread&quot;,             (PyCFunction)thread_PyThread_exit_thread,
+     METH_NOARGS, exit_doc},
+    ......
+    {NULL,                      NULL}           /* sentinel */
+};
+</code></pre>
 <p><code>_thread</code>模块为用户提供的多线程编程接口十分少, 也正因如此Python的多线程编程才变得简单灵活.</p>
 <p>创建线程的函数是<code>thread_PyThread_start_new_thread</code>, 下面是它的实现:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">static</span> PyObject *</span><br><span class="line">thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)</span><br><span class="line">&#123;</span><br><span class="line">    PyObject *func, *args, *keyw = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">bootstate</span> *<span class="title">boot</span>;</span></span><br><span class="line">    <span class="keyword">long</span> ident;</span><br><span class="line">    PyArg_UnpackTuple(fargs, <span class="string">"start_new_thread"</span>, <span class="number">2</span>, <span class="number">3</span>, &amp;func, &amp;args, &amp;keyw))</span><br><span class="line">    boot = PyMem_NEW(struct bootstate, <span class="number">1</span>); <span class="comment">/* 创建bootstate结构 */</span></span><br><span class="line">    </span><br><span class="line">    boot-&gt;interp = PyThreadState_GET()-&gt;interp;</span><br><span class="line">    boot-&gt;func = func;</span><br><span class="line">    boot-&gt;args = args;</span><br><span class="line">    boot-&gt;keyw = keyw;</span><br><span class="line">    boot-&gt;tstate = _PyThreadState_Prealloc(boot-&gt;interp);</span><br><span class="line">    </span><br><span class="line">    PyEval_InitThreads(); <span class="comment">/* 初始化多线程环境 */</span></span><br><span class="line">    ident = PyThread_start_new_thread(t_bootstrap, (<span class="keyword">void</span>*) boot); <span class="comment">/* 创建线程 */</span></span><br><span class="line">    <span class="keyword">return</span> PyLong_FromLong(ident); <span class="comment">/* 返回线程标识 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">
+static PyObject *
+thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
+{
+    PyObject *func, *args, *keyw = NULL;
+    struct bootstate *boot;
+    long ident;
+    PyArg_UnpackTuple(fargs, &quot;start_new_thread&quot;, 2, 3, &amp;func, &amp;args, &amp;keyw))
+    boot = PyMem_NEW(struct bootstate, 1); /* 创建bootstate结构 */
+
+    boot-&gt;interp = PyThreadState_GET()-&gt;interp;
+    boot-&gt;func = func;
+    boot-&gt;args = args;
+    boot-&gt;keyw = keyw;
+    boot-&gt;tstate = _PyThreadState_Prealloc(boot-&gt;interp);
+
+    PyEval_InitThreads(); /* 初始化多线程环境 */
+    ident = PyThread_start_new_thread(t_bootstrap, (void*) boot); /* 创建线程 */
+    return PyLong_FromLong(ident); /* 返回线程标识 */
+}
+</code></pre>
 <p><strong>Python在多线程机制默认是没有激活的.</strong></p>
 <p>这一点十分有意思, 在虚拟机启动的时候, Python只支持单线程, 支持多线程的数据结构和<code>GIL</code>都没有创建, 只有当用户调用<code>thread.start_new_thread</code>时, Python才会认为用户需要多线程的支持, 自动初始化多线程环境.</p>
 <h2 id="多线程环境"><a href="#多线程环境" class="headerlink" title="多线程环境"></a>多线程环境</h2><p>创建多线程环境的主要工作就是<code>GIL</code>的创建.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[pythread.h]</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">void</span> *PyThread_type_lock;</span><br><span class="line"></span><br><span class="line">[ceval.c]</span><br><span class="line"><span class="keyword">static</span> PyThread_type_lock pending_lock = <span class="number">0</span>; <span class="comment">/* for pending calls */</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">long</span> main_thread = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span></span><br><span class="line">PyEval_InitThreads(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (gil_created())</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    create_gil();</span><br><span class="line">    take_gil(PyThreadState_GET());</span><br><span class="line">    main_thread = PyThread_get_thread_ident();</span><br><span class="line">    <span class="keyword">if</span> (!pending_lock)</span><br><span class="line">        pending_lock = PyThread_allocate_lock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[pythread.h]
+typedef void *PyThread_type_lock;
+
+[ceval.c]
+static PyThread_type_lock pending_lock = 0; /* for pending calls */
+static long main_thread = 0;
+
+void
+PyEval_InitThreads(void)
+{
+    if (gil_created())
+        return;
+    create_gil();
+    take_gil(PyThreadState_GET());
+    main_thread = PyThread_get_thread_ident();
+    if (!pending_lock)
+        pending_lock = PyThread_allocate_lock();
+}
+</code></pre>
 <p>Python的<code>GIL</code>是一个<code>void *</code>指针, 可以指向任意类型. Python的多线程机制是平台相关的, 在Linux和Windows下有不同的实现: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[thread.c]</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> _POSIX_THREADS  <span class="comment">/* Linux POSIX线程 */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PYTHREAD_NAME <span class="meta-string">"pthread"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"thread_pthread.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NT_THREADS <span class="comment">/* Windows系统 */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PYTHREAD_NAME <span class="meta-string">"nt"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"thread_nt.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+<pre><code class="c">[thread.c]
+#ifdef _POSIX_THREADS  /* Linux POSIX线程 */
+#define PYTHREAD_NAME &quot;pthread&quot;
+#include &quot;thread_pthread.h&quot;
+#endif
+
+#ifdef NT_THREADS /* Windows系统 */
+#define PYTHREAD_NAME &quot;nt&quot;
+#include &quot;thread_nt.h&quot;
+#endif
+</code></pre>
 <p>在WIN32平台下, <code>GIL</code>是一个<code>NRMUTEX</code>结构体, 利用<code>Event</code>来实现线程的互斥:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[thread_nt.h]</span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">NRMUTEX</span> &#123;</span></span><br><span class="line">LONG   owned ;</span><br><span class="line">DWORD  thread_id ;</span><br><span class="line">HANDLE hevent ;</span><br><span class="line">&#125; NRMUTEX, *PNRMUTEX ;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[thread_nt.h]
+typedef struct NRMUTEX {
+LONG   owned ;
+DWORD  thread_id ;
+HANDLE hevent ;
+} NRMUTEX, *PNRMUTEX ;
+</code></pre>
 <p>在Linux系统下, <code>GIL</code>利用条件机制和互斥锁<code>&lt;cond, mutex&gt;</code>保护一个锁变量作为实现(还有其他的实现: “信号量”):</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[thread_pthread.h]</span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="keyword">char</span>             locked; <span class="comment">/* 0=unlocked, 1=locked */</span></span><br><span class="line">    <span class="keyword">pthread_cond_t</span>   lock_released;</span><br><span class="line">    <span class="keyword">pthread_mutex_t</span>  mut;  <span class="comment">/* 利用&lt;cond, mutex&gt;获得锁, 控制线程的同步 */</span></span><br><span class="line">&#125; pthread_lock;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[thread_pthread.h]
+typedef struct {
+    char             locked; /* 0=unlocked, 1=locked */
+    pthread_cond_t   lock_released;
+    pthread_mutex_t  mut;  /* 利用&lt;cond, mutex&gt;获得锁, 控制线程的同步 */
+} pthread_lock;
+</code></pre>
 <p>在这里不会过多的深入线程机制具体实现, 而是以Linux平台为参考, 重点关注Python的线程调度机制. </p>
 <p>无论创建多少个线程, 多线程环境的初始化动作只执行一次(检查<code>gil_created</code>).</p>
 <p>在经过<code>PyEval_InitThreads -&gt; PyThread_allocate_lock</code>获得了<code>GIL</code>锁后, 线程调度就需要<strong>获取</strong>和<strong>释放</strong><code>GIL</code>锁.</p>
@@ -266,30 +348,217 @@
 <li><code>PyThread_acquire_lock()</code></li>
 <li><code>PyThread_release_lock()</code></li>
 </ul>
-<h3 id="GIL创建"><a href="#GIL创建" class="headerlink" title="GIL创建"></a>GIL创建</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">PyThread_type_lock</span><br><span class="line">PyThread_allocate_lock(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    pthread_lock *lock;</span><br><span class="line">    <span class="keyword">int</span> status, error = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (!initialized)  <span class="comment">/* 检查原生线程环境的初始化 */</span></span><br><span class="line">        PyThread_init_thread();</span><br><span class="line">    lock = (pthread_lock *) PyMem_RawMalloc(<span class="keyword">sizeof</span>(pthread_lock));</span><br><span class="line">    <span class="built_in">memset</span>((<span class="keyword">void</span> *)lock, <span class="string">'\0'</span>, <span class="keyword">sizeof</span>(pthread_lock)); <span class="comment">/* 零值 */</span></span><br><span class="line">    lock-&gt;locked = <span class="number">0</span>; <span class="comment">/* GIL没有被占用 */</span></span><br><span class="line">    status = pthread_mutex_init(&amp;lock-&gt;mut,</span><br><span class="line">                                pthread_mutexattr_default);</span><br><span class="line">    <span class="comment">/* Mark the pthread mutex underlying a Python mutex as pure happens-before.</span></span><br><span class="line"><span class="comment">       We can't simply mark the Python-level mutex as a mutex because it can be</span></span><br><span class="line"><span class="comment">       acquired and released in different threads, which will cause errors. */</span></span><br><span class="line">    _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX(&amp;lock-&gt;mut);</span><br><span class="line">    status = pthread_cond_init(&amp;lock-&gt;lock_released,</span><br><span class="line">                                pthread_condattr_default);</span><br><span class="line">    <span class="keyword">return</span> (PyThread_type_lock) lock;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="GIL创建"><a href="#GIL创建" class="headerlink" title="GIL创建"></a>GIL创建</h3><pre><code class="c">PyThread_type_lock
+PyThread_allocate_lock(void)
+{
+    pthread_lock *lock;
+    int status, error = 0;
+    if (!initialized)  /* 检查原生线程环境的初始化 */
+        PyThread_init_thread();
+    lock = (pthread_lock *) PyMem_RawMalloc(sizeof(pthread_lock));
+    memset((void *)lock, &#39;\0&#39;, sizeof(pthread_lock)); /* 零值 */
+    lock-&gt;locked = 0; /* GIL没有被占用 */
+    status = pthread_mutex_init(&amp;lock-&gt;mut,
+                                pthread_mutexattr_default);
+    /* Mark the pthread mutex underlying a Python mutex as pure happens-before.
+       We can&#39;t simply mark the Python-level mutex as a mutex because it can be
+       acquired and released in different threads, which will cause errors. */
+    _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX(&amp;lock-&gt;mut);
+    status = pthread_cond_init(&amp;lock-&gt;lock_released,
+                                pthread_condattr_default);
+    return (PyThread_type_lock) lock;
+}
+</code></pre>
 <p>在<code>GIL</code>的创建中, Python会先通过变量<code>initialized</code>检查原生线程环境是否初始化完毕(没有什么工作, 只是一个标识), 在其后就是<code>PyThread_type_lock</code>各个域的初始化, 可以看到新创建的<code>GIL</code>锁是没有被线程占有的. 这样在虚拟机初始化</p>
-<h3 id="GIL获取"><a href="#GIL获取" class="headerlink" title="GIL获取"></a>GIL获取</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">[thread_pthread.h]</span><br><span class="line"></span><br><span class="line">PyLockStatus</span><br><span class="line">PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,</span><br><span class="line">                            <span class="keyword">int</span> intr_flag)</span><br><span class="line">&#123;</span><br><span class="line">    PyLockStatus success = PY_LOCK_FAILURE; <span class="comment">/* 上锁成功或失败 */</span></span><br><span class="line">    pthread_lock *thelock = (pthread_lock *)lock;</span><br><span class="line">    <span class="keyword">int</span> status, error = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    status = pthread_mutex_lock( &amp;thelock-&gt;mut );  <span class="comment">/* 先获取mutex, 获得操作locked变量的权限 */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (status == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (thelock-&gt;locked == <span class="number">0</span>) &#123; <span class="comment">/* GIL可用 */</span></span><br><span class="line">            success = PY_LOCK_ACQUIRED;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (microseconds != <span class="number">0</span>) &#123; <span class="comment">/* GIL不可用, 尝试等待 */</span></span><br><span class="line">            struct timespec ts;</span><br><span class="line">            <span class="keyword">if</span> (microseconds &gt; <span class="number">0</span>)  <span class="comment">/* 等待microseconds时长 */</span></span><br><span class="line">                MICROSECONDS_TO_TIMESPEC(microseconds, ts);</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">while</span> (success == PY_LOCK_FAILURE) &#123;</span><br><span class="line">                <span class="keyword">if</span> (microseconds &gt; <span class="number">0</span>) &#123; <span class="comment">/* 超时等待锁变量释放  */</span></span><br><span class="line">                    status = pthread_cond_timedwait(</span><br><span class="line">                        &amp;thelock-&gt;lock_released,</span><br><span class="line">                        &amp;thelock-&gt;mut, &amp;ts);</span><br><span class="line">                    <span class="keyword">if</span> (status == ETIMEDOUT)</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span> &#123; <span class="comment">/* 无限期的等待锁变量释放 */</span></span><br><span class="line">                    status = pthread_cond_wait(</span><br><span class="line">                        &amp;thelock-&gt;lock_released,</span><br><span class="line">                        &amp;thelock-&gt;mut);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (intr_flag &amp;&amp; status == <span class="number">0</span> &amp;&amp; thelock-&gt;locked) &#123; <span class="comment">/* 锁不可用, 允许上层重试 */</span></span><br><span class="line">                    success = PY_LOCK_INTR;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (status == <span class="number">0</span> &amp;&amp; !thelock-&gt;locked) &#123; <span class="comment">/* 成功, 其他线程释放了锁变量 */</span></span><br><span class="line">                    success = PY_LOCK_ACQUIRED;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (success == PY_LOCK_ACQUIRED) thelock-&gt;locked = <span class="number">1</span>; <span class="comment">/* 获取到mutex锁, 修改锁变量locked */</span></span><br><span class="line">        status = pthread_mutex_unlock(&amp;thelock-&gt;mut); <span class="comment">/* 解锁mutex, 让其他线程有机会进入临界区等待GIL */</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (error) success = PY_LOCK_FAILURE;  <span class="comment">/* 失败 */</span></span><br><span class="line">    <span class="keyword">return</span> success;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="GIL获取"><a href="#GIL获取" class="headerlink" title="GIL获取"></a>GIL获取</h3><pre><code class="c">[thread_pthread.h]
+
+PyLockStatus
+PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
+                            int intr_flag)
+{
+    PyLockStatus success = PY_LOCK_FAILURE; /* 上锁成功或失败 */
+    pthread_lock *thelock = (pthread_lock *)lock;
+    int status, error = 0;
+
+    status = pthread_mutex_lock( &amp;thelock-&gt;mut );  /* 先获取mutex, 获得操作locked变量的权限 */
+
+    if (status == 0) {
+        if (thelock-&gt;locked == 0) { /* GIL可用 */
+            success = PY_LOCK_ACQUIRED;
+        }
+        else if (microseconds != 0) { /* GIL不可用, 尝试等待 */
+            struct timespec ts;
+            if (microseconds &gt; 0)  /* 等待microseconds时长 */
+                MICROSECONDS_TO_TIMESPEC(microseconds, ts);
+
+            while (success == PY_LOCK_FAILURE) {
+                if (microseconds &gt; 0) { /* 超时等待锁变量释放  */
+                    status = pthread_cond_timedwait(
+                        &amp;thelock-&gt;lock_released,
+                        &amp;thelock-&gt;mut, &amp;ts);
+                    if (status == ETIMEDOUT)
+                        break;
+                }
+                else { /* 无限期的等待锁变量释放 */
+                    status = pthread_cond_wait(
+                        &amp;thelock-&gt;lock_released,
+                        &amp;thelock-&gt;mut);
+                }
+
+                if (intr_flag &amp;&amp; status == 0 &amp;&amp; thelock-&gt;locked) { /* 锁不可用, 允许上层重试 */
+                    success = PY_LOCK_INTR;
+                    break;
+                }
+                else if (status == 0 &amp;&amp; !thelock-&gt;locked) { /* 成功, 其他线程释放了锁变量 */
+                    success = PY_LOCK_ACQUIRED;
+                }
+            }
+        }
+        if (success == PY_LOCK_ACQUIRED) thelock-&gt;locked = 1; /* 获取到mutex锁, 修改锁变量locked */
+        status = pthread_mutex_unlock(&amp;thelock-&gt;mut); /* 解锁mutex, 让其他线程有机会进入临界区等待GIL */
+    }
+    if (error) success = PY_LOCK_FAILURE;  /* 失败 */
+    return success;
+}
+</code></pre>
 <p><code>GIL</code>的获取过程: 线程会先获得<code>mutex</code>锁, 才可以修改锁变量<code>locked</code>. 如果获得mutex锁后, <code>locked</code>不为<code>0</code>则代表其他线程正在占用锁, 必须通过<code>pthread_cond_timedwait</code>等待其他线程将锁变量释放掉. 在获得<code>GIL</code>锁后, 设置<code>thelock-&gt;locked = 1</code>表示正在占中<code>GIL</code>锁, 线程必须释放掉<code>mutex</code>锁, 让其他线程有机会进入临界区等待锁.</p>
-<h3 id="GIL释放"><a href="#GIL释放" class="headerlink" title="GIL释放"></a>GIL释放</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">PyThread_release_lock(PyThread_type_lock lock)</span><br><span class="line">&#123;</span><br><span class="line">    pthread_lock *thelock = (pthread_lock *)lock;</span><br><span class="line">    <span class="keyword">int</span> status, error = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    status = pthread_mutex_lock( &amp;thelock-&gt;mut ); <span class="comment">/* 先获取mutex锁, 获得修改锁变量的权限 */</span></span><br><span class="line">    thelock-&gt;locked = <span class="number">0</span>; <span class="comment">/* 释放GIL锁 */</span></span><br><span class="line">    status = pthread_cond_signal( &amp;thelock-&gt;lock_released ); <span class="comment">/* 通知临界区的一个线程, 锁已经释放 */</span></span><br><span class="line">    status = pthread_mutex_unlock( &amp;thelock-&gt;mut ); <span class="comment">/* 释放mutex锁 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="GIL释放"><a href="#GIL释放" class="headerlink" title="GIL释放"></a>GIL释放</h3><pre><code class="c">void
+PyThread_release_lock(PyThread_type_lock lock)
+{
+    pthread_lock *thelock = (pthread_lock *)lock;
+    int status, error = 0;
+
+    status = pthread_mutex_lock( &amp;thelock-&gt;mut ); /* 先获取mutex锁, 获得修改锁变量的权限 */
+    thelock-&gt;locked = 0; /* 释放GIL锁 */
+    status = pthread_cond_signal( &amp;thelock-&gt;lock_released ); /* 通知临界区的一个线程, 锁已经释放 */
+    status = pthread_mutex_unlock( &amp;thelock-&gt;mut ); /* 释放mutex锁 */
+}
+</code></pre>
 <p>释放<code>GIL</code>锁, 首先也需要先获取到<code>mutex</code>锁, 修改锁变量后, 还需要通知其他在等待<code>GIL</code>锁的线程, 最后释放掉<code>mutex</code>锁.</p>
 <p>疑问: 不是会造成死锁吗? 一个占有metex锁在等待<code>GIL</code>释放信号, 一个申请<code>mutex</code>锁, 发送<code>GIL</code>释放信号?</p>
 <p>答案: 应该是在进入<code>pthread_cond_wait</code>期间, 会将<code>thelock-&gt;mut</code>释放掉. 条件满足的时候, 又会对<code>metex</code>加锁.</p>
 <h2 id="创建子线程"><a href="#创建子线程" class="headerlink" title="创建子线程"></a>创建子线程</h2><p>现在回到创建线程的<code>thread_PyThread_start_new_thread</code>函数, 我们先来看看在初始化线程环境之前的那个<code>bootstate</code>:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">boot = PyMem_NEW(struct bootstate, <span class="number">1</span>);</span><br><span class="line">boot-&gt;interp = PyThreadState_GET()-&gt;interp; <span class="comment">/* 当前进程 */</span></span><br><span class="line">boot-&gt;func = func; <span class="comment">/* 线程函数 */</span></span><br><span class="line">boot-&gt;args = args; <span class="comment">/* 函数位置参数 */</span></span><br><span class="line">boot-&gt;keyw = keyw; <span class="comment">/* 函数关键字参数 */</span></span><br><span class="line">boot-&gt;tstate = _PyThreadState_Prealloc(boot-&gt;interp); <span class="comment">/* 创建一个空的threadstate */</span></span><br></pre></td></tr></table></figure>
+<pre><code class="c">boot = PyMem_NEW(struct bootstate, 1);
+boot-&gt;interp = PyThreadState_GET()-&gt;interp; /* 当前进程 */
+boot-&gt;func = func; /* 线程函数 */
+boot-&gt;args = args; /* 函数位置参数 */
+boot-&gt;keyw = keyw; /* 函数关键字参数 */
+boot-&gt;tstate = _PyThreadState_Prealloc(boot-&gt;interp); /* 创建一个空的threadstate */
+</code></pre>
 <p>这个<code>boot</code>保存了程序中定义的线程相关的信息, 在构造完<code>boot</code>结构体以及确认初始化多线程环境后, Python就会调用底层的API创建原生线程:<code>PyThread_start_new_thread(t_bootstrap, (void*) boot);</code>. 这里传递的参数是一个<code>t_bootstrap</code>函数和之前构建好的<code>boot</code>结构体.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">[thread_pthread.h]</span><br><span class="line"><span class="keyword">long</span></span><br><span class="line">PyThread_start_new_thread(<span class="keyword">void</span> (*func)(<span class="keyword">void</span> *), <span class="keyword">void</span> *arg)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">pthread_t</span> th; <span class="comment">/* 线程标识 */</span></span><br><span class="line">    <span class="keyword">int</span> status;</span><br><span class="line">    <span class="keyword">pthread_attr_t</span> attrs; <span class="comment">/* 线程属性 */</span></span><br><span class="line">    <span class="keyword">size_t</span>      tss;</span><br><span class="line">    <span class="keyword">if</span> (!initialized)  <span class="comment">/* 检查原生线程环境的初始化 */</span></span><br><span class="line">        PyThread_init_thread();</span><br><span class="line">    pthread_attr_init(&amp;attrs) <span class="comment">/* 线程属性初始化 */</span></span><br><span class="line">    tss = (_pythread_stacksize != <span class="number">0</span>) ? _pythread_stacksize : THREAD_STACK_SIZE;</span><br><span class="line">    pthread_attr_setstacksize(&amp;attrs, tss); <span class="comment">/* 设置线程堆栈大小 */</span></span><br><span class="line">    pthread_attr_setscope(&amp;attrs, PTHREAD_SCOPE_SYSTEM); <span class="comment">/* 设置CPU竞争模式 */</span></span><br><span class="line">    status = pthread_create(&amp;th, &amp;attrs, (<span class="keyword">pthread_attr_t</span>*)<span class="literal">NULL</span>,</span><br><span class="line">                            (<span class="keyword">void</span>* (*)(<span class="keyword">void</span> *))func, (<span class="keyword">void</span> *)arg); <span class="comment">/* 创建原生线程 */</span></span><br><span class="line">    pthread_attr_destroy(&amp;attrs); <span class="comment">/* 线程属性销毁 */</span></span><br><span class="line">    pthread_detach(th); <span class="comment">/* 线程运行结束后, 自动释放内存 */</span></span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">long</span>) th;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[thread_pthread.h]
+long
+PyThread_start_new_thread(void (*func)(void *), void *arg)
+{
+    pthread_t th; /* 线程标识 */
+    int status;
+    pthread_attr_t attrs; /* 线程属性 */
+    size_t      tss;
+    if (!initialized)  /* 检查原生线程环境的初始化 */
+        PyThread_init_thread();
+    pthread_attr_init(&amp;attrs) /* 线程属性初始化 */
+    tss = (_pythread_stacksize != 0) ? _pythread_stacksize : THREAD_STACK_SIZE;
+    pthread_attr_setstacksize(&amp;attrs, tss); /* 设置线程堆栈大小 */
+    pthread_attr_setscope(&amp;attrs, PTHREAD_SCOPE_SYSTEM); /* 设置CPU竞争模式 */
+    status = pthread_create(&amp;th, &amp;attrs, (pthread_attr_t*)NULL,
+                            (void* (*)(void *))func, (void *)arg); /* 创建原生线程 */
+    pthread_attr_destroy(&amp;attrs); /* 线程属性销毁 */
+    pthread_detach(th); /* 线程运行结束后, 自动释放内存 */
+    return (long) th;
+}
+</code></pre>
 <p>Python会调用一系列的C API来设置和创建一个原生线程, 传给<code>pthread_create</code>用来创建线程的<code>func</code>参数是<code>t_bootstrap</code>, <code>arg</code>参数是包装了线程信息的<code>boot</code>结构, 我们这里还是重点关注那个<code>t_bootstrap</code>函数:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">t_bootstrap(<span class="keyword">void</span> *boot_raw)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">bootstate</span> *<span class="title">boot</span> = (<span class="title">struct</span> <span class="title">bootstate</span> *) <span class="title">boot_raw</span>;</span></span><br><span class="line">    PyThreadState *tstate;</span><br><span class="line">    PyObject *res;</span><br><span class="line">    tstate = boot-&gt;tstate;</span><br><span class="line">    tstate-&gt;thread_id = PyThread_get_thread_ident();</span><br><span class="line">    _PyThreadState_Init(tstate);</span><br><span class="line">    PyEval_AcquireThread(tstate); <span class="comment">/* 获取GIL锁 */</span></span><br><span class="line">    nb_threads++;</span><br><span class="line">    res = PyEval_CallObjectWithKeywords(</span><br><span class="line">        boot-&gt;func, boot-&gt;args, boot-&gt;keyw); <span class="comment">/* 执行我们的函数 */</span></span><br><span class="line">    ......</span><br><span class="line">    PyMem_DEL(boot_raw);</span><br><span class="line">    nb_threads--;</span><br><span class="line">    PyThreadState_Clear(tstate);</span><br><span class="line">    PyThreadState_DeleteCurrent();</span><br><span class="line">    PyThread_exit_thread(); <span class="comment">/* 通过pthread_exit(0);退出, 保证线程的子线程不会跟着结束 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static void
+t_bootstrap(void *boot_raw)
+{
+    struct bootstate *boot = (struct bootstate *) boot_raw;
+    PyThreadState *tstate;
+    PyObject *res;
+    tstate = boot-&gt;tstate;
+    tstate-&gt;thread_id = PyThread_get_thread_ident();
+    _PyThreadState_Init(tstate);
+    PyEval_AcquireThread(tstate); /* 获取GIL锁 */
+    nb_threads++;
+    res = PyEval_CallObjectWithKeywords(
+        boot-&gt;func, boot-&gt;args, boot-&gt;keyw); /* 执行我们的函数 */
+    ......
+    PyMem_DEL(boot_raw);
+    nb_threads--;
+    PyThreadState_Clear(tstate);
+    PyThreadState_DeleteCurrent();
+    PyThread_exit_thread(); /* 通过pthread_exit(0);退出, 保证线程的子线程不会跟着结束 */
+}
+</code></pre>
 <p>子线程和主线程的<code>GIL</code>竞争将发生在这里, <code>PyEval_AcquireThread</code>会尝试获取<code>GIL</code>锁:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">PyEval_AcquireThread(PyThreadState *tstate)</span><br><span class="line">&#123;</span><br><span class="line">    assert(gil_created()); <span class="comment">/* 检查GIL锁已被初始化 */</span></span><br><span class="line">    take_gil(tstate); <span class="comment">/* 获取GIL锁 */</span></span><br><span class="line">    PyThreadState_Swap(tstate) <span class="comment">/* 更新线程状态指针_PyThreadState_Current */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">void
+PyEval_AcquireThread(PyThreadState *tstate)
+{
+    assert(gil_created()); /* 检查GIL锁已被初始化 */
+    take_gil(tstate); /* 获取GIL锁 */
+    PyThreadState_Swap(tstate) /* 更新线程状态指针_PyThreadState_Current */
+}
+</code></pre>
 <p>在子线程通过<code>take_gil</code>获得GIL后, 就会开始执行我们的线程函数, <code>PyEval_CallObjectWithKeywords</code>执行结束后, 会释放GIL, 并完成销毁工作.有一点没有讲到的是关于”让步”的问题, 线程持有<code>GIL</code>后并不是直到结束才释放<code>GIL</code>锁.</p>
 <h2 id="线程状态保护"><a href="#线程状态保护" class="headerlink" title="线程状态保护"></a>线程状态保护</h2><p>我们知道线程状态对象类似线程的上下文, 里面保存着对应线程的信息, 并且有一个全局的<code>PyThreadState_Current</code>保存着当前活跃线程对应的状态对象. 这里有一个问题就是， 如何在调度线程的时候， 激活对应的线程状态对象?</p>
 <p>Python的做法是在内部通过一个单链表的形式管理所有创建的<code>PyThreadState</code>对象, 它们通过<code>next</code>指针链接在在一起.</p>
 <p>对于这个状态对象链表(线程共享的)的访问不需要<code>GIL</code>, 因为单独维护了一个<code>headmutex</code>锁, 它是在创建进程状态对象的时候创建的.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[pystate.c]</span><br><span class="line"><span class="keyword">static</span> PyThread_type_lock head_mutex = <span class="literal">NULL</span>; <span class="comment">/* Protects interp-&gt;tstate_head */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> HEAD_INIT() (void)(head_mutex || (head_mutex = PyThread_allocate_lock()))</span></span><br></pre></td></tr></table></figure>
-<p>在<code>Py_Initialize</code>运行时环境初始化的过程中有这么一步:<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">_Py_InitializeEx_Private(<span class="keyword">int</span> install_sigs, <span class="keyword">int</span> install_importlib)</span><br><span class="line">&#123;</span><br><span class="line">    interp = PyInterpreterState_New(); <span class="comment">/* 创建进程状态对象, 并初始化headmutex锁 */</span></span><br><span class="line">    tstate = PyThreadState_New(interp); <span class="comment">/* 创建线程状态对象 */</span></span><br><span class="line">    (<span class="keyword">void</span>) PyThreadState_Swap(tstate); <span class="comment">/* 更新当前线程指针 */</span></span><br><span class="line">    _PyGILState_Init(interp, tstate); </span><br><span class="line">    ....</span><br></pre></td></tr></table></figure></p>
+<pre><code class="c">[pystate.c]
+static PyThread_type_lock head_mutex = NULL; /* Protects interp-&gt;tstate_head */
+#define HEAD_INIT() (void)(head_mutex || (head_mutex = PyThread_allocate_lock()))
+</code></pre>
+<p>在<code>Py_Initialize</code>运行时环境初始化的过程中有这么一步:</p>
+<pre><code class="c">void
+_Py_InitializeEx_Private(int install_sigs, int install_importlib)
+{
+    interp = PyInterpreterState_New(); /* 创建进程状态对象, 并初始化headmutex锁 */
+    tstate = PyThreadState_New(interp); /* 创建线程状态对象 */
+    (void) PyThreadState_Swap(tstate); /* 更新当前线程指针 */
+    _PyGILState_Init(interp, tstate); 
+    ....
+</code></pre>
 <p><code>_Py_InitializeEx_Private</code>里面会调用<code>_PyGILState_Init</code>函数, 创建<code>TLS entry</code>(TLS, Thread Local Storage), 用于存储和恢复线程状态对象.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">[pystate.c]</span><br><span class="line"><span class="keyword">void</span></span><br><span class="line">_PyGILState_Init(PyInterpreterState *i, PyThreadState *t)</span><br><span class="line">&#123;</span><br><span class="line">    assert(i &amp;&amp; t); <span class="comment">/* must init with valid states */</span></span><br><span class="line">    autoTLSkey = PyThread_create_key();</span><br><span class="line">    <span class="keyword">if</span> (autoTLSkey == <span class="number">-1</span>)</span><br><span class="line">        Py_FatalError(<span class="string">"Could not allocate TLS entry"</span>);</span><br><span class="line">    autoInterpreterState = i;</span><br><span class="line">    assert(PyThread_get_key_value(autoTLSkey) == <span class="literal">NULL</span>);</span><br><span class="line">    assert(t-&gt;gilstate_counter == <span class="number">0</span>);</span><br><span class="line">    _PyGILState_NoteThreadState(t);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_PyGILState_NoteThreadState(PyThreadState* tstate)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!autoInterpreterState)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">if</span> (PyThread_get_key_value(autoTLSkey) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        PyThread_set_key_value(autoTLSkey, (<span class="keyword">void</span> *)tstate <span class="comment">/* 存储线程状态对象 */</span></span><br><span class="line">    &#125;</span><br><span class="line">    tstate-&gt;gilstate_counter = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">[thread_pthread.h]</span><br><span class="line"><span class="keyword">int</span></span><br><span class="line">PyThread_create_key(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">pthread_key_t</span> key;</span><br><span class="line">    <span class="keyword">int</span> fail = pthread_key_create(&amp;key, <span class="literal">NULL</span>);</span><br><span class="line">    <span class="keyword">if</span> (fail)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">if</span> (key &gt; INT_MAX) &#123;</span><br><span class="line">        <span class="comment">/* Issue #22206: handle integer overflow */</span></span><br><span class="line">        pthread_key_delete(key);</span><br><span class="line">        errno = ENOMEM;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">int</span>)key;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[pystate.c]
+void
+_PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
+{
+    assert(i &amp;&amp; t); /* must init with valid states */
+    autoTLSkey = PyThread_create_key();
+    if (autoTLSkey == -1)
+        Py_FatalError(&quot;Could not allocate TLS entry&quot;);
+    autoInterpreterState = i;
+    assert(PyThread_get_key_value(autoTLSkey) == NULL);
+    assert(t-&gt;gilstate_counter == 0);
+    _PyGILState_NoteThreadState(t);
+}
+
+static void
+_PyGILState_NoteThreadState(PyThreadState* tstate)
+{
+    if (!autoInterpreterState)
+        return;
+    if (PyThread_get_key_value(autoTLSkey) == NULL) {
+        PyThread_set_key_value(autoTLSkey, (void *)tstate /* 存储线程状态对象 */
+    }
+    tstate-&gt;gilstate_counter = 1;
+}
+
+[thread_pthread.h]
+int
+PyThread_create_key(void)
+{
+    pthread_key_t key;
+    int fail = pthread_key_create(&amp;key, NULL);
+    if (fail)
+        return -1;
+    if (key &gt; INT_MAX) {
+        /* Issue #22206: handle integer overflow */
+        pthread_key_delete(key);
+        errno = ENOMEM;
+        return -1;
+    }
+    return (int)key;
+}
+</code></pre>
 <p><code>PyThread_create_key</code>函数会创建一个<code>TLS entry</code>(线程本地存储), 返回一个整数<code>key</code>, 这个<code>key</code>作为全局共享的<code>autoTLSkey</code>, 所有线程都能访问.</p>
 <p>线程可以通过一系列的<code>API</code>操作和自己线程相关的数据:</p>
 <ul>
@@ -301,13 +570,72 @@
 <p>不知道是不是因为兼容其他平台的实现, 或者不光用来存储线程状态对象还存储其他东西?…</p>
 <h2 id="线程调度"><a href="#线程调度" class="headerlink" title="线程调度"></a>线程调度</h2><p>在主线程创建子线程后, <code>t_bootstrap</code>函数是在子线程中执行的, 而在<code>PyEval_AcquireThread</code>竞争<code>GIL</code>之前的线程调度属于操作系统的线程调度, 之后的等待<code>GIL</code>锁以及之后的字节码执行才属于Python的线程调度范畴.</p>
 <p>进入字节码执行阶段, Python会模拟操作系统的时钟机制来实现线程调度:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">PyObject *</span><br><span class="line">_PyEval_EvalFrameDefault(PyFrameObject *f, <span class="keyword">int</span> throwflag)</span><br><span class="line">&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        ......</span><br><span class="line">        <span class="keyword">if</span> (_Py_atomic_load_relaxed(&amp;gil_drop_request)) &#123;</span><br><span class="line">            <span class="comment">/* Give another thread a chance */</span></span><br><span class="line">            <span class="keyword">if</span> (PyThreadState_Swap(<span class="literal">NULL</span>) != tstate)</span><br><span class="line">                Py_FatalError(<span class="string">"ceval: tstate mix-up"</span>);</span><br><span class="line">            drop_gil(tstate); <span class="comment">/* 释放GIL */</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Other threads may run now */</span></span><br><span class="line"></span><br><span class="line">            take_gil(tstate); <span class="comment">/* 重新尝试GIL */</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Check if we should make a quick exit. */</span></span><br><span class="line">            <span class="keyword">if</span> (_Py_Finalizing &amp;&amp; _Py_Finalizing != tstate) &#123;</span><br><span class="line">                drop_gil(tstate);</span><br><span class="line">                PyThread_exit_thread();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (PyThreadState_Swap(tstate) != <span class="literal">NULL</span>)</span><br><span class="line">                Py_FatalError(<span class="string">"ceval: orphan tstate"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">PyObject *
+_PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
+{
+    ......
+    for (;;) {
+        ......
+        if (_Py_atomic_load_relaxed(&amp;gil_drop_request)) {
+            /* Give another thread a chance */
+            if (PyThreadState_Swap(NULL) != tstate)
+                Py_FatalError(&quot;ceval: tstate mix-up&quot;);
+            drop_gil(tstate); /* 释放GIL */
+
+            /* Other threads may run now */
+
+            take_gil(tstate); /* 重新尝试GIL */
+
+            /* Check if we should make a quick exit. */
+            if (_Py_Finalizing &amp;&amp; _Py_Finalizing != tstate) {
+                drop_gil(tstate);
+                PyThread_exit_thread();
+            }
+
+            if (PyThreadState_Swap(tstate) != NULL)
+                Py_FatalError(&quot;ceval: orphan tstate&quot;);
+        }
+    ......
+}
+</code></pre>
 <p>在执行字节码的过程中, 当达到某个条件后, 会尝试释放锁<code>drop_gil(tstate);</code>, 而释放锁可能被其他线程立即获得, 主线程将会等待其他线程释放<code>GIL</code>, 因此需要重新申请<code>GIL</code>.</p>
 <h2 id="阻塞调度"><a href="#阻塞调度" class="headerlink" title="阻塞调度"></a>阻塞调度</h2><p>除了标准的线程调度外, Python还有一种阻塞调度的方式: 当线程执行<code>I/O</code>操作, 或者是睡眠<code>sleep</code>, 那么线程将会挂起, 虚拟机会唤醒正在等待的其他线程.</p>
 <p>我们以<code>time.sleep</code>为例, 分析Python的阻塞调度机制.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> PyObject *</span><br><span class="line">time_sleep(PyObject *self, PyObject *obj)</span><br><span class="line">&#123;</span><br><span class="line">    _PyTime_t secs; <span class="comment">/* int64_t 的别名 */</span></span><br><span class="line">    <span class="keyword">if</span> (_PyTime_FromSecondsObject(&amp;secs, obj, _PyTime_ROUND_TIMEOUT)) <span class="comment">/* 转换成timestamp */</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (pysleep(secs) != <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> Py_None;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static PyObject *
+time_sleep(PyObject *self, PyObject *obj)
+{
+    _PyTime_t secs; /* int64_t 的别名 */
+    if (_PyTime_FromSecondsObject(&amp;secs, obj, _PyTime_ROUND_TIMEOUT)) /* 转换成timestamp */
+        return NULL;
+    if (pysleep(secs) != 0)
+        return NULL;
+    return Py_None;
+}
+</code></pre>
 <p>下面是<code>pysleep</code>函数的实现:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">int</span></span><br><span class="line">pysleep(_PyTime_t secs)</span><br><span class="line">&#123;</span><br><span class="line">    _PyTime_t deadline, monotonic;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">timeout</span>;</span></span><br><span class="line">    <span class="keyword">int</span> err = <span class="number">0</span>;</span><br><span class="line">    deadline = _PyTime_GetMonotonicClock() + secs; <span class="comment">/* 单调时间 */</span></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (_PyTime_AsTimeval(secs, &amp;timeout, _PyTime_ROUND_CEILING) &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span>; <span class="comment">/* 将timestamp转换成struct timeval结构 */</span></span><br><span class="line">        Py_BEGIN_ALLOW_THREADS</span><br><span class="line">        err = select(<span class="number">0</span>, (fd_set *)<span class="number">0</span>, (fd_set *)<span class="number">0</span>, (fd_set *)<span class="number">0</span>, &amp;timeout);</span><br><span class="line">        Py_END_ALLOW_THREADS</span><br><span class="line">        <span class="keyword">if</span> (PyErr_CheckSignals()) <span class="comment">/* sleep was interrupted by SIGINT */</span></span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        monotonic = _PyTime_GetMonotonicClock();</span><br><span class="line">        secs = deadline - monotonic;</span><br><span class="line">        <span class="keyword">if</span> (secs &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">    &#125; <span class="keyword">while</span> (<span class="number">1</span>); <span class="comment">/* retry with the recomputed delay */</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static int
+pysleep(_PyTime_t secs)
+{
+    _PyTime_t deadline, monotonic;
+    struct timeval timeout;
+    int err = 0;
+    deadline = _PyTime_GetMonotonicClock() + secs; /* 单调时间 */
+    do {
+        if (_PyTime_AsTimeval(secs, &amp;timeout, _PyTime_ROUND_CEILING) &lt; 0)
+            return -1; /* 将timestamp转换成struct timeval结构 */
+        Py_BEGIN_ALLOW_THREADS
+        err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &amp;timeout);
+        Py_END_ALLOW_THREADS
+        if (PyErr_CheckSignals()) /* sleep was interrupted by SIGINT */
+            return -1;
+        monotonic = _PyTime_GetMonotonicClock();
+        secs = deadline - monotonic;
+        if (secs &lt; 0)
+            break;
+    } while (1); /* retry with the recomputed delay */
+    return 0;
+}
+</code></pre>
 <p>Python在这里使用<code>select</code>实现了<code>time.sleep(n)</code>的阻塞形式. 在阻塞的前后, 有两个宏定义:</p>
 <ul>
 <li><code>Py_BEGIN_ALLOW_THREADS</code>: 设置当前线程状态对象为<code>NULL</code>, 释放<code>GIL</code>, 保存线程状态对象;</li>
@@ -315,9 +643,33 @@
 </ul>
 <p>Python正是利用上面两个宏定义实现了阻塞调度机制, 只要能保证线程安全, 我们就可以使用<code>Py_BEGIN_ALLOW_THREADS</code>和<code>Py_END_ALLOW_THREADS</code>释放<code>GIL</code>.</p>
 <h2 id="子线程销毁"><a href="#子线程销毁" class="headerlink" title="子线程销毁"></a>子线程销毁</h2><p>线程执行占有<code>GIL</code>, 而当线程结束运行的时候就会释放<code>GIL</code>:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[_threadmodule.c]</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">t_bootstrap(<span class="keyword">void</span> *boot_raw)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">bootstate</span> *<span class="title">boot</span> = (<span class="title">struct</span> <span class="title">bootstate</span> *) <span class="title">boot_raw</span>;</span></span><br><span class="line">    PyThreadState *tstate;</span><br><span class="line">    ......</span><br><span class="line">    PyMem_DEL(boot_raw);</span><br><span class="line">    nb_threads--;</span><br><span class="line">    PyThreadState_Clear(tstate); <span class="comment">/* 线程状态对象清理 */</span></span><br><span class="line">    PyThreadState_DeleteCurrent(); <span class="comment">/* GIL释放 */</span></span><br><span class="line">    PyThread_exit_thread(); <span class="comment">/* 线程退出 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[_threadmodule.c]
+static void
+t_bootstrap(void *boot_raw)
+{
+    struct bootstate *boot = (struct bootstate *) boot_raw;
+    PyThreadState *tstate;
+    ......
+    PyMem_DEL(boot_raw);
+    nb_threads--;
+    PyThreadState_Clear(tstate); /* 线程状态对象清理 */
+    PyThreadState_DeleteCurrent(); /* GIL释放 */
+    PyThread_exit_thread(); /* 线程退出 */
+}
+</code></pre>
 <p>在<code>t_bootstrap</code>函数的末尾, 我们可以看见Python做了清理线程的工作, 引用计数的维护(这里没有列出)以及<code>GIL</code>的释放和线程的退出. <code>GIL</code>的释放在<code>PyThreadState_DeleteCurrent</code>函数中:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[pystate.c]</span><br><span class="line"><span class="keyword">void</span></span><br><span class="line">PyThreadState_DeleteCurrent()</span><br><span class="line">&#123;</span><br><span class="line">    PyThreadState *tstate = GET_TSTATE(); <span class="comment">/* 获取当前线程对象 */</span></span><br><span class="line">    tstate_delete_common(tstate);</span><br><span class="line">    <span class="keyword">if</span> (autoInterpreterState &amp;&amp; PyThread_get_key_value(autoTLSkey) == tstate)</span><br><span class="line">        PyThread_delete_key_value(autoTLSkey); <span class="comment">/* TLS中的tstate删除 */</span></span><br><span class="line">    SET_TSTATE(<span class="literal">NULL</span>); <span class="comment">/* 设置当前线程对象为NULL */</span></span><br><span class="line">    PyEval_ReleaseLock(); <span class="comment">/* 释放GIL锁 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">[pystate.c]
+void
+PyThreadState_DeleteCurrent()
+{
+    PyThreadState *tstate = GET_TSTATE(); /* 获取当前线程对象 */
+    tstate_delete_common(tstate);
+    if (autoInterpreterState &amp;&amp; PyThread_get_key_value(autoTLSkey) == tstate)
+        PyThread_delete_key_value(autoTLSkey); /* TLS中的tstate删除 */
+    SET_TSTATE(NULL); /* 设置当前线程对象为NULL */
+    PyEval_ReleaseLock(); /* 释放GIL锁 */
+}
+</code></pre>
 <h2 id="更多"><a href="#更多" class="headerlink" title="更多"></a>更多</h2><p>在Python的<code>GIL</code>机制下, 线程之间对整个Python解释器, 对Python提供的C API的访问都是互斥, 可以看作是Python内核级的互斥机制. 然而这种机制是Python程序员无法控制的, 我们还需要另外一种互斥机制—用户级互斥, 所以Python在这之上有提供了一系列的库, 例如: <code>threading</code>.</p>
 
     
@@ -328,7 +680,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

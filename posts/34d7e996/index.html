@@ -14,14 +14,20 @@
   
     <meta name="keywords" content="Python,源码," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
-  <meta name="description" content="Python2和Python3整数的实现有很大的区别, 在这里将两者的源码进行对比学习. 我们先来看看Python2中整数的实现.  定义在Python2中, 整型默认是int类型, 当溢出的时候就会转为long. 如下： 12345&amp;gt;&amp;gt;&amp;gt; import sys&amp;gt;&amp;gt;&amp;gt; type(sys.maxint)&amp;lt;type &apos;int&apos;&amp;gt;&amp;gt;&amp;gt;&amp;gt;">
+  <meta name="description" content="Python2和Python3整数的实现有很大的区别, 在这里将两者的源码进行对比学习. 我们先来看看Python2中整数的实现.  定义在Python2中, 整型默认是int类型, 当溢出的时候就会转为long. 如下： &amp;gt;&amp;gt;&amp;gt; import sys &amp;gt;&amp;gt;&amp;gt; type(sys.maxint) &amp;lt;type &amp;#39;int&amp;#39;&amp;gt; &amp;gt;&amp;gt">
 <meta name="keywords" content="Python,源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Python源码学习-整数">
 <meta property="og:url" content="http://shawnz.me/posts/34d7e996/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
-<meta property="og:description" content="Python2和Python3整数的实现有很大的区别, 在这里将两者的源码进行对比学习. 我们先来看看Python2中整数的实现.  定义在Python2中, 整型默认是int类型, 当溢出的时候就会转为long. 如下： 12345&amp;gt;&amp;gt;&amp;gt; import sys&amp;gt;&amp;gt;&amp;gt; type(sys.maxint)&amp;lt;type &apos;int&apos;&amp;gt;&amp;gt;&amp;gt;&amp;gt;">
+<meta property="og:description" content="Python2和Python3整数的实现有很大的区别, 在这里将两者的源码进行对比学习. 我们先来看看Python2中整数的实现.  定义在Python2中, 整型默认是int类型, 当溢出的时候就会转为long. 如下： &amp;gt;&amp;gt;&amp;gt; import sys &amp;gt;&amp;gt;&amp;gt; type(sys.maxint) &amp;lt;type &amp;#39;int&amp;#39;&amp;gt; &amp;gt;&amp;gt">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://shawnz.me/images/PyInt_smallints.png">
 <meta property="og:image" content="http://shawnz.me/images/PyIntBlock.png">
 <meta property="og:image" content="http://shawnz.me/images/PyIntBlock1.png">
@@ -30,7 +36,7 @@
 <meta property="og:updated_time" content="2018-03-10T06:20:54.102Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Python源码学习-整数">
-<meta name="twitter:description" content="Python2和Python3整数的实现有很大的区别, 在这里将两者的源码进行对比学习. 我们先来看看Python2中整数的实现.  定义在Python2中, 整型默认是int类型, 当溢出的时候就会转为long. 如下： 12345&amp;gt;&amp;gt;&amp;gt; import sys&amp;gt;&amp;gt;&amp;gt; type(sys.maxint)&amp;lt;type &apos;int&apos;&amp;gt;&amp;gt;&amp;gt;&amp;gt;">
+<meta name="twitter:description" content="Python2和Python3整数的实现有很大的区别, 在这里将两者的源码进行对比学习. 我们先来看看Python2中整数的实现.  定义在Python2中, 整型默认是int类型, 当溢出的时候就会转为long. 如下： &amp;gt;&amp;gt;&amp;gt; import sys &amp;gt;&amp;gt;&amp;gt; type(sys.maxint) &amp;lt;type &amp;#39;int&amp;#39;&amp;gt; &amp;gt;&amp;gt">
 <meta name="twitter:image" content="http://shawnz.me/images/PyInt_smallints.png">
 
   
@@ -238,11 +244,49 @@
     
       <p>Python2和Python3整数的实现有很大的区别, 在这里将两者的源码进行对比学习. 我们先来看看Python2中整数的实现. </p>
 <h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>在Python2中, 整型默认是<code>int</code>类型, 当溢出的时候就会转为<code>long</code>. 如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> sys</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>type(sys.maxint)</span><br><span class="line">&lt;type <span class="string">'int'</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>type(sys.maxint + <span class="number">1</span>)</span><br><span class="line">&lt;type <span class="string">'long'</span>&gt;</span><br></pre></td></tr></table></figure>
+<pre><code class="python">&gt;&gt;&gt; import sys
+&gt;&gt;&gt; type(sys.maxint)
+&lt;type &#39;int&#39;&gt;
+&gt;&gt;&gt; type(sys.maxint + 1)
+&lt;type &#39;long&#39;&gt;
+</code></pre>
 <a id="more"></a>
-<p><code>PyIntObject</code>是一个定长对象, 它内部使用C的<code>long</code>表示数值, 这与系统的最大整数一致(32位机器上位宽32,64位机器上位宽64)：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* include/intobject.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    PyObject_HEAD</span><br><span class="line">    <span class="keyword">long</span> ob_ival;</span><br><span class="line">&#125; PyIntObject;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*  Object/intobject.c */</span></span><br><span class="line">PyTypeObject PyInt_Type = &#123;</span><br><span class="line">    PyObject_HEAD_INIT(&amp;PyType_Type)</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="string">"int"</span>,</span><br><span class="line">    <span class="keyword">sizeof</span>(PyIntObject),</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    (destructor)int_dealloc,		<span class="comment">/* tp_dealloc */</span></span><br><span class="line">    (printfunc)int_print,			<span class="comment">/* tp_print */</span></span><br><span class="line">    <span class="number">0</span>,					<span class="comment">/* tp_getattr */</span></span><br><span class="line">    <span class="number">0</span>,					<span class="comment">/* tp_setattr */</span></span><br><span class="line">    (cmpfunc)int_compare,			<span class="comment">/* tp_compare */</span></span><br><span class="line">    (reprfunc)int_repr,			<span class="comment">/* tp_repr */</span></span><br><span class="line">    &amp;int_as_number,				<span class="comment">/* tp_as_number */</span> <span class="comment">/* 定义作为数值对象能进行的操作集合 */</span></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
-<h2 id="对象的操作"><a href="#对象的操作" class="headerlink" title="对象的操作"></a>对象的操作</h2><p>在整数类型对象<code>PyInt_Type</code>上定义了许多<code>PyIntObject</code>所支持的操作, 例如<code>int_dealloc</code>(对象的析构操作), <code>int_hash</code>(获取HASH值)和<code>int_as_number</code>(数值操作集合)等等. 而在<code>int_as_number</code>这个域定义了<code>PyIntObject</code>作为数值对象能够进行的所有可选操作, 这些操作包括加法、减法、乘法和模运算等. 下面是<code>PyIntObject</code>的加法<code>int_add</code>定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> PyObject *</span><br><span class="line">int_add(PyIntObject *v, PyIntObject *w)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">long</span> a, b, x;</span><br><span class="line">    CONVERT_TO_LONG(v, a);</span><br><span class="line">    CONVERT_TO_LONG(w, b);</span><br><span class="line">    x = a + b;  <span class="comment">/* 执行C的长整形加法运算, 并将结果赋予x */</span></span><br><span class="line">    <span class="keyword">if</span> ((x^a) &gt;= <span class="number">0</span> || (x^b) &gt;= <span class="number">0</span>)  <span class="comment">/* 检查结果是否溢出 */</span></span><br><span class="line">        <span class="keyword">return</span> PyInt_FromLong(x);</span><br><span class="line">    <span class="keyword">return</span> PyLong_Type.tp_as_number-&gt;nb_add((PyObject *)v, (PyObject *)w);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>PyIntObject</code>是一个定长对象, 它内部使用C的<code>long</code>表示数值, 这与系统的最大整数一致(32位机器上位宽32,64位机器上位宽64)：</p>
+<pre><code class="c">/* include/intobject.h */
+typedef struct {
+    PyObject_HEAD
+    long ob_ival;
+} PyIntObject;
+</code></pre>
+<pre><code class="c">/*  Object/intobject.c */
+PyTypeObject PyInt_Type = {
+    PyObject_HEAD_INIT(&amp;PyType_Type)
+    0,
+    &quot;int&quot;,
+    sizeof(PyIntObject),
+    0,
+    (destructor)int_dealloc,        /* tp_dealloc */
+    (printfunc)int_print,            /* tp_print */
+    0,                    /* tp_getattr */
+    0,                    /* tp_setattr */
+    (cmpfunc)int_compare,            /* tp_compare */
+    (reprfunc)int_repr,            /* tp_repr */
+    &amp;int_as_number,                /* tp_as_number */ /* 定义作为数值对象能进行的操作集合 */
+    ...
+</code></pre>
+<h2 id="对象的操作"><a href="#对象的操作" class="headerlink" title="对象的操作"></a>对象的操作</h2><p>在整数类型对象<code>PyInt_Type</code>上定义了许多<code>PyIntObject</code>所支持的操作, 例如<code>int_dealloc</code>(对象的析构操作), <code>int_hash</code>(获取HASH值)和<code>int_as_number</code>(数值操作集合)等等. 而在<code>int_as_number</code>这个域定义了<code>PyIntObject</code>作为数值对象能够进行的所有可选操作, 这些操作包括加法、减法、乘法和模运算等. 下面是<code>PyIntObject</code>的加法<code>int_add</code>定义：</p>
+<pre><code class="c">static PyObject *
+int_add(PyIntObject *v, PyIntObject *w)
+{
+    register long a, b, x;
+    CONVERT_TO_LONG(v, a);
+    CONVERT_TO_LONG(w, b);
+    x = a + b;  /* 执行C的长整形加法运算, 并将结果赋予x */
+    if ((x^a) &gt;= 0 || (x^b) &gt;= 0)  /* 检查结果是否溢出 */
+        return PyInt_FromLong(x);
+    return PyLong_Type.tp_as_number-&gt;nb_add((PyObject *)v, (PyObject *)w);
+}
+</code></pre>
 <p><code>PyIntObject</code>的加法定义很简单：从整数对象上获取<code>ob_ival</code>域, 执行C的<code>long</code>加法运算获取结果. 这里比较有意思的是在检查结果是否溢出时使用的：<code>(x^a) &gt;= 0 || (x^b) &gt;= 0</code><br><br>如果发生溢出的话, 返回的结果就是调用<code>PyLong_Type</code>的加法运算的执行结果(对应着Python中的<code>long</code>类型). </p>
 <h2 id="对象创建和维护"><a href="#对象创建和维护" class="headerlink" title="对象创建和维护"></a>对象创建和维护</h2><p>在Python的实现中, 几乎所有的內建对象都是调用C API来创建实例对象的. 对于整数对象来说有以下几种方式：</p>
 <ul>
@@ -252,7 +296,19 @@
 </ul>
 <p>而上面两种<code>PyInt_FromString</code>和<code>PyInt_FromUnicode</code>只是进行类型转换后, 调用的<code>PyInt_FromLong</code>. <br><br><code>PyInt_FromLong</code>方法是Python整数对象创建的核心. 在讨论它的实现之前, 我们先弄清Python的整数对象体系, Python将整数对象分成了两部分：小整数对象和通用整数对象. </p>
 <h3 id="小整数对象"><a href="#小整数对象" class="headerlink" title="小整数对象"></a>小整数对象</h3><p>我们来看看Python在<code>Objects/intobject.c</code>中定义的几个和小整数对象相关的宏：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> NSMALLPOSINTS</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> NSMALLPOSINTS		257</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> NSMALLNEGINTS</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> NSMALLNEGINTS		5</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> NSMALLNEGINTS + NSMALLPOSINTS &gt; 0</span></span><br><span class="line"><span class="keyword">static</span> PyIntObject *small_ints[NSMALLNEGINTS + NSMALLPOSINTS];</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> COUNT_ALLOCS</span></span><br><span class="line"><span class="keyword">int</span> quick_int_allocs, quick_neg_int_allocs;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+<pre><code class="c">#ifndef NSMALLPOSINTS
+#define NSMALLPOSINTS        257
+#endif
+#ifndef NSMALLNEGINTS
+#define NSMALLNEGINTS        5
+#endif
+#if NSMALLNEGINTS + NSMALLPOSINTS &gt; 0
+static PyIntObject *small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
+#endif
+#ifdef COUNT_ALLOCS
+int quick_int_allocs, quick_neg_int_allocs;
+#endif
+</code></pre>
 <p>其中：</p>
 <ul>
 <li><code>NSMALLPOSINTS</code>和<code>NSMALLNEGINTS</code>：定义小整数对象的数值范围[-5, 257), 通过修改这两个值可以伸缩小整数范围</li>
@@ -261,7 +317,21 @@
 </ul>
 <p><img src="/images/PyInt_smallints.png" alt=""></p>
 <h3 id="通用整数对象"><a href="#通用整数对象" class="headerlink" title="通用整数对象"></a>通用整数对象</h3><p>而对于其他的整数, Python的做法是申请一块内存空间, 这些内存空间供大整数轮流使用. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Objects/intobject.c */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BLOCK_SIZE	1000	<span class="comment">/* 1K less typical malloc overhead */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BHEAD_SIZE	8	<span class="comment">/* Enough for a 64-bit pointer */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> N_INTOBJECTS	((BLOCK_SIZE - BHEAD_SIZE) / sizeof(PyIntObject))</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">intblock</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">intblock</span> *<span class="title">next</span>;</span></span><br><span class="line">    PyIntObject objects[N_INTOBJECTS];</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">intblock</span> <span class="title">PyIntBlock</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> PyIntBlock *block_list = <span class="literal">NULL</span>;</span><br><span class="line"><span class="keyword">static</span> PyIntObject *free_list = <span class="literal">NULL</span>;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">/* Objects/intobject.c */
+#define BLOCK_SIZE    1000    /* 1K less typical malloc overhead */
+#define BHEAD_SIZE    8    /* Enough for a 64-bit pointer */
+#define N_INTOBJECTS    ((BLOCK_SIZE - BHEAD_SIZE) / sizeof(PyIntObject))
+
+struct _intblock {
+    struct _intblock *next;
+    PyIntObject objects[N_INTOBJECTS];
+};
+
+typedef struct _intblock PyIntBlock;
+
+static PyIntBlock *block_list = NULL;
+static PyIntObject *free_list = NULL;
+</code></pre>
 <p>其中：</p>
 <ul>
 <li><p>Python定义了一个结构体<code>PyIntBlock</code>(大小为1000位)</p>
@@ -276,12 +346,67 @@
 </ul>
 <p><img src="/images/PyIntBlock.png" alt=""></p>
 <h3 id="对象的创建"><a href="#对象的创建" class="headerlink" title="对象的创建"></a>对象的创建</h3><p>Python使用<code>PyInt_FromLong</code>来创建整数对象：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">PyObject *</span><br><span class="line">PyInt_FromLong(<span class="keyword">long</span> ival)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">register</span> PyIntObject *v;</span><br><span class="line">    <span class="comment">/* 1.尝试使用小整数对象池 */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> NSMALLNEGINTS + NSMALLPOSINTS &gt; 0</span></span><br><span class="line">    <span class="keyword">if</span> (-NSMALLNEGINTS &lt;= ival &amp;&amp; ival &lt; NSMALLPOSINTS) &#123;</span><br><span class="line">        v = small_ints[ival + NSMALLNEGINTS];</span><br><span class="line">        Py_INCREF(v);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> COUNT_ALLOCS</span></span><br><span class="line">        <span class="keyword">if</span> (ival &gt;= <span class="number">0</span>)</span><br><span class="line">            quick_int_allocs++;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            quick_neg_int_allocs++;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">return</span> (PyObject *) v;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="comment">/* 2.为通用整数对象池申请新的内存空间 */</span></span><br><span class="line">    <span class="keyword">if</span> (free_list == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((free_list = fill_free_list()) == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;  <span class="comment">/* 申请失败*/</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* 3.使用通用整数对象池 */</span></span><br><span class="line">    v = free_list;</span><br><span class="line">    free_list = (PyIntObject *)v-&gt;ob_type;</span><br><span class="line">    PyObject_INIT(v, &amp;PyInt_Type);</span><br><span class="line">    v-&gt;ob_ival = ival;</span><br><span class="line">	<span class="keyword">return</span> (PyObject *) v;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">PyObject *
+PyInt_FromLong(long ival)
+{
+    register PyIntObject *v;
+    /* 1.尝试使用小整数对象池 */
+#if NSMALLNEGINTS + NSMALLPOSINTS &gt; 0
+    if (-NSMALLNEGINTS &lt;= ival &amp;&amp; ival &lt; NSMALLPOSINTS) {
+        v = small_ints[ival + NSMALLNEGINTS];
+        Py_INCREF(v);
+#ifdef COUNT_ALLOCS
+        if (ival &gt;= 0)
+            quick_int_allocs++;
+        else
+            quick_neg_int_allocs++;
+#endif
+        return (PyObject *) v;
+    }
+#endif
+    /* 2.为通用整数对象池申请新的内存空间 */
+    if (free_list == NULL) {
+        if ((free_list = fill_free_list()) == NULL)
+            return NULL;  /* 申请失败*/
+    }
+    /* 3.使用通用整数对象池 */
+    v = free_list;
+    free_list = (PyIntObject *)v-&gt;ob_type;
+    PyObject_INIT(v, &amp;PyInt_Type);
+    v-&gt;ob_ival = ival;
+    return (PyObject *) v;
+}
+</code></pre>
 <p>很明显, <code>PyInt_FromLong</code>创建一个整数对象的过程分为三种情况：</p>
 <ol>
 <li>尝试使用小整数对象池：<br><br> <code>#if NSMALLNEGINTS + NSMALLPOSINTS &gt; 0</code>：Python认为小整数对象池机制被激活<br><br> <code>if (-NSMALLNEGINTS &lt;= ival &amp;&amp; ival &lt; NSMALLPOSINTS)</code>：如果参数<code>ival</code>是一个小整数, 直接从<code>small_ints</code>池中返回该小整数对象. </li>
 <li><p>空闲内存不够, 需要通用整数对象池申请新的内存空间：<br><br> 在<code>PyInt_FromLong</code>首次调用, 或者一个<code>PyIntBlock</code>块用完了的时候, Python会尝试申请一个新的<code>block</code>：</p>
- <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> PyIntObject *</span><br><span class="line">fill_free_list(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    PyIntObject *p, *q;</span><br><span class="line">    <span class="comment">/* 申请大小为sizeof(PyIntBlock)的内存空间p */</span></span><br><span class="line">    p = (PyIntObject *) PyMem_MALLOC(<span class="keyword">sizeof</span>(PyIntBlock));</span><br><span class="line">    <span class="keyword">if</span> (p == <span class="literal">NULL</span>)  <span class="comment">/* 申请失败 */</span></span><br><span class="line">        <span class="keyword">return</span> (PyIntObject *) PyErr_NoMemory();</span><br><span class="line">    <span class="comment">/* 把p链接到已有的block_list的头部 */</span></span><br><span class="line">    ((PyIntBlock *)p)-&gt;next = block_list;</span><br><span class="line">    block_list = (PyIntBlock *)p;</span><br><span class="line">    <span class="comment">/* p是block里面的objects数组的头地址*/</span></span><br><span class="line">    p = &amp;((PyIntBlock *)p)-&gt;objects[<span class="number">0</span>];</span><br><span class="line">    <span class="comment">/* q是block里面数组的尾地址*/</span></span><br><span class="line">    q = p + N_INTOBJECTS;</span><br><span class="line">    <span class="comment">/* 刚进入循环的时候减一才使指针q需要指向数组最后一个元素的头部*/</span></span><br><span class="line">    <span class="comment">/* 从最后一个元素开始, 利用ob_type这个指针指向前一个元素 */</span></span><br><span class="line">    <span class="comment">/* 构建一个单向链表, 头部是数组的最后一个元素, 链表的最后一个元素的ob_type指向NULL */</span></span><br><span class="line">    <span class="keyword">while</span> (--q &gt; p)</span><br><span class="line">        q-&gt;ob_type = (struct _typeobject *)(q<span class="number">-1</span>);</span><br><span class="line">    q-&gt;ob_type = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* 返回单向链表的第一个元素的头地址 */</span></span><br><span class="line">    <span class="comment">/* 也相当于objects数组最后一个元素的头地址 */</span></span><br><span class="line">    <span class="keyword">return</span> p + N_INTOBJECTS - <span class="number">1</span>; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c"> static PyIntObject *
+ fill_free_list(void)
+ {
+     PyIntObject *p, *q;
+     /* 申请大小为sizeof(PyIntBlock)的内存空间p */
+     p = (PyIntObject *) PyMem_MALLOC(sizeof(PyIntBlock));
+     if (p == NULL)  /* 申请失败 */
+         return (PyIntObject *) PyErr_NoMemory();
+     /* 把p链接到已有的block_list的头部 */
+     ((PyIntBlock *)p)-&gt;next = block_list;
+     block_list = (PyIntBlock *)p;
+     /* p是block里面的objects数组的头地址*/
+     p = &amp;((PyIntBlock *)p)-&gt;objects[0];
+     /* q是block里面数组的尾地址*/
+     q = p + N_INTOBJECTS;
+     /* 刚进入循环的时候减一才使指针q需要指向数组最后一个元素的头部*/
+     /* 从最后一个元素开始, 利用ob_type这个指针指向前一个元素 */
+     /* 构建一个单向链表, 头部是数组的最后一个元素, 链表的最后一个元素的ob_type指向NULL */
+     while (--q &gt; p)
+         q-&gt;ob_type = (struct _typeobject *)(q-1);
+     q-&gt;ob_type = NULL;
+     /* 返回单向链表的第一个元素的头地址 */
+     /* 也相当于objects数组最后一个元素的头地址 */
+     return p + N_INTOBJECTS - 1; 
+ }
+</code></pre>
 <p> 在申请内存空间的过程中, Python会将<code>PyIntBlock</code>中的<code>PyIntObject.ob_type</code>作为指针使用(不在具备原来的用途), 将<code>PyIntBlock.objects</code>数组构建成单向链表. 在构建完成后会返回<code>free_list</code>, 从<code>free_list</code>开始, 沿着指针<code>ob_type</code>就可以获得刚刚创建的<code>PyIntBlock</code>中准备的所有空闲内存：</p>
 <p> <img src="/images/PyIntBlock1.png" alt=""></p>
 <p> 当一个<code>block</code>的内存用完时, <code>free_list</code>会指向<code>NULL</code>, 这个时候就会再申请一个新的<code>block</code>. 并把新加入的<code>PyIntBlock</code>链接到已有的<code>block_list</code>中去：</p>
@@ -295,17 +420,96 @@
 </li>
 </ol>
 <h3 id="对象的销毁"><a href="#对象的销毁" class="headerlink" title="对象的销毁"></a>对象的销毁</h3><p>当整数对象的引用为0时, 就会调用<code>PyInt_Type</code>类型对象上的<code>int_dealloc</code>：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">int_dealloc(PyIntObject *v)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* 如果销毁的是一个整数对象, 那么就对象加入free_list单向链表表头 */</span></span><br><span class="line">    <span class="keyword">if</span> (PyInt_CheckExact(v)) &#123;</span><br><span class="line">        v-&gt;ob_type = (struct _typeobject *)free_list;</span><br><span class="line">        free_list = v;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="comment">/* 如果是整数的派生类对象, 就简单地调用派生类型定义的tp_free */</span></span><br><span class="line">        v-&gt;ob_type-&gt;tp_free((PyObject *)v);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static void
+int_dealloc(PyIntObject *v)
+{
+    /* 如果销毁的是一个整数对象, 那么就对象加入free_list单向链表表头 */
+    if (PyInt_CheckExact(v)) {
+        v-&gt;ob_type = (struct _typeobject *)free_list;
+        free_list = v;
+    }
+    else /* 如果是整数的派生类对象, 就简单地调用派生类型定义的tp_free */
+        v-&gt;ob_type-&gt;tp_free((PyObject *)v);
+}
+</code></pre>
 <p>Python在销毁一个整数对象时, 会把空间交给<code>free_list</code>, 这是为了更好地利用内存. 过程如下：</p>
 <p><img src="/images/int_dealloc.jpg" alt=""></p>
 <p><code>block_list</code>维护着<code>PyIntBlock</code>链表, 在源代码对<code>block_list</code>注释是：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">PyIntBlocks are never returned to the</span><br><span class="line">   system before shutdown (PyInt_Fini).</span><br></pre></td></tr></table></figure>
+<pre><code class="c">PyIntBlocks are never returned to the
+   system before shutdown (PyInt_Fini).
+</code></pre>
 <p>对象销毁的时候, 仅仅只是将内存重新加入到<code>free_list</code>链表中, 在<code>int_dealloc</code>中永远不会向系统堆交还任何内存. <br><br><code>block_list</code>维护的<code>PyIntBlock</code>链表, 一旦被申请直至Python结束之前, 永远被不会释放. <br><br>这也是Python2中range(1000000), 虽然运行结束, 但是内存依旧占用着的原因. </p>
 <h3 id="小整数对象池的初始化"><a href="#小整数对象池的初始化" class="headerlink" title="小整数对象池的初始化"></a>小整数对象池的初始化</h3><p>在之前的<code>PyInt_FromLong</code>中首先会尝试使用小整数对象池, <code>small_ints</code>里面存放的只是指针, 那么必然有个地方需要在这之前对小整数对象池进行初始化. 那么初始化的地方就在<code>_PyInt_Init</code>中：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span></span><br><span class="line">_PyInt_Init(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    PyIntObject *v;</span><br><span class="line">    <span class="keyword">int</span> ival;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> NSMALLNEGINTS + NSMALLPOSINTS &gt; 0</span></span><br><span class="line">    <span class="keyword">for</span> (ival = -NSMALLNEGINTS; ival &lt; NSMALLPOSINTS; ival++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!free_list &amp;&amp; (free_list = fill_free_list()) == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        v = free_list;</span><br><span class="line">        free_list = (PyIntObject *)v-&gt;ob_type;</span><br><span class="line">        PyObject_INIT(v, &amp;PyInt_Type);</span><br><span class="line">        v-&gt;ob_ival = ival;</span><br><span class="line">        small_ints[ival + NSMALLNEGINTS] = v;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">	<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">int
+_PyInt_Init(void)
+{
+    PyIntObject *v;
+    int ival;
+#if NSMALLNEGINTS + NSMALLPOSINTS &gt; 0
+    for (ival = -NSMALLNEGINTS; ival &lt; NSMALLPOSINTS; ival++) {
+        if (!free_list &amp;&amp; (free_list = fill_free_list()) == NULL)
+            return 0;
+        v = free_list;
+        free_list = (PyIntObject *)v-&gt;ob_type;
+        PyObject_INIT(v, &amp;PyInt_Type);
+        v-&gt;ob_ival = ival;
+        small_ints[ival + NSMALLNEGINTS] = v;
+    }
+#endif
+    return 1;
+}
+</code></pre>
 <p>从小整数对象的初始化过程可以发现, 这些小整数对象也是生存在<code>block_list</code>维护的内存上, 在<code>small_ints</code>里面保有着它们的指针. </p>
 <h2 id="Python3"><a href="#Python3" class="headerlink" title="Python3"></a>Python3</h2><p>在Python3中, 只有一种整数类型<code>int</code>, 相当于Python2中“长整形”, 它不存在溢出问题, 可以存放任意大小的数值. </p>
-<p>来看Python3源码中整数对象<code>PyLongObject</code>的定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* include/longobject.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">longobject</span> <span class="title">PyLongObject</span>;</span> <span class="comment">/* Revealed in longintrepr.h */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* include/longintrepr.h */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> PYLONG_BITS_IN_DIGIT == 30</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">uint32_t</span> digit;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">int32_t</span> sdigit; <span class="comment">/* signed variant of digit */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">uint64_t</span> twodigits;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">int64_t</span> stwodigits; <span class="comment">/* signed variant of twodigits */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PyLong_SHIFT	30</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _PyLong_DECIMAL_SHIFT	9 <span class="comment">/* max(e such that 10**e fits in a digit) */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _PyLong_DECIMAL_BASE	((digit)1000000000) <span class="comment">/* 10 ** DECIMAL_SHIFT */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> PYLONG_BITS_IN_DIGIT == 15</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">short</span> digit;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">short</span> sdigit; <span class="comment">/* signed variant of digit */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> twodigits;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> stwodigits; <span class="comment">/* signed variant of twodigits */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PyLong_SHIFT	15</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _PyLong_DECIMAL_SHIFT	4 <span class="comment">/* max(e such that 10**e fits in a digit) */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _PyLong_DECIMAL_BASE	((digit)10000) <span class="comment">/* 10 ** DECIMAL_SHIFT */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">error</span> <span class="meta-string">"PYLONG_BITS_IN_DIGIT should be 15 or 30"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PyLong_BASE	((digit)1 &lt;&lt; PyLong_SHIFT)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> PyLong_MASK	((digit)(PyLong_BASE - 1))</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> PyLong_SHIFT % 5 != 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">error</span> <span class="meta-string">"longobject.c requires that PyLong_SHIFT be divisible by 5"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="comment">/* Long integer representation.</span></span><br><span class="line"><span class="comment">   The absolute value of a number is equal to</span></span><br><span class="line"><span class="comment">   	SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)</span></span><br><span class="line"><span class="comment">   Negative numbers are represented with ob_size &lt; 0;</span></span><br><span class="line"><span class="comment">   zero is represented by ob_size == 0.</span></span><br><span class="line"><span class="comment">   In a normalized number, ob_digit[abs(ob_size)-1] (the most significant</span></span><br><span class="line"><span class="comment">   digit) is never zero.  Also, in all cases, for all valid i,</span></span><br><span class="line"><span class="comment">   	0 &lt;= ob_digit[i] &lt;= MASK.</span></span><br><span class="line"><span class="comment">   The allocation function takes care of allocating extra memory</span></span><br><span class="line"><span class="comment">   so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   CAUTION:  Generic code manipulating subtypes of PyVarObject has to</span></span><br><span class="line"><span class="comment">   aware that ints abuse  ob_size's sign bit.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">longobject</span> &#123;</span></span><br><span class="line">    PyObject_VAR_HEAD</span><br><span class="line">    digit ob_digit[<span class="number">1</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>来看Python3源码中整数对象<code>PyLongObject</code>的定义：</p>
+<pre><code class="c">/* include/longobject.h */
+typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
+
+/* include/longintrepr.h */
+#if PYLONG_BITS_IN_DIGIT == 30
+typedef uint32_t digit;
+typedef int32_t sdigit; /* signed variant of digit */
+typedef uint64_t twodigits;
+typedef int64_t stwodigits; /* signed variant of twodigits */
+#define PyLong_SHIFT    30
+#define _PyLong_DECIMAL_SHIFT    9 /* max(e such that 10**e fits in a digit) */
+#define _PyLong_DECIMAL_BASE    ((digit)1000000000) /* 10 ** DECIMAL_SHIFT */
+#elif PYLONG_BITS_IN_DIGIT == 15
+typedef unsigned short digit;
+typedef short sdigit; /* signed variant of digit */
+typedef unsigned long twodigits;
+typedef long stwodigits; /* signed variant of twodigits */
+#define PyLong_SHIFT    15
+#define _PyLong_DECIMAL_SHIFT    4 /* max(e such that 10**e fits in a digit) */
+#define _PyLong_DECIMAL_BASE    ((digit)10000) /* 10 ** DECIMAL_SHIFT */
+#else
+#error &quot;PYLONG_BITS_IN_DIGIT should be 15 or 30&quot;
+#endif
+#define PyLong_BASE    ((digit)1 &lt;&lt; PyLong_SHIFT)
+#define PyLong_MASK    ((digit)(PyLong_BASE - 1))
+
+#if PyLong_SHIFT % 5 != 0
+#error &quot;longobject.c requires that PyLong_SHIFT be divisible by 5&quot;
+#endif
+/* Long integer representation.
+   The absolute value of a number is equal to
+       SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
+   Negative numbers are represented with ob_size &lt; 0;
+   zero is represented by ob_size == 0.
+   In a normalized number, ob_digit[abs(ob_size)-1] (the most significant
+   digit) is never zero.  Also, in all cases, for all valid i,
+       0 &lt;= ob_digit[i] &lt;= MASK.
+   The allocation function takes care of allocating extra memory
+   so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
+
+   CAUTION:  Generic code manipulating subtypes of PyVarObject has to
+   aware that ints abuse  ob_size&#39;s sign bit.
+*/
+struct _longobject {
+    PyObject_VAR_HEAD
+    digit ob_digit[1];
+};
+</code></pre>
 <p>在Python内部使用一个柔性数组<code>ob_digit</code>保存数值, 待存储的数值的低位信息放于低位下标, 高位信息放于高下标. </p>
 <p>在对象初始化时, 会为<code>ob_digit</code>分配空间, 并确定其长度保存在不定长头部的<code>ob_size</code>中, <code>ob_size</code>的正负表示整数对象的正负.<br>一个<code>digit</code>能保存多大的数决定于<code>PYLONG_BITS_IN_DIGIT</code>, 该值只能是15或30. </p>
 <p>源码中的注释告诉了我们几个信息:</p>
@@ -316,9 +520,37 @@
 <li>在任何情况下, 对于有效的下标<code>i</code>, 有<code>0 &lt;= ob_digit[i] &lt;= MASK</code>;</li>
 </ul>
 <p>为进一步的理解对整型对象是怎么工作的, 我们对<code>long_to_decimal_string_internal</code>进行改动, 打印出一些变量的详情:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">int</span></span><br><span class="line">long_to_decimal_string_internal(PyObject *aa,</span><br><span class="line">                                PyObject **p_output,</span><br><span class="line">                                _PyUnicodeWriter *writer)</span><br><span class="line">&#123;</span><br><span class="line">    PyLongObject *scratch, *a;</span><br><span class="line">    PyObject *str;</span><br><span class="line">    Py_ssize_t size, <span class="built_in">strlen</span>, size_a, i, j;</span><br><span class="line">    digit *pout, *pin, rem, tenpow;</span><br><span class="line">    <span class="keyword">int</span> negative;</span><br><span class="line">    <span class="keyword">enum</span> PyUnicode_Kind kind;</span><br><span class="line">    a = (PyLongObject *)aa;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"==== Hack Code ====\n"</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"ob_size     = %d\n"</span>, Py_SIZE(a));</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> ob_i = <span class="number">0</span>; ob_i &lt; Py_SIZE(a); ++ob_i)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"ob_digit[%d] = %d\n"</span>, ob_i, a-&gt;ob_digit[ob_i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"====    End    ====\n"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static int
+long_to_decimal_string_internal(PyObject *aa,
+                                PyObject **p_output,
+                                _PyUnicodeWriter *writer)
+{
+    PyLongObject *scratch, *a;
+    PyObject *str;
+    Py_ssize_t size, strlen, size_a, i, j;
+    digit *pout, *pin, rem, tenpow;
+    int negative;
+    enum PyUnicode_Kind kind;
+    a = (PyLongObject *)aa;
+    printf(&quot;==== Hack Code ====\n&quot;);
+    printf(&quot;ob_size     = %d\n&quot;, Py_SIZE(a));
+    for (int ob_i = 0; ob_i &lt; Py_SIZE(a); ++ob_i)
+    {
+        printf(&quot;ob_digit[%d] = %d\n&quot;, ob_i, a-&gt;ob_digit[ob_i]);
+    }
+    printf(&quot;====    End    ====\n&quot;);
+}
+</code></pre>
 <p>输出:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">2</span>**<span class="number">60</span>+<span class="number">2</span>*<span class="number">2</span>**<span class="number">30</span>+<span class="number">4</span></span><br><span class="line">==== Hack Code ====</span><br><span class="line">ob_size     = <span class="number">3</span></span><br><span class="line">ob_digit[<span class="number">0</span>] = <span class="number">4</span></span><br><span class="line">ob_digit[<span class="number">1</span>] = <span class="number">2</span></span><br><span class="line">ob_digit[<span class="number">2</span>] = <span class="number">1</span></span><br><span class="line">====    End    ====</span><br><span class="line"><span class="number">1152921506754330628</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">&gt;&gt;&gt; 2**60+2*2**30+4
+==== Hack Code ====
+ob_size     = 3
+ob_digit[0] = 4
+ob_digit[1] = 2
+ob_digit[2] = 1
+====    End    ====
+1152921506754330628
+</code></pre>
 <p>通过这个例子可以看到<code>1152921506754330628</code>的内部表示为:</p>
 <ul>
 <li><code>ob_size</code>为<code>3</code>, 代表数组<code>ob_digit</code>大小为<code>3</code>;</li>
@@ -342,7 +574,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="前言 愚蠢的一致性就像没有脑子的妖怪 「别人在阅读代码过程中飙脏话的频率是衡量你代码质量的唯一标准」。 Guido 的一个核心观点认为，相比于被编写，代码更多的是被阅读。这篇指南意在提高代码的可读性并使之在广袤的 Python 编码中保持风格一致。">
 <meta name="keywords" content="Python">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/169f56b2/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="前言 愚蠢的一致性就像没有脑子的妖怪 「别人在阅读代码过程中飙脏话的频率是衡量你代码质量的唯一标准」。 Guido 的一个核心观点认为，相比于被编写，代码更多的是被阅读。这篇指南意在提高代码的可读性并使之在广袤的 Python 编码中保持风格一致。">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.030Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PEP8代码规范">
@@ -184,7 +190,7 @@
 
   <div id="toc" class="toc-article">
     <strong class="toc-title">文章目录</strong>
-    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#相关连接"><span class="toc-text">相关连接</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#怎样提高代码的可读性"><span class="toc-text">怎样提高代码的可读性</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#代码缩进"><span class="toc-text">代码缩进</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#文档编排"><span class="toc-text">文档编排</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#空格"><span class="toc-text">空格</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#注释"><span class="toc-text">注释</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命名规范"><span class="toc-text">命名规范</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编码建议"><span class="toc-text">编码建议</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#RESTful-API"><span class="toc-text">RESTful API</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#URL-知道要什么"><span class="toc-text">URL 知道要什么</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#HTTP-method-知道干什么"><span class="toc-text">HTTP method 知道干什么</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#HTTP-status-code-知道结果如何"><span class="toc-text">HTTP status code 知道结果如何</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#“HTTP协议是这样设计的，别用错了”-——RESTfull"><span class="toc-text">“HTTP协议是这样设计的，别用错了” ——RESTfull**</span></a></li></ol></li></ol></li></ol>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#相关连接"><span class="toc-text">相关连接</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#怎样提高代码的可读性"><span class="toc-text">怎样提高代码的可读性</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#代码缩进"><span class="toc-text">代码缩进</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#文档编排"><span class="toc-text">文档编排</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#空格"><span class="toc-text">空格</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#注释"><span class="toc-text">注释</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命名规范"><span class="toc-text">命名规范</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编码建议"><span class="toc-text">编码建议</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#YES"><span class="toc-text">YES</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#NO："><span class="toc-text">NO：</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#YES-1"><span class="toc-text">YES</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#NO"><span class="toc-text">NO</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#RESTful-API"><span class="toc-text">RESTful API</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#URL-知道要什么"><span class="toc-text">URL 知道要什么</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#HTTP-method-知道干什么"><span class="toc-text">HTTP method 知道干什么</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#HTTP-status-code-知道结果如何"><span class="toc-text">HTTP status code 知道结果如何</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#“HTTP协议是这样设计的，别用错了”-——RESTfull"><span class="toc-text">“HTTP协议是这样设计的，别用错了” ——RESTfull**</span></a></li></ol></li></ol></li></ol>
   </div>
 
 
@@ -267,8 +273,52 @@
 <li>谨慎地使用内嵌注释</li>
 <li>内嵌注释是一种和语句在同一行的注释。内嵌注释至少和语句间隔2个空格。他们开始于一个 # 和一个空格。</li>
 </ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">                   ::</span><br><span class="line">                  :;J7, :,                        ::;<span class="number">7</span>:</span><br><span class="line">                  ,ivYi, ,                       ;LLLFS:</span><br><span class="line">                  :iv7Yi                       :<span class="number">7</span>ri;j5PL</span><br><span class="line">                 ,:ivYLvr                    ,ivrrirrY2X,</span><br><span class="line">                 :;r<span class="meta">@Wwz</span>.7r:                :ivu<span class="meta">@kexianli</span>.</span><br><span class="line">                :iL7::,:::iiirii:ii;::::,,irvF7rvvLujL7ur</span><br><span class="line">               ri::,:,::i:iiiiiii:i:irrv177JX7rYXqZEkvv17</span><br><span class="line">            ;i:, , ::::iirrririi:i:::iiir2XXvii;L8OGJr71i</span><br><span class="line">          :,, ,,:   ,::ir<span class="meta">@mingyi</span>.irii:i:::j1jri7ZBOS7ivv,</span><br><span class="line">             ,::,    ::rv77iiiriii:iii:i::,rvLq<span class="meta">@huhao</span>.Li</span><br><span class="line">         ,,      ,, ,:ir7ir::,:::i;ir:::i:i::rSGGYri712:</span><br><span class="line">       :::  ,v7r:: ::rrv77:, ,, ,:i7rrii:::::, ir7ri7Lri</span><br><span class="line">      ,     <span class="number">2</span>OBBOi,iiir;r::        ,irriiii::,, ,iv7Luur:</span><br><span class="line">    ,,     i78MBBi,:,:::,:,  :<span class="number">7F</span>SL: ,iriii:::i::,,:rLqXv::</span><br><span class="line">    :      iuMMP: :,:::,:ii;<span class="number">2</span>GY7OBB0viiii:i:iii:i:::iJqL;::</span><br><span class="line">   ,     ::::i   ,,,,, ::LuBBu BBBBBErii:i:i:i:i:i:i:r77ii</span><br><span class="line">  ,       :       , ,,:::rruBZ1MBBqi, :,,,:::,::::::iiriri:</span><br><span class="line"> ,               ,,,,::::i:  <span class="meta">@arqiao</span>.       ,:,, ,:::ii;i7:</span><br><span class="line">:,       rjujLYLi   ,,:::::,:::::::::,,   ,:i,:,,,,,::i:iii</span><br><span class="line">::      BBBBBBBBB0,    ,,::: , ,:::::: ,      ,,,, ,,:::::::</span><br><span class="line">i,  ,  ,<span class="number">8</span>BMMBBBBBBi     ,,:,,     ,,, , ,   , , , :,::ii::i::</span><br><span class="line">:      iZMOMOMBBM2::::::::::,,,,     ,,,,,,:,,,::::i:irr:i:::,</span><br><span class="line">i   ,,:;u0MBMOG1L:::i::::::  ,,,::,   ,,, ::::::i:i:iirii:i:i:</span><br><span class="line">:    ,iuUuuXUkFu7i:iii:i:::, :,:,: ::::::::i:i:::::iirr7iiri::</span><br><span class="line">:     :rk<span class="meta">@Yizero</span>.i:::::, ,:ii:::::::i:::::i::,::::iirrriiiri::,</span><br><span class="line"> :      <span class="number">5</span>BMBBBBBBSr:,::rv2kuii:::iii::,:i:,, , ,,:,:i<span class="meta">@petermu</span>.,</span><br><span class="line">      , :r50EZ8MBBBBGOBBBZP7::::i::,:::::,: :,:,::i;rrririiii::</span><br><span class="line">          :jujYY7LS0ujJL7r::,::i::,::::::::::::::iirirrrrrrr:ii:</span><br><span class="line">       ,:  :<span class="meta">@kevensun</span>.:,:,,,::::i:i:::::,,::::::iir;ii;<span class="number">7</span>v77;ii;i,</span><br><span class="line">       ,,,     ,,:,::::::i:iiiii:i::::,, ::::iiiir<span class="meta">@xingjief</span>.r;<span class="number">7</span>:i,</span><br><span class="line">    , , ,,,:,,::::::::iiiiiiiiii:,:,:::::::::iiir;ri7vL77rrirri::</span><br><span class="line">     :,, , ::::::::i:::i:::i:i::,,,,,:,::i:i:::iir;<span class="meta">@Secbone</span>.ii:::</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 写这段代码的时候，只有上帝和我知道它是干嘛的</span></span><br><span class="line"><span class="comment"># 现在只有上帝知道</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 实在干不下去了</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 已经找好下家明天就辞职</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 如果你也不想干了</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 找我给你内推</span></span><br></pre></td></tr></table></figure>
+<pre><code class="java">                   ::
+                  :;J7, :,                        ::;7:
+                  ,ivYi, ,                       ;LLLFS:
+                  :iv7Yi                       :7ri;j5PL
+                 ,:ivYLvr                    ,ivrrirrY2X,
+                 :;r@Wwz.7r:                :ivu@kexianli.
+                :iL7::,:::iiirii:ii;::::,,irvF7rvvLujL7ur
+               ri::,:,::i:iiiiiii:i:irrv177JX7rYXqZEkvv17
+            ;i:, , ::::iirrririi:i:::iiir2XXvii;L8OGJr71i
+          :,, ,,:   ,::ir@mingyi.irii:i:::j1jri7ZBOS7ivv,
+             ,::,    ::rv77iiiriii:iii:i::,rvLq@huhao.Li
+         ,,      ,, ,:ir7ir::,:::i;ir:::i:i::rSGGYri712:
+       :::  ,v7r:: ::rrv77:, ,, ,:i7rrii:::::, ir7ri7Lri
+      ,     2OBBOi,iiir;r::        ,irriiii::,, ,iv7Luur:
+    ,,     i78MBBi,:,:::,:,  :7FSL: ,iriii:::i::,,:rLqXv::
+    :      iuMMP: :,:::,:ii;2GY7OBB0viiii:i:iii:i:::iJqL;::
+   ,     ::::i   ,,,,, ::LuBBu BBBBBErii:i:i:i:i:i:i:r77ii
+  ,       :       , ,,:::rruBZ1MBBqi, :,,,:::,::::::iiriri:
+ ,               ,,,,::::i:  @arqiao.       ,:,, ,:::ii;i7:
+:,       rjujLYLi   ,,:::::,:::::::::,,   ,:i,:,,,,,::i:iii
+::      BBBBBBBBB0,    ,,::: , ,:::::: ,      ,,,, ,,:::::::
+i,  ,  ,8BMMBBBBBBi     ,,:,,     ,,, , ,   , , , :,::ii::i::
+:      iZMOMOMBBM2::::::::::,,,,     ,,,,,,:,,,::::i:irr:i:::,
+i   ,,:;u0MBMOG1L:::i::::::  ,,,::,   ,,, ::::::i:i:iirii:i:i:
+:    ,iuUuuXUkFu7i:iii:i:::, :,:,: ::::::::i:i:::::iirr7iiri::
+:     :rk@Yizero.i:::::, ,:ii:::::::i:::::i::,::::iirrriiiri::,
+ :      5BMBBBBBBSr:,::rv2kuii:::iii::,:i:,, , ,,:,:i@petermu.,
+      , :r50EZ8MBBBBGOBBBZP7::::i::,:::::,: :,:,::i;rrririiii::
+          :jujYY7LS0ujJL7r::,::i::,::::::::::::::iirirrrrrrr:ii:
+       ,:  :@kevensun.:,:,,,::::i:i:::::,,::::::iir;ii;7v77;ii;i,
+       ,,,     ,,:,::::::i:iiiii:i::::,, ::::iiiir@xingjief.r;7:i,
+    , , ,,,:,,::::::::iiiiiiiiii:,:,:::::::::iiir;ri7vL77rrirri::
+     :,, , ::::::::i:::i:::i:i::,,,,,:,::i:i:::iir;@Secbone.ii:::
+</code></pre>
+<pre><code class="python">
+# 写这段代码的时候，只有上帝和我知道它是干嘛的
+# 现在只有上帝知道
+
+# 实在干不下去了
+
+# 已经找好下家明天就辞职
+
+# 如果你也不想干了
+
+# 找我给你内推
+</code></pre>
 <h2 id="命名规范"><a href="#命名规范" class="headerlink" title="命名规范"></a>命名规范</h2><p><strong>应该避免的名称</strong></p>
 <ol>
 <li>单字符名称, 除了计数器和迭代器. <code>x</code>,<code>y</code>变量</li>
@@ -282,30 +332,155 @@
 <li>将相关的类和顶级函数放在同一个模块里. 不像Java, 没必要限制一个类一个模块.</li>
 <li>对类名使用大写字母开头的单词(如CapWords, 即Pascal风格), 但是模块名应该用小写加下划线的方式(如lower_with_under.py). 尽管已经有很多现存的模块使用类似于CapWords.py这样的命名, 但现在已经不鼓励这样做, 因为如果模块名碰巧和类名一致, 这会让人困扰.</li>
 </ol>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 作者：xlzd</span></span><br><span class="line"><span class="comment"># 链接：https://www.zhihu.com/question/21395276/answer/33747423</span></span><br><span class="line"><span class="comment"># 来源：知乎</span></span><br><span class="line"><span class="comment"># 著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</span></span><br><span class="line">(<span class="keyword">lambda</span> _________, _, __, ___, ____, _____, ______, _______, ________: \</span><br><span class="line">getattr(getattr( \</span><br><span class="line">__import__(<span class="keyword">None</span>.__class__.__name__.__class__.__name__[_____-_____] \</span><br><span class="line">+ <span class="keyword">False</span>.__class__.__class__.__name__[_ &lt;&lt; (_____-_____)] \</span><br><span class="line">+ [].__class__.__name__[_ &lt;&lt; _]),\</span><br><span class="line">[].__class__.__name__[________ &gt;&gt; __:] + &#123;&#125;.__class__.__name__[______-______] + _________(__&lt;&lt;_______, \</span><br><span class="line">(_______ &lt;&lt; (_____ &lt;&lt; __)) + (____ &lt;&lt; (____ &lt;&lt; __)) + (__ ** (_______ &lt;&lt; _)) \</span><br><span class="line">+ __ ** (_____ + ________) + (_ &lt;&lt; (____ * ___)) + __ ** (________ + __) \</span><br><span class="line">+ (_ &lt;&lt; ________) + __**_______ - _ - (__ &lt;&lt; ___))), \</span><br><span class="line">_________(__**________, (_ &lt;&lt; (_____ * ________ - __)) + (_ &lt;&lt; (_____ * ________ - ___)) + \</span><br><span class="line">(__ ** ((_ &lt;&lt; _____) + __)) + (__ ** (_ &lt;&lt; _____)) + (__ ** ((_ &lt;&lt; _____) - __)) + \</span><br><span class="line">(__ ** ((_ &lt;&lt; _____) - ___)) + (__ ** ((_ &lt;&lt; _____) - ____)) + (_ &lt;&lt; (_____ ** __ + _)) + \</span><br><span class="line">(__ ** (____ * _____ + __)) + (_ &lt;&lt; (__ ** ____ + _____)) + (__ ** (_____ * ____ - _)) + \</span><br><span class="line">(__ ** (_ &lt;&lt; ____)) + ( <span class="number">1</span> &lt;&lt; (__ ** ____ - __)) + (_ &lt;&lt; (______ * __ + _)) + \</span><br><span class="line">(_ &lt;&lt; (______ * __)) + (__ ** (___ ** __)) + __ ** ______ + __ ** _____ + __ ** ____ + ____ + __ + _)\</span><br><span class="line">)(_________(____ &lt;&lt; ______, (((_____ &lt;&lt; ____) + _) &lt;&lt; ((___ &lt;&lt; _____) - ___)) + \</span><br><span class="line">(((((___ &lt;&lt; __) - _) &lt;&lt; ___) + _) &lt;&lt; ((_____ &lt;&lt; ____) + (_ &lt;&lt; _))) + \</span><br><span class="line">(((_______ &lt;&lt; __) - _) &lt;&lt; (((((_ &lt;&lt; ___) + _)) &lt;&lt; ___) + (_ &lt;&lt; _))) + \</span><br><span class="line">(((_______ &lt;&lt; ___) + _) &lt;&lt; ((_ &lt;&lt; ______) + _)) + (((_______ &lt;&lt; ____) - _) &lt;&lt; ((_______ &lt;&lt; ___))) + \</span><br><span class="line">(((_ &lt;&lt; ____) - _) &lt;&lt; ((((___ &lt;&lt; __) + _) &lt;&lt; __) - _)) - \</span><br><span class="line">(((((___ &lt;&lt; __) + _) &lt;&lt; __) + _) &lt;&lt; ((_____ &lt;&lt; ___) + (_ &lt;&lt; _))) + \</span><br><span class="line">(_______ &lt;&lt; (((((_ &lt;&lt; ___) + _)) &lt;&lt; __))) - \</span><br><span class="line">((((((_ &lt;&lt; ___) + _)) &lt;&lt; __) + _) &lt;&lt; ((((___ &lt;&lt; __) + _) &lt;&lt; _))) + \</span><br><span class="line">(((_______ &lt;&lt; __) - _) &lt;&lt; (((((_ &lt;&lt; ___) + _)) &lt;&lt; _))) + (((___ &lt;&lt; ___) + _) &lt;&lt; ((_____ &lt;&lt; _))) \</span><br><span class="line">+ ((((___ &lt;&lt; __) - _)) &lt;&lt; _____) + (_ &lt;&lt; ___))))\</span><br><span class="line">(<span class="keyword">lambda</span> _______, ___ : (<span class="keyword">lambda</span> _, __ : _(_, __))(<span class="keyword">lambda</span> _, __ : chr(__ % _______) + \</span><br><span class="line">_(_, __ // _______) <span class="keyword">if</span> __ <span class="keyword">else</span> (<span class="keyword">lambda</span>: _).func_code.co_lnotab, ___),\</span><br><span class="line">*(<span class="keyword">lambda</span> _, __, ___: _(_, __, ___))(</span><br><span class="line">(<span class="keyword">lambda</span> _, __, ___:</span><br><span class="line">[__(___[(<span class="keyword">lambda</span>: _).func_code.co_nlocals])] +</span><br><span class="line">_(_, __, ___[(<span class="keyword">lambda</span> _: _).func_code.co_nlocals:]) <span class="keyword">if</span> ___ <span class="keyword">else</span> []</span><br><span class="line">),</span><br><span class="line"><span class="keyword">lambda</span> _: _.func_code.co_argcount,</span><br><span class="line">(</span><br><span class="line"><span class="keyword">lambda</span> _: _,</span><br><span class="line"><span class="keyword">lambda</span> _, __: _,</span><br><span class="line"><span class="keyword">lambda</span> _, __, ___: _,</span><br><span class="line"><span class="keyword">lambda</span> _, __, ___, ____: _,</span><br><span class="line"><span class="keyword">lambda</span> _, __, ___, ____, _____: _,</span><br><span class="line"><span class="keyword">lambda</span> _, __, ___, ____, _____, ______: _,</span><br><span class="line"><span class="keyword">lambda</span> _, __, ___, ____, _____, ______, _______: _,</span><br><span class="line"><span class="keyword">lambda</span> _, __, ___, ____, _____, ______, _______, ________: _</span><br><span class="line">)</span><br><span class="line">))</span><br></pre></td></tr></table></figure>
+<pre><code class="python"># 作者：xlzd
+# 链接：https://www.zhihu.com/question/21395276/answer/33747423
+# 来源：知乎
+# 著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+(lambda _________, _, __, ___, ____, _____, ______, _______, ________: \
+getattr(getattr( \
+__import__(None.__class__.__name__.__class__.__name__[_____-_____] \
++ False.__class__.__class__.__name__[_ &lt;&lt; (_____-_____)] \
++ [].__class__.__name__[_ &lt;&lt; _]),\
+[].__class__.__name__[________ &gt;&gt; __:] + {}.__class__.__name__[______-______] + _________(__&lt;&lt;_______, \
+(_______ &lt;&lt; (_____ &lt;&lt; __)) + (____ &lt;&lt; (____ &lt;&lt; __)) + (__ ** (_______ &lt;&lt; _)) \
++ __ ** (_____ + ________) + (_ &lt;&lt; (____ * ___)) + __ ** (________ + __) \
++ (_ &lt;&lt; ________) + __**_______ - _ - (__ &lt;&lt; ___))), \
+_________(__**________, (_ &lt;&lt; (_____ * ________ - __)) + (_ &lt;&lt; (_____ * ________ - ___)) + \
+(__ ** ((_ &lt;&lt; _____) + __)) + (__ ** (_ &lt;&lt; _____)) + (__ ** ((_ &lt;&lt; _____) - __)) + \
+(__ ** ((_ &lt;&lt; _____) - ___)) + (__ ** ((_ &lt;&lt; _____) - ____)) + (_ &lt;&lt; (_____ ** __ + _)) + \
+(__ ** (____ * _____ + __)) + (_ &lt;&lt; (__ ** ____ + _____)) + (__ ** (_____ * ____ - _)) + \
+(__ ** (_ &lt;&lt; ____)) + ( 1 &lt;&lt; (__ ** ____ - __)) + (_ &lt;&lt; (______ * __ + _)) + \
+(_ &lt;&lt; (______ * __)) + (__ ** (___ ** __)) + __ ** ______ + __ ** _____ + __ ** ____ + ____ + __ + _)\
+)(_________(____ &lt;&lt; ______, (((_____ &lt;&lt; ____) + _) &lt;&lt; ((___ &lt;&lt; _____) - ___)) + \
+(((((___ &lt;&lt; __) - _) &lt;&lt; ___) + _) &lt;&lt; ((_____ &lt;&lt; ____) + (_ &lt;&lt; _))) + \
+(((_______ &lt;&lt; __) - _) &lt;&lt; (((((_ &lt;&lt; ___) + _)) &lt;&lt; ___) + (_ &lt;&lt; _))) + \
+(((_______ &lt;&lt; ___) + _) &lt;&lt; ((_ &lt;&lt; ______) + _)) + (((_______ &lt;&lt; ____) - _) &lt;&lt; ((_______ &lt;&lt; ___))) + \
+(((_ &lt;&lt; ____) - _) &lt;&lt; ((((___ &lt;&lt; __) + _) &lt;&lt; __) - _)) - \
+(((((___ &lt;&lt; __) + _) &lt;&lt; __) + _) &lt;&lt; ((_____ &lt;&lt; ___) + (_ &lt;&lt; _))) + \
+(_______ &lt;&lt; (((((_ &lt;&lt; ___) + _)) &lt;&lt; __))) - \
+((((((_ &lt;&lt; ___) + _)) &lt;&lt; __) + _) &lt;&lt; ((((___ &lt;&lt; __) + _) &lt;&lt; _))) + \
+(((_______ &lt;&lt; __) - _) &lt;&lt; (((((_ &lt;&lt; ___) + _)) &lt;&lt; _))) + (((___ &lt;&lt; ___) + _) &lt;&lt; ((_____ &lt;&lt; _))) \
++ ((((___ &lt;&lt; __) - _)) &lt;&lt; _____) + (_ &lt;&lt; ___))))\
+(lambda _______, ___ : (lambda _, __ : _(_, __))(lambda _, __ : chr(__ % _______) + \
+_(_, __ // _______) if __ else (lambda: _).func_code.co_lnotab, ___),\
+*(lambda _, __, ___: _(_, __, ___))(
+(lambda _, __, ___:
+[__(___[(lambda: _).func_code.co_nlocals])] +
+_(_, __, ___[(lambda _: _).func_code.co_nlocals:]) if ___ else []
+),
+lambda _: _.func_code.co_argcount,
+(
+lambda _: _,
+lambda _, __: _,
+lambda _, __, ___: _,
+lambda _, __, ___, ____: _,
+lambda _, __, ___, ____, _____: _,
+lambda _, __, ___, ____, _____, ______: _,
+lambda _, __, ___, ____, _____, ______, _______: _,
+lambda _, __, ___, ____, _____, ______, _______, ________: _
+)
+))
+
+</code></pre>
 <h2 id="编码建议"><a href="#编码建议" class="headerlink" title="编码建议"></a>编码建议</h2><ol>
 <li><p>尽可能使用<code>is</code> <code>is not</code>取代<code>==</code>，比如<code>if x is not None</code>要优于<code>if x</code>。</p>
 </li>
 <li><p>异常中不要使用裸露的except，except后跟具体的exceptions。</p>
 </li>
-<li><p>异常中try的代码尽可能少。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># YES</span></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    value = collection[key]</span><br><span class="line"><span class="keyword">except</span> KeyError:</span><br><span class="line">    <span class="keyword">return</span> key_not_found(key)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="keyword">return</span> handle_value(value)</span><br><span class="line"></span><br><span class="line"><span class="comment"># NO：</span></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="comment"># 很多代码</span></span><br><span class="line">    <span class="keyword">return</span> handle_value(collection[key])</span><br><span class="line"><span class="keyword">except</span> KeyError:</span><br><span class="line">    <span class="comment"># 捕获由handle_value()抛出的KeyError</span></span><br><span class="line">    <span class="keyword">return</span> key_not_found(key)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>每次循环 判断条件不如 失败 <code>try except</code>。</p>
-</li>
-<li><p>列表推导式，字典推导式，lambda函数</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">sorted_warehouse = sorted(warehouses,</span><br><span class="line">                              key=<span class="keyword">lambda</span> x:</span><br><span class="line">                              min(x.expresses,</span><br><span class="line">                                  key=<span class="keyword">lambda</span> y: y.first_weight_price).</span><br><span class="line">                                  first_weight_price)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">split_order</span><span class="params">(order)</span>:</span></span><br><span class="line">    <span class="comment"># 检查库存</span></span><br><span class="line">    ret_1 = &#123;&#125;</span><br><span class="line">    ret_2 = &#123;&#125;</span><br><span class="line">    ret_3 = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> item <span class="keyword">in</span> order[<span class="string">"order_details"</span>]:</span><br><span class="line">        stock = order_api.get_stock(order[<span class="string">"user_id"</span>], item[<span class="string">"item_id"</span>])</span><br><span class="line">        sku_id = stock[<span class="string">'sku_id'</span>]</span><br><span class="line">        ret_3[sku_id] = item[<span class="string">'quantity'</span>]</span><br><span class="line">        ret_1[sku_id] = &#123;warehouse[<span class="string">'id'</span>] <span class="keyword">for</span> warehouse <span class="keyword">in</span> stock[<span class="string">'warehouse'</span>] <span class="keyword">if</span></span><br><span class="line">                         warehouse[<span class="string">'available_count'</span>] &gt;= item[<span class="string">'quantity'</span>]&#125;</span><br><span class="line">        <span class="keyword">for</span> warehouse <span class="keyword">in</span> stock[<span class="string">'warehouse'</span>]:</span><br><span class="line">            ret_2.setdefault(warehouse[<span class="string">'id'</span>], [])</span><br><span class="line">            ret_2[warehouse[<span class="string">'id'</span>]].append(</span><br><span class="line">                (sku_id, warehouse[<span class="string">'available_count'</span>]))</span><br><span class="line">    tmp = next(iter(ret_1.values()))</span><br><span class="line">    <span class="keyword">for</span> r <span class="keyword">in</span> ret_1.values():</span><br><span class="line">        tmp = r &amp; tmp</span><br><span class="line">    <span class="keyword">if</span> tmp:</span><br><span class="line">        tmp = list(tmp)</span><br><span class="line">        ret = []</span><br><span class="line">        <span class="keyword">for</span> warehouse_id <span class="keyword">in</span> tmp:</span><br><span class="line">            dict_data = &#123;&#125;</span><br><span class="line">            <span class="keyword">for</span> item <span class="keyword">in</span> order[<span class="string">"order_details"</span>]:</span><br><span class="line">                dict_data[item[<span class="string">"sku_id"</span>]] = item[<span class="string">"quantity"</span>]</span><br><span class="line">            ret.append(&#123;warehouse_id: dict_data&#125;)</span><br><span class="line">        <span class="keyword">return</span> ret</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        success_item = []</span><br><span class="line">        success_item_1 = []</span><br><span class="line">        <span class="comment"># print("没有仓可以全部发货，需要拆单")</span></span><br><span class="line">        <span class="keyword">for</span> item <span class="keyword">in</span> combinations(ret_2.keys(), <span class="number">2</span>):</span><br><span class="line">            tag = <span class="keyword">True</span></span><br><span class="line">            tmp = &#123;&#125;</span><br><span class="line">            tmp[item[<span class="number">0</span>]] = &#123;&#125;</span><br><span class="line">            tmp[item[<span class="number">1</span>]] = &#123;&#125;</span><br><span class="line">            <span class="keyword">for</span> sku_id <span class="keyword">in</span> ret_3.keys():</span><br><span class="line">                a = [value[<span class="number">1</span>] <span class="keyword">for</span> value <span class="keyword">in</span> ret_2[item[<span class="number">0</span>]] <span class="keyword">if</span> value[<span class="number">0</span>] == sku_id][<span class="number">0</span>] <span class="keyword">if</span> [</span><br><span class="line">                    value[<span class="number">1</span>] <span class="keyword">for</span> value <span class="keyword">in</span> ret_2[item[<span class="number">0</span>]] <span class="keyword">if</span> value[<span class="number">0</span>] == sku_id] <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">                b = [value[<span class="number">1</span>] <span class="keyword">for</span> value <span class="keyword">in</span> ret_2[item[<span class="number">1</span>]] <span class="keyword">if</span> value[<span class="number">0</span>] == sku_id][<span class="number">0</span>] <span class="keyword">if</span> [</span><br><span class="line">                    value[<span class="number">1</span>] <span class="keyword">for</span> value <span class="keyword">in</span> ret_2[item[<span class="number">1</span>]] <span class="keyword">if</span> value[<span class="number">0</span>] == sku_id] <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">                <span class="keyword">if</span> ret_3[sku_id] &lt;= a + b:</span><br><span class="line">                    <span class="keyword">if</span> a &gt; ret_3[sku_id]:</span><br><span class="line">                        tmp[item[<span class="number">0</span>]][sku_id] = ret_3[sku_id]</span><br><span class="line">                    <span class="keyword">elif</span> b &gt; ret_3[sku_id]:</span><br><span class="line">                        tmp[item[<span class="number">1</span>]][sku_id] = ret_3[sku_id]</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        tmp[item[<span class="number">0</span>]][sku_id] = max(a, b)</span><br><span class="line">                        tmp[item[<span class="number">1</span>]][sku_id] = ret_3[sku_id] - max(a, b)</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    tag = <span class="keyword">False</span></span><br><span class="line">            <span class="keyword">if</span> tag:</span><br><span class="line">                success_item.append(item)</span><br><span class="line">                success_item_1.append(tmp)</span><br><span class="line">        <span class="keyword">return</span> success_item_1</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>判断序列为空 <code>if sequence</code> 优于 <code>if len(sequence) &gt; 0</code>,利用空序列是<code>False</code>的事实。。</p>
-</li>
-<li><p>返回语句保持一致。函数中的所有返回语句都有返回值，或都没有返回值。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># YES</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">foo</span><span class="params">(x)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> x &gt;= <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> math.sqrt(x)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">None</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">bar</span><span class="params">(x)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> x &lt; <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">None</span></span><br><span class="line">    <span class="keyword">return</span> math.sqrt(x)</span><br><span class="line"></span><br><span class="line"><span class="comment"># NO</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">foo</span><span class="params">(x)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> x &gt;= <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> math.sqrt(x)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">bar</span><span class="params">(x)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> x &lt; <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">return</span> math.sqrt(x)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>对象类型的比较使用<code>isinstance()</code>代替<code>type</code>直接比较类型。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 风格良好</span></span><br><span class="line"><span class="keyword">if</span> isinstance(obj, int):</span><br><span class="line"><span class="comment"># 风格不良</span></span><br><span class="line"><span class="keyword">if</span> type(obj) <span class="keyword">is</span> type(<span class="number">1</span>):</span><br></pre></td></tr></table></figure>
+<li><p>异常中try的代码尽可能少。<br><code>`</code>python</p>
 </li>
 </ol>
-<h1 id="RESTful-API"><a href="#RESTful-API" class="headerlink" title="RESTful API"></a>RESTful API</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><blockquote>
+<h1 id="YES"><a href="#YES" class="headerlink" title="YES"></a>YES</h1><p>try:<br>    value = collection[key]<br>except KeyError:<br>    return key_not_found(key)<br>else:<br>    return handle_value(value)</p>
+<h1 id="NO："><a href="#NO：" class="headerlink" title="NO："></a>NO：</h1><p>try:</p>
+<pre><code># 很多代码
+return handle_value(collection[key])
+</code></pre><p>except KeyError:</p>
+<pre><code># 捕获由handle_value()抛出的KeyError
+return key_not_found(key)
+</code></pre><pre><code>
+4. 每次循环 判断条件不如 失败 `try except`。
+
+5. 列表推导式，字典推导式，lambda函数
+```python
+sorted_warehouse = sorted(warehouses,
+                              key=lambda x:
+                              min(x.expresses,
+                                  key=lambda y: y.first_weight_price).
+                                  first_weight_price)
+
+def split_order(order):
+    # 检查库存
+    ret_1 = {}
+    ret_2 = {}
+    ret_3 = {}
+    for item in order[&quot;order_details&quot;]:
+        stock = order_api.get_stock(order[&quot;user_id&quot;], item[&quot;item_id&quot;])
+        sku_id = stock[&#39;sku_id&#39;]
+        ret_3[sku_id] = item[&#39;quantity&#39;]
+        ret_1[sku_id] = {warehouse[&#39;id&#39;] for warehouse in stock[&#39;warehouse&#39;] if
+                         warehouse[&#39;available_count&#39;] &gt;= item[&#39;quantity&#39;]}
+        for warehouse in stock[&#39;warehouse&#39;]:
+            ret_2.setdefault(warehouse[&#39;id&#39;], [])
+            ret_2[warehouse[&#39;id&#39;]].append(
+                (sku_id, warehouse[&#39;available_count&#39;]))
+    tmp = next(iter(ret_1.values()))
+    for r in ret_1.values():
+        tmp = r &amp; tmp
+    if tmp:
+        tmp = list(tmp)
+        ret = []
+        for warehouse_id in tmp:
+            dict_data = {}
+            for item in order[&quot;order_details&quot;]:
+                dict_data[item[&quot;sku_id&quot;]] = item[&quot;quantity&quot;]
+            ret.append({warehouse_id: dict_data})
+        return ret
+    else:
+        success_item = []
+        success_item_1 = []
+        # print(&quot;没有仓可以全部发货，需要拆单&quot;)
+        for item in combinations(ret_2.keys(), 2):
+            tag = True
+            tmp = {}
+            tmp[item[0]] = {}
+            tmp[item[1]] = {}
+            for sku_id in ret_3.keys():
+                a = [value[1] for value in ret_2[item[0]] if value[0] == sku_id][0] if [
+                    value[1] for value in ret_2[item[0]] if value[0] == sku_id] else 0
+                b = [value[1] for value in ret_2[item[1]] if value[0] == sku_id][0] if [
+                    value[1] for value in ret_2[item[1]] if value[0] == sku_id] else 0
+                if ret_3[sku_id] &lt;= a + b:
+                    if a &gt; ret_3[sku_id]:
+                        tmp[item[0]][sku_id] = ret_3[sku_id]
+                    elif b &gt; ret_3[sku_id]:
+                        tmp[item[1]][sku_id] = ret_3[sku_id]
+                    else:
+                        tmp[item[0]][sku_id] = max(a, b)
+                        tmp[item[1]][sku_id] = ret_3[sku_id] - max(a, b)
+                else:
+                    tag = False
+            if tag:
+                success_item.append(item)
+                success_item_1.append(tmp)
+        return success_item_1
+
+</code></pre><ol>
+<li><p>判断序列为空 <code>if sequence</code> 优于 <code>if len(sequence) &gt; 0</code>,利用空序列是<code>False</code>的事实。。</p>
+</li>
+<li><p>返回语句保持一致。函数中的所有返回语句都有返回值，或都没有返回值。<br><code>`</code>python</p>
+</li>
+</ol>
+<h1 id="YES-1"><a href="#YES-1" class="headerlink" title="YES"></a>YES</h1><p>def foo(x):<br>    if x &gt;= 0:<br>        return math.sqrt(x)<br>    else:<br>        return None</p>
+<p>def bar(x):<br>    if x &lt; 0:<br>        return None<br>    return math.sqrt(x)</p>
+<h1 id="NO"><a href="#NO" class="headerlink" title="NO"></a>NO</h1><p>def foo(x):<br>    if x &gt;= 0:<br>        return math.sqrt(x)</p>
+<p>def bar(x):<br>    if x &lt; 0:<br>        return<br>    return math.sqrt(x)</p>
+<pre><code>8. 对象类型的比较使用`isinstance()`代替`type`直接比较类型。
+```python
+# 风格良好
+if isinstance(obj, int):
+# 风格不良
+if type(obj) is type(1):
+</code></pre><h1 id="RESTful-API"><a href="#RESTful-API" class="headerlink" title="RESTful API"></a>RESTful API</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><blockquote>
 <p>REST是<code>REpresentational State Transfer</code>的缩写，可以翻译成<code>表现状态转换</code></p>
 </blockquote>
 <ul>
@@ -340,7 +515,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

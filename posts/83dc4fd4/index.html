@@ -12,14 +12,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   
-    <meta name="keywords" content="Python,源码,Django," />
+    <meta name="keywords" content="Python,Django,源码," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
-  <meta name="keywords" content="Python,源码,Django">
+  <meta name="keywords" content="Python,Django,源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深入Django ORM">
 <meta property="og:url" content="http://shawnz.me/posts/83dc4fd4/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.198Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入Django ORM">
@@ -232,10 +238,37 @@
 <p>大多数人对<code>ORM</code>褒贬不一, 一方面<code>ORM</code>能够以编码面向对象的设计方式和关系数据库关联, 从底层的数据库操作中解脱出来. 但是另一方面, <code>ORM</code>框架也导致了程序员对底层的控制力明显减弱, 而且使用<code>ORM</code>很难有针对的进行优化.</p>
 <p>Django ORM框架</p>
 <h2 id="源码组织"><a href="#源码组织" class="headerlink" title="源码组织"></a>源码组织</h2><p>Django ORM实现的源码都在<code>django.db</code>包中, 先来看一下它的代码组织结构:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">├── db</span><br><span class="line">│   ├── models  <span class="comment"># 以面向对象的方式和数据库关联</span></span><br><span class="line">│   │   ├── aggregates.py  <span class="comment"># 聚合查询</span></span><br><span class="line">│   │   ├── base.py  <span class="comment"># Model类定义</span></span><br><span class="line">│   │   ├── constants.py  <span class="comment"># 常量</span></span><br><span class="line">│   │   ├── deletion.py  <span class="comment"># 数据库表项删除的实现</span></span><br><span class="line">│   │   ├── expressions.py  <span class="comment"># 表达式</span></span><br><span class="line">│   │   ├── fields  <span class="comment"># 字段以及关联me</span></span><br><span class="line">│   │   ├── functions  <span class="comment"># 数据库函数</span></span><br><span class="line">│   │   ├── indexes.py  <span class="comment"># 索引</span></span><br><span class="line">│   │   ├── __init__.py  </span><br><span class="line">│   │   ├── lookups.py  <span class="comment"># 属性查找器</span></span><br><span class="line">│   │   ├── manager.py  <span class="comment"># 对象管理器</span></span><br><span class="line">│   │   ├── options.py  <span class="comment"># 数据库属性</span></span><br><span class="line">│   │   ├── query.py  <span class="comment"># 查询集</span></span><br><span class="line">│   │   ├── query_utils.py  <span class="comment"># 查询工具</span></span><br><span class="line">│   │   ├── signals.py  <span class="comment"># 信号</span></span><br><span class="line">│   │   ├── sql <span class="comment"># sql语句</span></span><br><span class="line">│   │   └── utils.py</span><br></pre></td></tr></table></figure>
+<pre><code class="python">├── db
+│   ├── models  # 以面向对象的方式和数据库关联
+│   │   ├── aggregates.py  # 聚合查询
+│   │   ├── base.py  # Model类定义
+│   │   ├── constants.py  # 常量
+│   │   ├── deletion.py  # 数据库表项删除的实现
+│   │   ├── expressions.py  # 表达式
+│   │   ├── fields  # 字段以及关联me
+│   │   ├── functions  # 数据库函数
+│   │   ├── indexes.py  # 索引
+│   │   ├── __init__.py  
+│   │   ├── lookups.py  # 属性查找器
+│   │   ├── manager.py  # 对象管理器
+│   │   ├── options.py  # 数据库属性
+│   │   ├── query.py  # 查询集
+│   │   ├── query_utils.py  # 查询工具
+│   │   ├── signals.py  # 信号
+│   │   ├── sql # sql语句
+│   │   └── utils.py 
+</code></pre>
 <p>本篇文章主要针对<code>db.models</code>的各个模块分析<code>Django ORM</code>是怎么实现对象关系映射的以及有哪些地方是可以优化.</p>
 <h2 id="简单的例子"><a href="#简单的例子" class="headerlink" title="简单的例子"></a>简单的例子</h2><p>官方文档中的一个例子:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> django.db <span class="keyword">import</span> models</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Person</span><span class="params">(models.Model)</span>:</span></span><br><span class="line">    first_name = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    last_name = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">Meta</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">from django.db import models
+
+class Person(models.Model):
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
+
+    class Meta:
+        pass
+</code></pre>
 <h2 id="运行时创建模型类"><a href="#运行时创建模型类" class="headerlink" title="运行时创建模型类"></a>运行时创建模型类</h2><p><code>Django</code>用到了<code>Python</code>许多强大的特性, 而<code>Django ORM</code>部分就使用<code>元类(metaclass)</code>编程技术, 在运行时动态创建模型类.</p>
 <p><code>ModelBase</code>正是创建模型类的元类. 它实现了<code>__new__(cls, name, bases, attrs)</code>方法, 接收四个参数:</p>
 <ul>
@@ -269,7 +302,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

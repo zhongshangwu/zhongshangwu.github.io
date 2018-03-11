@@ -12,16 +12,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   
-    <meta name="keywords" content="Python,Flask,源码," />
+    <meta name="keywords" content="Python,源码,Flask," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="Flask简介 Flask is a micro web development framework for Python.">
-<meta name="keywords" content="Python,Flask,源码">
+<meta name="keywords" content="Python,源码,Flask">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Flask源码阅读">
 <meta property="og:url" content="http://shawnz.me/posts/f034d9c0/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="Flask简介 Flask is a micro web development framework for Python.">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.062Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Flask源码阅读">
@@ -254,13 +260,61 @@
 <li><a href="/posts/e09df7aa/" title="werkzeug源码阅读">werkzeug源码阅读</a>。</li>
 </ul>
 <h2 id="应用启动流程"><a href="#应用启动流程" class="headerlink" title="应用启动流程"></a>应用启动流程</h2><p>我们先来看看Flask的官方<code>Hello World</code>示例:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route('/')</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hello_world</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">'Hello World!'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    app.run()</span><br></pre></td></tr></table></figure>
+<pre><code class="python">from flask import Flask
+app = Flask(__name__)
+
+@app.route(&#39;/&#39;)
+def hello_world():
+    return &#39;Hello World!&#39;
+
+if __name__ == &#39;__main__&#39;:
+    app.run()
+</code></pre>
 <p>很简单的，我们编写了一个<code>application</code>，并使用Flask内置的(<code>werkzeug</code>)<code>HTTPServer</code>运行起来了。</p>
 <p>我们来看看<code>run</code>的内部：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self, host=None, port=None, debug=None, **options)</span>:</span></span><br><span class="line">        <span class="keyword">from</span> werkzeug.serving <span class="keyword">import</span> run_simple</span><br><span class="line">        <span class="keyword">if</span> host <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            host = <span class="string">'127.0.0.1'</span></span><br><span class="line">        <span class="keyword">if</span> port <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            server_name = self.config[<span class="string">'SERVER_NAME'</span>]</span><br><span class="line">            <span class="keyword">if</span> server_name <span class="keyword">and</span> <span class="string">':'</span> <span class="keyword">in</span> server_name:</span><br><span class="line">                port = int(server_name.rsplit(<span class="string">':'</span>, <span class="number">1</span>)[<span class="number">1</span>])</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                port = <span class="number">5000</span></span><br><span class="line">        <span class="keyword">if</span> debug <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">            self.debug = bool(debug)</span><br><span class="line">        options.setdefault(<span class="string">'use_reloader'</span>, self.debug)</span><br><span class="line">        options.setdefault(<span class="string">'use_debugger'</span>, self.debug)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            run_simple(host, port, self, **options)</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            self._got_first_request = <span class="keyword">False</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">def run(self, host=None, port=None, debug=None, **options):
+        from werkzeug.serving import run_simple
+        if host is None:
+            host = &#39;127.0.0.1&#39;
+        if port is None:
+            server_name = self.config[&#39;SERVER_NAME&#39;]
+            if server_name and &#39;:&#39; in server_name:
+                port = int(server_name.rsplit(&#39;:&#39;, 1)[1])
+            else:
+                port = 5000
+        if debug is not None:
+            self.debug = bool(debug)
+        options.setdefault(&#39;use_reloader&#39;, self.debug)
+        options.setdefault(&#39;use_debugger&#39;, self.debug)
+        try:
+            run_simple(host, port, self, **options)
+        finally:
+            self._got_first_request = False
+</code></pre>
 <p>在这里，我们可以看到Flask简单的处理了一下参数，然后调用<code>werkzeug</code>的<code>run_simple()</code>，传递的<code>application</code>即<code>Flask</code>类本身实例<code>self</code>。</p>
 <p>在上一篇博客<code>werkzeug源码阅读</code>中，我们知道<code>run_simple()</code>在请求到来时，会执行<code>application(envrion, start_response)</code>。所以我们来看<code>Flask.__call__()</code>方法：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">wsgi_app</span><span class="params">(self, environ, start_response)</span>:</span></span><br><span class="line">    ctx = self.request_context(environ)</span><br><span class="line">    ctx.push()</span><br><span class="line">    error = <span class="keyword">None</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            response = self.full_dispatch_request()</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            error = e</span><br><span class="line">            response = self.handle_exception(e)</span><br><span class="line">        <span class="keyword">except</span>:</span><br><span class="line">            error = sys.exc_info()[<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line">        <span class="keyword">return</span> response(environ, start_response)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        <span class="keyword">if</span> self.should_ignore_error(error):</span><br><span class="line">            error = <span class="keyword">None</span></span><br><span class="line">        ctx.auto_pop(error)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, environ, start_response)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> self.wsgi_app(environ, start_response)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def wsgi_app(self, environ, start_response):
+    ctx = self.request_context(environ)
+    ctx.push()
+    error = None
+    try:
+        try:
+            response = self.full_dispatch_request()
+        except Exception as e:
+            error = e
+            response = self.handle_exception(e)
+        except:
+            error = sys.exc_info()[1]
+            raise
+        return response(environ, start_response)
+    finally:
+        if self.should_ignore_error(error):
+            error = None
+        ctx.auto_pop(error)
+
+def __call__(self, environ, start_response):
+    return self.wsgi_app(environ, start_response)
+</code></pre>
 <p>在上面的<code>wsgi_app</code>中的执行流程大致分为三步：</p>
 <ul>
 <li>处理<code>environ</code>参数，这是和<code>context</code>上下文有关的，可以先放在一旁；</li>
@@ -268,7 +322,17 @@
 <li>最后是返回响应，以及上下文清除。</li>
 </ul>
 <p>进入<code>full_dispatch_request()</code>我们可以看到:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">full_dispatch_request</span><span class="params">(self)</span>:</span></span><br><span class="line">    self.try_trigger_before_first_request_functions()</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        request_started.send(self)</span><br><span class="line">        rv = self.preprocess_request()</span><br><span class="line">        <span class="keyword">if</span> rv <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            rv = self.dispatch_request()</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        rv = self.handle_user_exception(e)</span><br><span class="line">    <span class="keyword">return</span> self.finalize_request(rv)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def full_dispatch_request(self):
+    self.try_trigger_before_first_request_functions()
+    try:
+        request_started.send(self)
+        rv = self.preprocess_request()
+        if rv is None:
+            rv = self.dispatch_request()
+    except Exception as e:
+        rv = self.handle_user_exception(e)
+    return self.finalize_request(rv)
+</code></pre>
 <p>这个部分可以清晰的看到整个请求的处理流程：</p>
 <ul>
 <li><code>try_trigger_before_first_request_functions</code>：第一个请求的触发器；</li>
@@ -296,14 +360,37 @@
 <li>直接操作<code>app.url_map</code>数据结构。</li>
 </ul>
 <p>在Flaksk内部，这三种方式从下到下其实是一种包装关系。<code>route()</code>装饰器内部调用<code>app.add_url_route()</code>，而后者直接操作<code>url_map</code>数据结构。我们可以直接来看<code>add_url_map()</code>方法源码：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@setupmethod</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add_url_rule</span><span class="params">(self, rule, endpoint=None, view_func=None, **options)</span>:</span></span><br><span class="line">    <span class="comment"># 省略了endpoint和method处理</span></span><br><span class="line">    methods = options.pop(<span class="string">'methods'</span>, <span class="keyword">None</span>)</span><br><span class="line"></span><br><span class="line">    rule = self.url_rule_class(rule, methods=methods, **options)</span><br><span class="line"></span><br><span class="line">    self.url_map.add(rule)</span><br><span class="line">    <span class="keyword">if</span> view_func <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        old_func = self.view_functions.get(endpoint)</span><br><span class="line">        <span class="keyword">if</span> old_func <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span> <span class="keyword">and</span> old_func != view_func:</span><br><span class="line">            <span class="keyword">raise</span> AssertionError(<span class="string">'View function mapping is overwriting an '</span></span><br><span class="line">                                    <span class="string">'existing endpoint function: %s'</span> % endpoint)</span><br><span class="line">        self.view_functions[endpoint] = view_func</span><br></pre></td></tr></table></figure>
+<pre><code class="python">@setupmethod
+def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
+    # 省略了endpoint和method处理
+    methods = options.pop(&#39;methods&#39;, None)
+
+    rule = self.url_rule_class(rule, methods=methods, **options)
+
+    self.url_map.add(rule)
+    if view_func is not None:
+        old_func = self.view_functions.get(endpoint)
+        if old_func is not None and old_func != view_func:
+            raise AssertionError(&#39;View function mapping is overwriting an &#39;
+                                    &#39;existing endpoint function: %s&#39; % endpoint)
+        self.view_functions[endpoint] = view_func
+</code></pre>
 <p>在这里省略了<code>endpoint</code>和<code>method</code>的处理，<code>add_url_rule</code>主要工作是：</p>
 <ul>
 <li>使用<code>url_rule_class</code>构造了<code>werkzeug</code>的<code>Rule</code>对象，并添加到<code>url_map</code>数据结构中，这是<code>werkzeug</code>中的<code>Map</code>实例,在应用启用之前就已经实例化。</li>
 <li>在<code>werkzeug</code>路由分析中，我们知道<code>werkzeug</code>是不维护<code>endpoint</code>和<code>view_func</code>的映射的，在Flask中通过<code>view_functions</code>的字典来维护这种映射关系。注意：这里<code>endpoint</code>不同重复。</li>
 </ul>
 <h3 id="请求路径映射"><a href="#请求路径映射" class="headerlink" title="请求路径映射"></a>请求路径映射</h3><p>在之前的<code>应用启动流程</code>分析到<code>dispatch_request</code>转发请求，继续往下看：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dispatch_request</span><span class="params">(self)</span>:</span></span><br><span class="line">   req = _request_ctx_stack.top.request</span><br><span class="line">   <span class="keyword">if</span> req.routing_exception <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">       self.raise_routing_exception(req)</span><br><span class="line">   rule = req.url_rule</span><br><span class="line">   <span class="keyword">if</span> getattr(rule, <span class="string">'provide_automatic_options'</span>, <span class="keyword">False</span>) \</span><br><span class="line">       <span class="keyword">and</span> req.method == <span class="string">'OPTIONS'</span>:</span><br><span class="line">       <span class="keyword">return</span> self.make_default_options_response()</span><br><span class="line">   <span class="keyword">return</span> self.view_functions[rule.endpoint](**req.view_args)</span><br></pre></td></tr></table></figure>
+<pre><code class="python"> def dispatch_request(self):
+    req = _request_ctx_stack.top.request
+    if req.routing_exception is not None:
+        self.raise_routing_exception(req)
+    rule = req.url_rule
+    if getattr(rule, &#39;provide_automatic_options&#39;, False) \
+        and req.method == &#39;OPTIONS&#39;:
+        return self.make_default_options_response()
+    return self.view_functions[rule.endpoint](**req.view_args)
+</code></pre>
 <p>请求URL分发到具体处理函数上，大致分为两个部分：</p>
 <ul>
 <li>从<code>请求上下文</code>中获取请求对象，其中包含匹配到的<code>Rule</code>实例。</li>
@@ -311,14 +398,65 @@
 </ul>
 <p>还有问题的是<code>请求上下文</code>以及如何从请求信息中找到匹配的<code>Rule</code>？</p>
 <p>在<code>wsgi_app</code>中，找到如下代码：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">wsgi_app</span><span class="params">(self, environ, start_response)</span>:</span></span><br><span class="line">    ctx = self.request_context(environ)</span><br><span class="line">    ctx.push()</span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">request_context</span><span class="params">(self, environ)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> RequestContext(self, environ)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def wsgi_app(self, environ, start_response):
+    ctx = self.request_context(environ)
+    ctx.push()
+    pass
+
+def request_context(self, environ):
+    return RequestContext(self, environ)
+</code></pre>
 <p>在每回请求到来的时候，Flask首先会构建请求上下文，在<code>RequestContext</code>中，首先在<code>url_map</code>通过绑定一些请求的路径参数来构建<code>MapAdapter</code>。有了<code>url_adapter</code>就可以通过<code>match()</code>找到匹配的<code>url_rule</code>和<code>view_args</code>(请求参数)。</p>
 <p>其中相关代码如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">create_url_adapter</span><span class="params">(self, request)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> request <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">return</span> self.url_map.bind_to_environ(request.environ,</span><br><span class="line">            server_name=self.config[<span class="string">'SERVER_NAME'</span>])</span><br><span class="line">    <span class="keyword">if</span> self.config[<span class="string">'SERVER_NAME'</span>] <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">return</span> self.url_map.bind(</span><br><span class="line">            self.config[<span class="string">'SERVER_NAME'</span>],</span><br><span class="line">            script_name=self.config[<span class="string">'APPLICATION_ROOT'</span>] <span class="keyword">or</span> <span class="string">'/'</span>,</span><br><span class="line">            url_scheme=self.config[<span class="string">'PREFERRED_URL_SCHEME'</span>])</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">match_request</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        url_rule, self.request.view_args = \</span><br><span class="line">            self.url_adapter.match(return_rule=<span class="keyword">True</span>)</span><br><span class="line">        self.request.url_rule = url_rule</span><br><span class="line">    <span class="keyword">except</span> HTTPException <span class="keyword">as</span> e:</span><br><span class="line">        self.request.routing_exception = e</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def create_url_adapter(self, request):
+    if request is not None:
+        return self.url_map.bind_to_environ(request.environ,
+            server_name=self.config[&#39;SERVER_NAME&#39;])
+    if self.config[&#39;SERVER_NAME&#39;] is not None:
+        return self.url_map.bind(
+            self.config[&#39;SERVER_NAME&#39;],
+            script_name=self.config[&#39;APPLICATION_ROOT&#39;] or &#39;/&#39;,
+            url_scheme=self.config[&#39;PREFERRED_URL_SCHEME&#39;])
+
+def match_request(self):
+    try:
+        url_rule, self.request.view_args = \
+            self.url_adapter.match(return_rule=True)
+        self.request.url_rule = url_rule
+    except HTTPException as e:
+        self.request.routing_exception = e
+</code></pre>
 <p>在请求路由过程中，怎么通过视图函数签名从请求信息中获取具体函数需要的请求参数？怎么进行URL的正则匹配？</p>
 <h2 id="Context机制"><a href="#Context机制" class="headerlink" title="Context机制"></a>Context机制</h2><p>Flask提供两种上下文环境，一个是应用上下文(Application Context)，二是请求上下文(Request Context)。</p>
 <p>Flask的全局变量定义在<code>globals.py</code>中，另外在<code>ctx.py</code>中实现了相应的上下文：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> functools <span class="keyword">import</span> partial</span><br><span class="line"><span class="keyword">from</span> werkzeug.local <span class="keyword">import</span> LocalStack, LocalProxy</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_lookup_req_object</span><span class="params">(name)</span>:</span></span><br><span class="line">    top = _request_ctx_stack.top</span><br><span class="line">    <span class="keyword">if</span> top <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(_request_ctx_err_msg)</span><br><span class="line">    <span class="keyword">return</span> getattr(top, name)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_lookup_app_object</span><span class="params">(name)</span>:</span></span><br><span class="line">    top = _app_ctx_stack.top</span><br><span class="line">    <span class="keyword">if</span> top <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(_app_ctx_err_msg)</span><br><span class="line">    <span class="keyword">return</span> getattr(top, name)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_find_app</span><span class="params">()</span>:</span></span><br><span class="line">    top = _app_ctx_stack.top</span><br><span class="line">    <span class="keyword">if</span> top <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(_app_ctx_err_msg)</span><br><span class="line">    <span class="keyword">return</span> top.app</span><br><span class="line"></span><br><span class="line">_request_ctx_stack = LocalStack()</span><br><span class="line">_app_ctx_stack = LocalStack()</span><br><span class="line">current_app = LocalProxy(_find_app)</span><br><span class="line">request = LocalProxy(partial(_lookup_req_object, <span class="string">'request'</span>))</span><br><span class="line">session = LocalProxy(partial(_lookup_req_object, <span class="string">'session'</span>))</span><br><span class="line">g = LocalProxy(partial(_lookup_app_object, <span class="string">'g'</span>))</span><br></pre></td></tr></table></figure>
+<pre><code class="python">from functools import partial
+from werkzeug.local import LocalStack, LocalProxy
+
+def _lookup_req_object(name):
+    top = _request_ctx_stack.top
+    if top is None:
+        raise RuntimeError(_request_ctx_err_msg)
+    return getattr(top, name)
+
+def _lookup_app_object(name):
+    top = _app_ctx_stack.top
+    if top is None:
+        raise RuntimeError(_app_ctx_err_msg)
+    return getattr(top, name)
+
+def _find_app():
+    top = _app_ctx_stack.top
+    if top is None:
+        raise RuntimeError(_app_ctx_err_msg)
+    return top.app
+
+_request_ctx_stack = LocalStack()
+_app_ctx_stack = LocalStack()
+current_app = LocalProxy(_find_app)
+request = LocalProxy(partial(_lookup_req_object, &#39;request&#39;))
+session = LocalProxy(partial(_lookup_req_object, &#39;session&#39;))
+g = LocalProxy(partial(_lookup_app_object, &#39;g&#39;))
+</code></pre>
 <p>Flask通过<code>werkzeug</code>的<code>LocalStack</code>实现了两个栈结构：</p>
 <ul>
 <li><code>_request_ctx_stack</code>：保存请求上下文<code>RequestContext</code>，演化出全局变量<code>request</code>和<code>session</code>。</li>
@@ -326,28 +464,115 @@
 </ul>
 <p>Note：在这里再次回顾一点，<code>LocalStack</code>的<code>push</code>、<code>top</code>以及<code>pop</code>都是对于当前线程维护的一个栈上的操作。</p>
 <p>了解过<code>werkzeug</code>后，我们知道使用<code>LocalStack</code>和<code>LocalProxy</code>，<code>current_app</code>、<code>g</code>、<code>request</code>和<code>session</code>四个虽然是全局变量，但是可以在多线程的环境下线程安全的访问，每个线程获取的都是当前上下文中的内容。</p>
-<h3 id="请求上下文"><a href="#请求上下文" class="headerlink" title="请求上下文"></a>请求上下文</h3><p>我们先来看<code>RequestContext</code>的实现：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, app, environ, request=None)</span>:</span></span><br><span class="line">    self.app = app</span><br><span class="line">    <span class="keyword">if</span> request <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        request = app.request_class(environ)</span><br><span class="line">    self.request = request</span><br><span class="line">    self.url_adapter = app.create_url_adapter(self.request)</span><br><span class="line">    self.flashes = <span class="keyword">None</span></span><br><span class="line">    self.session = <span class="keyword">None</span></span><br><span class="line">    <span class="comment"># 省略部分</span></span><br><span class="line">    self.match_request()</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_get_g</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> _app_ctx_stack.top.g</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_set_g</span><span class="params">(self, value)</span>:</span></span><br><span class="line">    _app_ctx_stack.top.g = value</span><br><span class="line">g = property(_get_g, _set_g)</span><br><span class="line"><span class="keyword">del</span> _get_g, _set_g</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></span><br><span class="line">    _request_ctx_stack.push(self)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, exc_type, exc_value, tb)</span>:</span></span><br><span class="line">    self.auto_pop(exc_value)</span><br><span class="line">    <span class="keyword">if</span> BROKEN_PYPY_CTXMGR_EXIT <span class="keyword">and</span> exc_type <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        reraise(exc_type, exc_value, tb)</span><br></pre></td></tr></table></figure></p>
+<h3 id="请求上下文"><a href="#请求上下文" class="headerlink" title="请求上下文"></a>请求上下文</h3><p>我们先来看<code>RequestContext</code>的实现：</p>
+<pre><code class="python">def __init__(self, app, environ, request=None):
+    self.app = app
+    if request is None:
+        request = app.request_class(environ)
+    self.request = request
+    self.url_adapter = app.create_url_adapter(self.request)
+    self.flashes = None
+    self.session = None
+    # 省略部分
+    self.match_request()
+
+def _get_g(self):
+        return _app_ctx_stack.top.g
+def _set_g(self, value):
+    _app_ctx_stack.top.g = value
+g = property(_get_g, _set_g)
+del _get_g, _set_g
+
+def __enter__(self):
+    _request_ctx_stack.push(self)
+
+def __exit__(self, exc_type, exc_value, tb):
+    self.auto_pop(exc_value)
+    if BROKEN_PYPY_CTXMGR_EXIT and exc_type is not None:
+        reraise(exc_type, exc_value, tb)
+</code></pre>
 <p>由上面的实现的可知：</p>
 <ul>
 <li><code>RequestContext</code>对象有一些属性，存储了请求的全部信息。例如<code>app</code>、<code>request</code>、<code>session</code>、<code>g</code>。还有一个<code>url_adapter</code>属性以及<code>match_request</code>方法，用于URL匹配。</li>
 <li>另外它实现了<code>with</code>上下文管理协议，在<code>__enter__</code>中压栈，<code>__exit__</code>中出栈。</li>
 </ul>
 <p>我们知道当请求到达时，会执行一次请求上下文压栈操作：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">push</span><span class="params">(self)</span>:</span></span><br><span class="line">    app_ctx = _app_ctx_stack.top</span><br><span class="line">    <span class="keyword">if</span> app_ctx <span class="keyword">is</span> <span class="keyword">None</span> <span class="keyword">or</span> app_ctx.app != self.app:</span><br><span class="line">        app_ctx = self.app.app_context()</span><br><span class="line">        app_ctx.push()</span><br><span class="line">        self._implicit_app_ctx_stack.append(app_ctx)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        self._implicit_app_ctx_stack.append(<span class="keyword">None</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> hasattr(sys, <span class="string">'exc_clear'</span>):</span><br><span class="line">        sys.exc_clear()</span><br><span class="line"></span><br><span class="line">    _request_ctx_stack.push(self)</span><br><span class="line"></span><br><span class="line">    self.session = self.app.open_session(self.request)</span><br><span class="line">    <span class="keyword">if</span> self.session <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        self.session = self.app.make_null_session()</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def push(self):
+    app_ctx = _app_ctx_stack.top
+    if app_ctx is None or app_ctx.app != self.app:
+        app_ctx = self.app.app_context()
+        app_ctx.push()
+        self._implicit_app_ctx_stack.append(app_ctx)
+    else:
+        self._implicit_app_ctx_stack.append(None)
+
+    if hasattr(sys, &#39;exc_clear&#39;):
+        sys.exc_clear()
+
+    _request_ctx_stack.push(self)
+
+    self.session = self.app.open_session(self.request)
+    if self.session is None:
+        self.session = self.app.make_null_session()
+</code></pre>
 <p>当要将一个“请求上下文”推入<code>_request_ctx_stack</code>栈中的时候，会先检查另一个栈<code>_app_ctx_stack</code>的栈顶是否存在“应用上下文”对象或者栈顶的“应用上下文”对象的应用是否是当前应用。如果不存在或者不是当前对象，Flask会自动生成一个“应用上下文”对象，并将其推入<code>_app_ctx_stack</code>中。</p>
-<p>在离开上下文的时候：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">pop</span><span class="params">(self, exc=_sentinel)</span>:</span></span><br><span class="line">    app_ctx = self._implicit_app_ctx_stack.pop()</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        clear_request = <span class="keyword">False</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self._implicit_app_ctx_stack:</span><br><span class="line">            self.app.do_teardown_request(exc)</span><br><span class="line"></span><br><span class="line">            request_close = getattr(self.request, <span class="string">'close'</span>, <span class="keyword">None</span>)</span><br><span class="line">            <span class="keyword">if</span> request_close <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">                request_close()</span><br><span class="line">            clear_request = <span class="keyword">True</span></span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        rv = _request_ctx_stack.pop()</span><br><span class="line">        <span class="keyword">if</span> clear_request:</span><br><span class="line">            rv.request.environ[<span class="string">'werkzeug.request'</span>] = <span class="keyword">None</span></span><br><span class="line">        <span class="keyword">if</span> app_ctx <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">            app_ctx.pop(exc)</span><br></pre></td></tr></table></figure></p>
+<p>在离开上下文的时候：</p>
+<pre><code class="python">def pop(self, exc=_sentinel):
+    app_ctx = self._implicit_app_ctx_stack.pop()
+    try:
+        clear_request = False
+        if not self._implicit_app_ctx_stack:
+            self.app.do_teardown_request(exc)
+
+            request_close = getattr(self.request, &#39;close&#39;, None)
+            if request_close is not None:
+                request_close()
+            clear_request = True
+    finally:
+        rv = _request_ctx_stack.pop()
+        if clear_request:
+            rv.request.environ[&#39;werkzeug.request&#39;] = None
+        if app_ctx is not None:
+            app_ctx.pop(exc)
+</code></pre>
 <p>当要离开以上“请求上下文”环境的时候，Flask会先将“请求上下文”对象从<code>_request_ctx_stack</code>栈中销毁，之后会根据实际的情况确定销毁“应用上下文”对象，并做清尾工作。</p>
 <p>以上这种逻辑的实现使得请求的处理始终在一个上下文环境，并且<code>LocalStack</code>可以很好的实现线程/协程的安全隔离。</p>
 <h3 id="应用上下文"><a href="#应用上下文" class="headerlink" title="应用上下文"></a>应用上下文</h3><p>先来看看<code>AppContext</code>的实现：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, app)</span>:</span></span><br><span class="line">    self.app = app</span><br><span class="line">    self.url_adapter = app.create_url_adapter(<span class="keyword">None</span>)</span><br><span class="line">    self.g = app.app_ctx_globals_class()</span><br><span class="line">    self._refcnt = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__enter__</span><span class="params">(self)</span>:</span></span><br><span class="line">    self.push()</span><br><span class="line">    <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__exit__</span><span class="params">(self, exc_type, exc_value, tb)</span>:</span></span><br><span class="line">    self.pop(exc_value)</span><br><span class="line">    <span class="keyword">if</span> BROKEN_PYPY_CTXMGR_EXIT <span class="keyword">and</span> exc_type <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        reraise(exc_type, exc_value, tb)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def __init__(self, app):
+    self.app = app
+    self.url_adapter = app.create_url_adapter(None)
+    self.g = app.app_ctx_globals_class()
+    self._refcnt = 0
+
+def __enter__(self):
+    self.push()
+    return self
+
+def __exit__(self, exc_type, exc_value, tb):
+    self.pop(exc_value)
+    if BROKEN_PYPY_CTXMGR_EXIT and exc_type is not None:
+        reraise(exc_type, exc_value, tb)
+</code></pre>
 <p>和请求上下文相似，应用上下文也实现了上下文管理协议，<code>push()</code>和<code>pop()</code>方法操作<code>_app_ctx_stack</code>。也有<code>app</code>、<code>url_adapter</code>和<code>g</code>属性。“应用上下文”存在的一个主要功能就是确定请求所在的应用。</p>
 <p>有两种方式创建应用上下文：</p>
 <ul>
 <li><p>第一种是隐式的：无论何时当一个请求上下文被压栈时， 如果有必要的话一个应用上下文会被一起创建。由于这个原因，你可以忽略应用上下文的存在，除非你需要它。在<code>RequestContext</code>的<code>push()</code>方法中找到了一下代码:</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">app_ctx = _app_ctx_stack.top</span><br><span class="line"><span class="keyword">if</span> app_ctx <span class="keyword">is</span> <span class="keyword">None</span> <span class="keyword">or</span> app_ctx.app != self.app:</span><br><span class="line">    app_ctx = self.app.app_context()</span><br><span class="line">    app_ctx.push()</span><br><span class="line">    self._implicit_app_ctx_stack.append(app_ctx)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    self._implicit_app_ctx_stack.append(<span class="keyword">None</span>)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">  app_ctx = _app_ctx_stack.top
+  if app_ctx is None or app_ctx.app != self.app:
+      app_ctx = self.app.app_context()
+      app_ctx.push()
+      self._implicit_app_ctx_stack.append(app_ctx)
+  else:
+      self._implicit_app_ctx_stack.append(None)
+</code></pre>
 </li>
 <li><p>第二种是显式地调用 <code>app.app_context()</code> 方法：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">rom flask <span class="keyword">import</span> Flask, current_app</span><br><span class="line">app = Flask(__name__)</span><br><span class="line"><span class="keyword">with</span> app.app_context():</span><br><span class="line">    <span class="comment"># within this block, current_app points to app.</span></span><br><span class="line">    <span class="keyword">print</span> current_app.name</span><br></pre></td></tr></table></figure>
+<pre><code class="python">  rom flask import Flask, current_app
+  app = Flask(__name__)
+  with app.app_context():
+      # within this block, current_app points to app.
+      print current_app.name
+</code></pre>
 </li>
 </ul>
 <h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p><strong>问题一：既然有了<code>RequestContext</code>，并且能够通过<code>_request_ctx_stack.top.app</code>获取到应用信息，为什么还需要<code>AppContext</code>?</strong></p>
@@ -357,10 +582,29 @@
 <li><code>多App共存</code>：当在一个应用的请求上下文环境中，需要嵌套处理另一个应用的相关操作时，“请求上下文”显然就不能很好地解决问题了。在过去的做法是显示的传递应用，然而这种方式对于不是使用这种理念设计的库时遇到问题。通过使用<code>current_app</code>这种代理对象可以动态地通过当前应用上下文获取应用。</li>
 <li><code>非Web Runtime</code>：离线脚本或者测试这类非 Web 环境和和 Web 环境不同 —— 前者一般只在主线程运行。所以<code>App Context</code> 应该和 <code>Request Context</code> 分离。</li>
 </ul>
-<p>设想，在一个离线环境下，需要操作两个Flask APP关联的上下文，应该怎么办么？这个时候，栈这个数据结构的特性就体现出来了：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> biubiu.app <span class="keyword">import</span> create_app</span><br><span class="line"><span class="keyword">from</span> biubiu.admin.app <span class="keyword">import</span> create_app <span class="keyword">as</span> create_admin_app</span><br><span class="line"></span><br><span class="line">app = create_app()</span><br><span class="line">admin_app = create_admin_app()</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">copy_data</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">with</span> app.app_context():</span><br><span class="line">        data = read_data()  <span class="comment"># fake function for demo</span></span><br><span class="line">        <span class="keyword">with</span> admin_app.app_context():</span><br><span class="line">            write_data(data)  <span class="comment"># fake function for demo</span></span><br><span class="line">        mark_data_copied()  <span class="comment"># fake function for demo</span></span><br></pre></td></tr></table></figure></p>
+<p>设想，在一个离线环境下，需要操作两个Flask APP关联的上下文，应该怎么办么？这个时候，栈这个数据结构的特性就体现出来了：</p>
+<pre><code class="python">from biubiu.app import create_app
+from biubiu.admin.app import create_app as create_admin_app
+
+app = create_app()
+admin_app = create_admin_app()
+
+def copy_data():
+    with app.app_context():
+        data = read_data()  # fake function for demo
+        with admin_app.app_context():
+            write_data(data)  # fake function for demo
+        mark_data_copied()  # fake function for demo
+</code></pre>
 <h2 id="Flask对象"><a href="#Flask对象" class="headerlink" title="Flask对象"></a>Flask对象</h2><h3 id="Request"><a href="#Request" class="headerlink" title="Request"></a>Request</h3><p>在请求到来时，Flask将WSGI服务器传入的<code>environ</code>参数用<code>werkzeug</code>的<code>Request</code>类包装构造请求对象。生成<code>request</code>对象后，将它绑定在当前请求上下文上：<code>self.request = request</code>。这样就可以通过Context机制，暴露一个全局的访问当前请求对象的接口。</p>
 <h3 id="Response"><a href="#Response" class="headerlink" title="Response"></a>Response</h3><p>在<code>full_dispatch_request()</code>中，Flask通过路由执行相应的<code>view_func</code>获取返回，接下来调用了<code>finalize_request(rv)</code>来包装成响应。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">finalize_request</span><span class="params">(self, rv, from_error_handler=False)</span>:</span></span><br><span class="line">    response = self.make_response(rv)</span><br><span class="line">    response = self.process_response(response)</span><br><span class="line">    request_finished.send(self, response=response)</span><br><span class="line">    <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
+<pre><code class="python">
+def finalize_request(self, rv, from_error_handler=False):
+    response = self.make_response(rv)
+    response = self.process_response(response)
+    request_finished.send(self, response=response)
+    return response
+</code></pre>
 <ol>
 <li><code>make_response(rv)</code>：根据视图函数返回值生成response对象。在内部可以根据不同的输入得到不同的输出，接收<code>str/unicode</code>、<code>tuple</code>、<code>WSGI function</code>和<code>Response</code>实例等等。</li>
 <li><code>process_response(response)</code>：在response发送给WSGI服务器前执行当前请求的后续<code>Hooks函数</code>(<code>after_request</code>和<code>after_app_request</code>)，还有就是<code>session</code>处理。</li>
@@ -368,9 +612,29 @@
 </ol>
 <h3 id="Session"><a href="#Session" class="headerlink" title="Session"></a>Session</h3><p><code>Session</code>需要在服务器保存客户端信息，将多次请求识别为一次会话。</p>
 <p>经过前面的分析，我们知道Flask有个全局变量<code>session</code>，它也是放在请求上下文中的。既然是多次请求，也就是说是不同的请求上下文，那么Flask是怎么保存<code>session</code>的呢？</p>
-<p>在<code>RequestContext.push()</code>的最后有这么一段代码：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">self.session = self.app.open_session(self.request)</span><br><span class="line"><span class="keyword">if</span> self.session <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">    self.session = self.app.make_null_session()</span><br></pre></td></tr></table></figure></p>
+<p>在<code>RequestContext.push()</code>的最后有这么一段代码：</p>
+<pre><code class="python">self.session = self.app.open_session(self.request)
+if self.session is None:
+    self.session = self.app.make_null_session()
+</code></pre>
 <p>在上面Flask先是试图从请求中打开一个<code>session</code>，如果<code>session</code>不存在，那么将打开一个空的<code>session</code>。这个<code>NullSession</code>实例不能执行任何读写操作，否则将报异常。所有有关<code>session</code>的操作都转发到<code>self.session_interface</code>的方法调用上(对于用户来讲，可以扩展自<code>SessionInterface</code>定义自己的会话行为)。这里的<code>open_session()</code>默认转发到<code>SecureCookieSessionInterface.open_session()</code>上做处理，我们来到这里看具体实现：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">open_session</span><span class="params">(self, app, request)</span>:</span></span><br><span class="line">   <span class="comment"># 获取session签名的算法</span></span><br><span class="line">   s = self.get_signing_serializer(app)</span><br><span class="line">   <span class="keyword">if</span> s <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">       <span class="keyword">return</span> <span class="keyword">None</span></span><br><span class="line">   <span class="comment"># 使用app中设置的session_cookie_name，从cookies中获取session标识</span></span><br><span class="line">   val = request.cookies.get(app.session_cookie_name)</span><br><span class="line">   <span class="keyword">if</span> <span class="keyword">not</span> val:</span><br><span class="line">       <span class="keyword">return</span> self.session_class()</span><br><span class="line">   <span class="comment"># 使用签名算法验证cookie，以及session有效性</span></span><br><span class="line">   max_age = total_seconds(app.permanent_session_lifetime)</span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       data = s.loads(val, max_age=max_age)</span><br><span class="line">       <span class="keyword">return</span> self.session_class(data)</span><br><span class="line">   <span class="keyword">except</span> BadSignature:</span><br><span class="line">       <span class="keyword">return</span> self.session_class()</span><br></pre></td></tr></table></figure>
+<pre><code class="python"> def open_session(self, app, request):
+    # 获取session签名的算法
+    s = self.get_signing_serializer(app)
+    if s is None:
+        return None
+    # 使用app中设置的session_cookie_name，从cookies中获取session标识
+    val = request.cookies.get(app.session_cookie_name)
+    if not val:
+        return self.session_class()
+    # 使用签名算法验证cookie，以及session有效性
+    max_age = total_seconds(app.permanent_session_lifetime)
+    try:
+        data = s.loads(val, max_age=max_age)
+        return self.session_class(data)
+    except BadSignature:
+        return self.session_class()
+</code></pre>
 <p>对于Flaks 的session处理有以下几个问题：</p>
 <ul>
 <li>怎么使用签名算法将<code>cookie</code>转化为<code>session</code>？</li>
@@ -378,7 +642,17 @@
 <li>怎么保存一个会话？</li>
 </ul>
 <p>对于第一个问题，签名算法是怎么工作的？我们在<code>get_signing_serializer</code>中找到了做加解密的具体实现。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_signing_serializer</span><span class="params">(self, app)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> app.secret_key:</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">None</span></span><br><span class="line">    signer_kwargs = dict(</span><br><span class="line">        key_derivation=self.key_derivation,</span><br><span class="line">        digest_method=self.digest_method</span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">return</span> URLSafeTimedSerializer(app.secret_key, salt=self.salt,</span><br><span class="line">                                serializer=self.serializer,</span><br><span class="line">                                signer_kwargs=signer_kwargs)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def get_signing_serializer(self, app):
+    if not app.secret_key:
+        return None
+    signer_kwargs = dict(
+        key_derivation=self.key_derivation,
+        digest_method=self.digest_method
+    )
+    return URLSafeTimedSerializer(app.secret_key, salt=self.salt,
+                                serializer=self.serializer,
+                                signer_kwargs=signer_kwargs)
+</code></pre>
 <p>Flask默认使用<code>itsdangerous</code>模块中的<code>URLSafeTimedSerializer</code>类，这里需要许多参数：</p>
 <ul>
 <li><code>secret_key</code>：密钥。这个是必须的，如果没有配置 secret_key 就直接使用 session 会报错。</li>
@@ -388,12 +662,46 @@
 </ul>
 <p>在<code>itsdangerous</code>模块中，有许多关于数据安全相关的算法实现以及各种做序列化<code>Serializer</code>。<code>URLSafeTimedSerializer</code>是使用Mixin模式实现的。</p>
 <p>对于第二个问题，Flask中<code>session</code>是<code>SecureCookieSession</code>的实例。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SecureCookieSession</span><span class="params">(CallbackDict, SessionMixin)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, initial=None)</span>:</span></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">on_update</span><span class="params">(self)</span>:</span></span><br><span class="line">            self.modified = <span class="keyword">True</span></span><br><span class="line">        CallbackDict.__init__(self, initial, on_update)</span><br><span class="line">        self.modified = <span class="keyword">False</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">class SecureCookieSession(CallbackDict, SessionMixin):
+    def __init__(self, initial=None):
+        def on_update(self):
+            self.modified = True
+        CallbackDict.__init__(self, initial, on_update)
+        self.modified = False
+</code></pre>
 <p>可以看到，<code>SecureCookieSession</code>采用Mixin模式，继承自<code>CallbackDict</code>和<code>SessionMixin</code>。</p>
 <p>其中比较有趣的是，<code>CallbackDict</code>在数据更新的时候会回调<code>on_update()</code>，来表示<code>session</code>是否被修改了。对于应用程序来讲可以简单的把<code>session</code>当做字典处理。</p>
 <p>最后，我们来看下Flask是怎么保存一个<code>session</code>的。</p>
-<p>在<code>finalize_request</code>中会有个阶段对相应进行加工：<code>self.process_response(response)</code>，而这里面就会设计到<code>session</code>的保存：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> self.session_interface.is_null_session(ctx.session):</span><br><span class="line">    self.save_session(ctx.session, response)</span><br></pre></td></tr></table></figure></p>
-<p>Flask首先会检查当前<code>session</code>是否为空，如果不为空，则保存<code>session</code>。<code>save_session()</code>和<code>open_session()</code>是对应的：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">save_session</span><span class="params">(self, app, session, response)</span>:</span></span><br><span class="line">    domain = self.get_cookie_domain(app)</span><br><span class="line">    path = self.get_cookie_path(app)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 如果 session 被清空了，Flask 会直接删除对应的 cookie</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> session:</span><br><span class="line">        <span class="keyword">if</span> session.modified:</span><br><span class="line">            response.delete_cookie(app.session_cookie_name,</span><br><span class="line">                                    domain=domain, path=path)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 用户可以 `SESSION_REFRESH_EACH_REQUEST` 变量控制是否要设置 cookie</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> self.should_set_cookie(app, session):</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 若是 session 发生了变化，那么需要更新 cookie</span></span><br><span class="line">    httponly = self.get_cookie_httponly(app)</span><br><span class="line">    secure = self.get_cookie_secure(app)</span><br><span class="line">    expires = self.get_expiration_time(app, session)</span><br><span class="line">    val = self.get_signing_serializer(app).dumps(dict(session))</span><br><span class="line">    response.set_cookie(app.session_cookie_name, val,</span><br><span class="line">                        expires=expires,</span><br><span class="line">                        httponly=httponly,</span><br><span class="line">                        domain=domain, path=path, secure=secure)</span><br></pre></td></tr></table></figure></p>
+<p>在<code>finalize_request</code>中会有个阶段对相应进行加工：<code>self.process_response(response)</code>，而这里面就会设计到<code>session</code>的保存：</p>
+<pre><code class="python">if not self.session_interface.is_null_session(ctx.session):
+    self.save_session(ctx.session, response)
+</code></pre>
+<p>Flask首先会检查当前<code>session</code>是否为空，如果不为空，则保存<code>session</code>。<code>save_session()</code>和<code>open_session()</code>是对应的：</p>
+<pre><code class="python">def save_session(self, app, session, response):
+    domain = self.get_cookie_domain(app)
+    path = self.get_cookie_path(app)
+
+    # 如果 session 被清空了，Flask 会直接删除对应的 cookie
+    if not session:
+        if session.modified:
+            response.delete_cookie(app.session_cookie_name,
+                                    domain=domain, path=path)
+        return
+
+    # 用户可以 `SESSION_REFRESH_EACH_REQUEST` 变量控制是否要设置 cookie
+    if not self.should_set_cookie(app, session):
+        return
+
+    # 若是 session 发生了变化，那么需要更新 cookie
+    httponly = self.get_cookie_httponly(app)
+    secure = self.get_cookie_secure(app)
+    expires = self.get_expiration_time(app, session)
+    val = self.get_signing_serializer(app).dumps(dict(session))
+    response.set_cookie(app.session_cookie_name, val,
+                        expires=expires,
+                        httponly=httponly,
+                        domain=domain, path=path, secure=secure)
+</code></pre>
 <p>这段代码主要是从<code>app</code>和<code>session</code>中获取相关信息，最后通过在响应中，保存<code>Cookie</code>，发送给客户端。</p>
 <p>从Flask对于<code>session</code>的处理，我们可以知道Flask的会话是基于Cookie实现的。这种方式和传统的使用Cookie保存会话标识（<code>session_id</code>）不同，Flask的会话是不在服务端保存用户数据的，所有的信息都在<code>Cookie</code>中，更像是<code>JWT</code>，符合”无状态“特性。不过需要权衡的是安全性问题。<code>flask-session</code> 这个三方的库，它就把数据保存在服务器端（本地文件、redis、memcached），客户端只拿到一个 <code>sessionid</code>。</p>
 <h2 id="Flask多应用，App-Factory"><a href="#Flask多应用，App-Factory" class="headerlink" title="Flask多应用，App Factory"></a>Flask多应用，App Factory</h2><h2 id="Flask-ext原理"><a href="#Flask-ext原理" class="headerlink" title="Flask-ext原理"></a>Flask-ext原理</h2><h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><code>&gt;&gt;&gt;</code> <a href="http://docs.jinkan.org/docs/flask/index.html" target="_blank" rel="noopener">Flask中文档</a></p>
@@ -408,7 +716,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

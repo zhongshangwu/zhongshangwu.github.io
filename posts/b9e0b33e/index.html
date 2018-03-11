@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Piper,Shawn&#39;s Blog,Python,Web,系统设计，编程,博客,后端开发" />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="登录流程Step1:客户端预登录响应参数：  servertime nonce rsakey">
 <meta property="og:type" content="article">
@@ -21,6 +26,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/b9e0b33e/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="登录流程Step1:客户端预登录响应参数：  servertime nonce rsakey">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.034Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="新浪登录流程">
@@ -231,7 +237,51 @@
 <li>rsakey<a id="more"></a>
 <strong>加密用户名和密码：</strong></li>
 </ul>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> makeRequest = <span class="function"><span class="keyword">function</span>(<span class="params">username, password, savestate</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> request = &#123;</span><br><span class="line">      entry: me.getEntry(),</span><br><span class="line">      gateway: <span class="number">1</span>,</span><br><span class="line">      <span class="keyword">from</span>: me.from,</span><br><span class="line">      savestate: savestate,</span><br><span class="line">      useticket: me.useTicket ? <span class="number">1</span> : <span class="number">0</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">if</span> (me.failRedirect) &#123;</span><br><span class="line">      me.loginExtraQuery.frd = <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">    request = objMerge(request, &#123;</span><br><span class="line">      pagerefer: <span class="built_in">document</span>.referrer || <span class="string">""</span></span><br><span class="line">    &#125;);</span><br><span class="line">    request = objMerge(request, me.loginExtraFlag);</span><br><span class="line">    request = objMerge(request, me.loginExtraQuery);</span><br><span class="line">    <span class="comment">// 用户名加密，可以base64解码</span></span><br><span class="line">    request.su = sinaSSOEncoder.base64.encode(urlencode(username));</span><br><span class="line">    <span class="keyword">if</span> (me.service) &#123;</span><br><span class="line">      request.service = me.service</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ((me.loginType &amp; rsa) &amp;&amp; me.servertime &amp;&amp; sinaSSOEncoder &amp;&amp; sinaSSOEncoder.RSAKey) &#123;</span><br><span class="line">      request.servertime = me.servertime;</span><br><span class="line">      request.nonce = me.nonce;</span><br><span class="line">      request.pwencode = <span class="string">"rsa2"</span>;</span><br><span class="line">      request.rsakv = me.rsakv;</span><br><span class="line">      <span class="keyword">var</span> RSAKey = <span class="keyword">new</span> sinaSSOEncoder.RSAKey();</span><br><span class="line">      RSAKey.setPublic(me.rsaPubkey, <span class="string">"10001"</span>);</span><br><span class="line">      <span class="comment">//公钥加密，服务器端私钥解密 可以得到原始密码</span></span><br><span class="line">      password = RSAKey.encrypt([me.servertime, me.nonce].join(<span class="string">"\t"</span>) + <span class="string">"\n"</span> + password)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> ((me.loginType &amp; wsse) &amp;&amp; me.servertime &amp;&amp; sinaSSOEncoder &amp;&amp; sinaSSOEncoder.hex_sha1) &#123;</span><br><span class="line">        request.servertime = me.servertime;</span><br><span class="line">        request.nonce = me.nonce;</span><br><span class="line">        request.pwencode = <span class="string">"wsse"</span>;</span><br><span class="line">        password = sinaSSOEncoder.hex_sha1(<span class="string">""</span> + sinaSSOEncoder.hex_sha1(sinaSSOEncoder.hex_sha1(password)) + me.servertime + me.nonce)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    request.sp = password;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      request.sr = <span class="built_in">window</span>.screen.width + <span class="string">"*"</span> + <span class="built_in">window</span>.screen.height</span><br><span class="line">    &#125; <span class="keyword">catch</span> (e) &#123;&#125;</span><br><span class="line">    <span class="keyword">return</span> request</span><br><span class="line">  &#125;;</span><br></pre></td></tr></table></figure>
+<pre><code class="javascript">var makeRequest = function(username, password, savestate) {
+    var request = {
+      entry: me.getEntry(),
+      gateway: 1,
+      from: me.from,
+      savestate: savestate,
+      useticket: me.useTicket ? 1 : 0
+    };
+    if (me.failRedirect) {
+      me.loginExtraQuery.frd = 1
+    }
+    request = objMerge(request, {
+      pagerefer: document.referrer || &quot;&quot;
+    });
+    request = objMerge(request, me.loginExtraFlag);
+    request = objMerge(request, me.loginExtraQuery);
+    // 用户名加密，可以base64解码
+    request.su = sinaSSOEncoder.base64.encode(urlencode(username));
+    if (me.service) {
+      request.service = me.service
+    }
+    if ((me.loginType &amp; rsa) &amp;&amp; me.servertime &amp;&amp; sinaSSOEncoder &amp;&amp; sinaSSOEncoder.RSAKey) {
+      request.servertime = me.servertime;
+      request.nonce = me.nonce;
+      request.pwencode = &quot;rsa2&quot;;
+      request.rsakv = me.rsakv;
+      var RSAKey = new sinaSSOEncoder.RSAKey();
+      RSAKey.setPublic(me.rsaPubkey, &quot;10001&quot;);
+      //公钥加密，服务器端私钥解密 可以得到原始密码
+      password = RSAKey.encrypt([me.servertime, me.nonce].join(&quot;\t&quot;) + &quot;\n&quot; + password)
+    } else {
+      if ((me.loginType &amp; wsse) &amp;&amp; me.servertime &amp;&amp; sinaSSOEncoder &amp;&amp; sinaSSOEncoder.hex_sha1) {
+        request.servertime = me.servertime;
+        request.nonce = me.nonce;
+        request.pwencode = &quot;wsse&quot;;
+        password = sinaSSOEncoder.hex_sha1(&quot;&quot; + sinaSSOEncoder.hex_sha1(sinaSSOEncoder.hex_sha1(password)) + me.servertime + me.nonce)
+      }
+    }
+    request.sp = password;
+    try {
+      request.sr = window.screen.width + &quot;*&quot; + window.screen.height
+    } catch (e) {}
+    return request
+  };
+</code></pre>
 <h2 id="Step2-客户端登录"><a href="#Step2-客户端登录" class="headerlink" title="Step2:客户端登录"></a>Step2:客户端登录</h2><p><strong>请求参数：</strong></p>
 <ul>
 <li>cdult: 3</li>
@@ -311,7 +361,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

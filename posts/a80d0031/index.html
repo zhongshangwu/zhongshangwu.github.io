@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="算法,动态规划," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="动态规划动态规划（英语：Dynamic programming，简称DP）通常用来求解最优化问题（optimization problem）。适用于具有重复子问题（overlapping subproblems）和最优子结构（optimal substructure）特点的问题，所耗时间往往远少于朴素解法。">
 <meta name="keywords" content="算法,动态规划">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/a80d0031/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="动态规划动态规划（英语：Dynamic programming，简称DP）通常用来求解最优化问题（optimization problem）。适用于具有重复子问题（overlapping subproblems）和最优子结构（optimal substructure）特点的问题，所耗时间往往远少于朴素解法。">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.046Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="动态规划(Dynamic Programming)">
@@ -257,7 +263,20 @@
 <p>$F_{k,i} = max(F_{k+1, i}, F_{k+1, i+1}) + A_{k,i}$</p>
 </blockquote>
 <p><strong>实现</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">minimumTotal</span><span class="params">(self, triangle)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    :type triangle: List[List[int]]</span></span><br><span class="line"><span class="string">    :rtype: int</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> triangle:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    res = triangle[<span class="number">-1</span>]  <span class="comment"># 优化空间</span></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> range(len(triangle)<span class="number">-2</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>, len(triangle[k]), <span class="number">1</span>):</span><br><span class="line">            res[i] = min(res[i], res[i+<span class="number">1</span>]) + triangle[k][i]</span><br><span class="line">    <span class="keyword">return</span> res[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def minimumTotal(self, triangle):
+    &quot;&quot;&quot;
+    :type triangle: List[List[int]]
+    :rtype: int
+    &quot;&quot;&quot;
+    if not triangle:
+        return
+    res = triangle[-1]  # 优化空间
+    for k in range(len(triangle)-2, -1, -1):
+
+        for i in range(0, len(triangle[k]), 1):
+            res[i] = min(res[i], res[i+1]) + triangle[k][i]
+    return res[0]
+</code></pre>
 <h3 id="背包问题"><a href="#背包问题" class="headerlink" title="背包问题"></a>背包问题</h3><p><strong>问题描述</strong></p>
 <p>给出n个物品的重量W[i]和其价值V[i]，背包的容量为w磅，问最多能装入的总价值有多大？</p>
 <p><strong>状态转移</strong></p>
@@ -267,7 +286,21 @@
 <p>$$F[i][w] = \begin{cases}<br>0, &amp;if\ i=0\ or\ w=0\<br>F[i-1][w], &amp;if\ W[i] &gt; w\<br>max(F[i-1][w-W[i]]+V[i], F[i-1][w]), &amp;if\ W[i] &lt;= w\<br>\end{cases}$$</p>
 </blockquote>
 <p><strong>实现</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">backPackII</span><span class="params">(self, w, W, V)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    :type w: An integer m denotes the size of a backpack</span></span><br><span class="line"><span class="string">    :type W: Given n items with size W[i]</span></span><br><span class="line"><span class="string">    :type V: Given n items with value V[i]</span></span><br><span class="line"><span class="string">    :rtype: int</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    res = [<span class="number">0</span>] * (w+<span class="number">1</span>)  <span class="comment"># 空间优化</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, len(W)+<span class="number">1</span>):</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> reversed(range(W[i<span class="number">-1</span>], w+<span class="number">1</span>)):</span><br><span class="line">            res[j] = max(res[j], res[j-A[i<span class="number">-1</span>]]+V[i<span class="number">-1</span>])</span><br><span class="line">    <span class="keyword">return</span> res[w]</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def backPackII(self, w, W, V):
+    &quot;&quot;&quot;
+    :type w: An integer m denotes the size of a backpack
+    :type W: Given n items with size W[i]
+    :type V: Given n items with value V[i]
+    :rtype: int
+    &quot;&quot;&quot;
+    res = [0] * (w+1)  # 空间优化
+
+    for i in range(1, len(W)+1):
+
+        for j in reversed(range(W[i-1], w+1)):
+            res[j] = max(res[j], res[j-A[i-1]]+V[i-1])
+    return res[w]
+</code></pre>
 <h3 id="最长公共子序列问题"><a href="#最长公共子序列问题" class="headerlink" title="最长公共子序列问题"></a>最长公共子序列问题</h3><p><strong>问题描述</strong></p>
 <p>给定两个序列$X=[x_1, x_2, …, x_m]$和$Y=[y_1, y_2, …, y_n]$，求X和Y的最长公共子序列。</p>
 <blockquote>
@@ -278,7 +311,25 @@
 <blockquote>
 <p>$$<br>C[i, j]= \begin{cases}<br>0, &amp;\text {if i = 0 or j = 0}\<br>C[i-1, j-1] + 1, &amp;\text {if i,j &gt; 0 and $x_i=y_j$} \<br>max(C[i-1, j], C[i, j-1]), &amp; \text {if i,j &gt; 0 and $x_i \neq y_j$}<br>\end{cases} $$</p>
 </blockquote>
-<p><strong>实现</strong><br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">longestCommonSubsequence</span><span class="params">(A, B)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    @param: A: A string</span></span><br><span class="line"><span class="string">    @param: B: A string</span></span><br><span class="line"><span class="string">    @return: The length of longest common subsequence of A and B</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    m = len(A)</span><br><span class="line">    n = len(B)</span><br><span class="line">    c = [[<span class="number">0</span>] * (n+<span class="number">1</span>) <span class="keyword">for</span> i <span class="keyword">in</span> range(m+<span class="number">1</span>)]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, m+<span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(<span class="number">1</span>, n+<span class="number">1</span>):</span><br><span class="line">            <span class="keyword">if</span> A[i<span class="number">-1</span>] == B[j<span class="number">-1</span>]:</span><br><span class="line">                c[i][j] = c[i<span class="number">-1</span>][j<span class="number">-1</span>] + <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                c[i][j] = max(c[i<span class="number">-1</span>][j], c[i][j<span class="number">-1</span>])</span><br><span class="line">    <span class="keyword">return</span> c[m][n]</span><br></pre></td></tr></table></figure></p>
+<p><strong>实现</strong></p>
+<pre><code class="python">def longestCommonSubsequence(A, B):
+    &quot;&quot;&quot;
+    @param: A: A string
+    @param: B: A string
+    @return: The length of longest common subsequence of A and B
+    &quot;&quot;&quot;
+    m = len(A)
+    n = len(B)
+    c = [[0] * (n+1) for i in range(m+1)]
+
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if A[i-1] == B[j-1]:
+                c[i][j] = c[i-1][j-1] + 1
+            else:
+                c[i][j] = max(c[i-1][j], c[i][j-1])
+    return c[m][n]
+</code></pre>
 <h3 id="最长公共子串问题"><a href="#最长公共子串问题" class="headerlink" title="最长公共子串问题"></a>最长公共子串问题</h3><p><strong>问题描述</strong></p>
 <p>最大公共字串要求的字串是连续的。</p>
 <blockquote>
@@ -291,7 +342,28 @@
 <p>$$<br>C[i, j]= \begin{cases}<br>0, &amp;\text {if i = 0 or j = 0}\<br>C[i-1, j-1] + 1, &amp;\text {if i,j &gt; 0 and $x_i=y_j$} \<br>C[i-1, j-1], &amp; \text {if i,j &gt; 0 and $x_i \neq y_j$}<br>\end{cases}<br>$$</p>
 </blockquote>
 <p><strong>实现</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">longestCommonSubstring</span><span class="params">(self, A, B)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    @param: A: A string</span></span><br><span class="line"><span class="string">    @param: B: A string</span></span><br><span class="line"><span class="string">    @return: the length of the longest common substring.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    m = len(A)</span><br><span class="line">    n = len(B)</span><br><span class="line">    c = [[<span class="number">0</span>] * (n+<span class="number">1</span>) <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>)]</span><br><span class="line">    ans = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, m+<span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(<span class="number">1</span>, n+<span class="number">1</span>):</span><br><span class="line">            <span class="keyword">if</span> A[i<span class="number">-1</span>] == B[j<span class="number">-1</span>]:</span><br><span class="line">                c[<span class="number">1</span>][j] = c[<span class="number">0</span>][j<span class="number">-1</span>] + <span class="number">1</span></span><br><span class="line">                ans = max(ans, c[<span class="number">1</span>][j])</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                c[<span class="number">1</span>][j] =<span class="number">0</span></span><br><span class="line">        c[<span class="number">0</span>], c[<span class="number">1</span>] = c[<span class="number">1</span>], c[<span class="number">0</span>]</span><br><span class="line">    <span class="keyword">return</span> ans</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def longestCommonSubstring(self, A, B):
+    &quot;&quot;&quot;
+    @param: A: A string
+    @param: B: A string
+    @return: the length of the longest common substring.
+    &quot;&quot;&quot;
+    m = len(A)
+    n = len(B)
+    c = [[0] * (n+1) for i in range(2)]
+    ans = 0
+
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if A[i-1] == B[j-1]:
+                c[1][j] = c[0][j-1] + 1
+                ans = max(ans, c[1][j])
+
+            else:
+                c[1][j] =0
+        c[0], c[1] = c[1], c[0]
+    return ans
+</code></pre>
 <h3 id="最长递增序列问题"><a href="#最长递增序列问题" class="headerlink" title="最长递增序列问题"></a>最长递增序列问题</h3><p><strong>问题描述</strong></p>
 <p>最长递增子序列（Longest Increasing Subsequence）是指找到一个给定序列的最长子序列的长度，使得子序列中的所有元素单调递增。</p>
 <blockquote>
@@ -312,9 +384,40 @@
 <p>$F[i]=\mathop{max}\limits_{0 \le j\lt i}(F[j])+(a[i]&gt;a[j])?1:0$</p>
 </blockquote>
 <p>代码：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lengthOfLIS</span><span class="params">(self, nums)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    :type nums: List[int]</span></span><br><span class="line"><span class="string">    :rtype: int</span></span><br><span class="line"><span class="string">    :O(n) = n^2</span></span><br><span class="line"><span class="string">    """</span>        </span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> nums:</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">    n = len(nums)</span><br><span class="line">    c = [<span class="number">1</span>] * n</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, n):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(<span class="number">0</span>, i):</span><br><span class="line">            <span class="keyword">if</span> nums[i] &gt; nums[j] <span class="keyword">and</span> c[i] &lt; c[j] + <span class="number">1</span>:</span><br><span class="line">                c[i] = c[j] + <span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> max(c)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def lengthOfLIS(self, nums):
+    &quot;&quot;&quot;
+    :type nums: List[int]
+    :rtype: int
+    :O(n) = n^2
+    &quot;&quot;&quot;        
+    if not nums:
+        return 0
+    n = len(nums)
+    c = [1] * n
+
+    for i in range(1, n):
+        for j in range(0, i):
+            if nums[i] &gt; nums[j] and c[i] &lt; c[j] + 1:
+                c[i] = c[j] + 1
+    return max(c)
+</code></pre>
 <p><strong>解法三</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lengthOfLIS</span><span class="params">(self, nums)</span>:</span></span><br><span class="line">    tails = [<span class="number">0</span>] * len(nums)</span><br><span class="line">    size = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> x <span class="keyword">in</span> nums:</span><br><span class="line">        i, j = <span class="number">0</span>, size</span><br><span class="line">        <span class="keyword">while</span> i != j:</span><br><span class="line">            m = (i + j) // <span class="number">2</span></span><br><span class="line">            <span class="keyword">if</span> tails[m] &lt; x:</span><br><span class="line">                i = m + <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                j = m</span><br><span class="line">        tails[i] = x</span><br><span class="line">        size = max(i + <span class="number">1</span>, size)</span><br><span class="line">    <span class="keyword">return</span> size</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def lengthOfLIS(self, nums):
+    tails = [0] * len(nums)
+    size = 0
+    for x in nums:
+        i, j = 0, size
+        while i != j:
+            m = (i + j) // 2
+            if tails[m] &lt; x:
+                i = m + 1
+            else:
+                j = m
+        tails[i] = x
+        size = max(i + 1, size)
+    return size
+</code></pre>
+
     
   </div>
 
@@ -323,7 +426,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

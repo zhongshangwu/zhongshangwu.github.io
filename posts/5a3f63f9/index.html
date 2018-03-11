@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python,源码," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="import指令import有两种形式:  import ... from ... import ...  我们从简单的import sys开始，看看背后都发生了什么：">
 <meta name="keywords" content="Python,源码">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/5a3f63f9/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="import指令import有两种形式:  import ... from ... import ...  我们从简单的import sys开始，看看背后都发生了什么：">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.118Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Python源码阅读-import机制">
@@ -237,17 +243,171 @@
 </ul>
 <p>我们从简单的<code>import sys</code>开始，看看背后都发生了什么：</p>
 <a id="more"></a>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="comment"># 0 LOAD_CONST               0 (0)</span></span><br><span class="line"><span class="comment"># 2 LOAD_CONST               1 (None)</span></span><br><span class="line"><span class="comment"># 4 IMPORT_NAME              0 (sys)</span></span><br><span class="line"><span class="comment"># 6 STORE_NAME               0 (sys)</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">import sys
+# 0 LOAD_CONST               0 (0)
+# 2 LOAD_CONST               1 (None)
+# 4 IMPORT_NAME              0 (sys)
+# 6 STORE_NAME               0 (sys)
+</code></pre>
 <p>关键的<code>IMPORT_NAME 0</code>指令：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">names = co-&gt;co_names;</span><br><span class="line"></span><br><span class="line">TARGET(IMPORT_NAME) &#123;</span><br><span class="line">    PyObject *name = GETITEM(names, oparg); <span class="comment">/* 从co-&gt;const常量表中获取"sys" */</span></span><br><span class="line">    PyObject *fromlist = POP(); <span class="comment">/* None */</span></span><br><span class="line">    PyObject *level = TOP(); <span class="comment">/* 0 */</span></span><br><span class="line">    PyObject *res;</span><br><span class="line">    res = import_name(f, name, fromlist, level); <span class="comment">/* f是frame */</span></span><br><span class="line">    SET_TOP(res);</span><br><span class="line">    DISPATCH();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">names = co-&gt;co_names;
+
+TARGET(IMPORT_NAME) {
+    PyObject *name = GETITEM(names, oparg); /* 从co-&gt;const常量表中获取&quot;sys&quot; */
+    PyObject *fromlist = POP(); /* None */
+    PyObject *level = TOP(); /* 0 */
+    PyObject *res;
+    res = import_name(f, name, fromlist, level); /* f是frame */
+    SET_TOP(res);
+    DISPATCH();
+}
+</code></pre>
 <p>在<code>IMPORT_NAME</code>指令中首先获取到了几个参数，然后调用<code>import_name</code>导入模块，并通过<code>SET_TOP</code>将模块对象压入栈顶，最终指令<code>STORE_NAME</code>将把模块对象存入命名空间中。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> PyObject *</span><br><span class="line">import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *level)</span><br><span class="line">&#123;</span><br><span class="line">    _Py_IDENTIFIER(__import__);</span><br><span class="line">    PyObject *import_func, *res;</span><br><span class="line">    PyObject* <span class="built_in">stack</span>[<span class="number">5</span>];</span><br><span class="line">    <span class="comment">/* 获取builtins模块的__import__函数*/</span></span><br><span class="line">    import_func = _PyDict_GetItemId(f-&gt;f_builtins, &amp;PyId___import__);</span><br><span class="line">    <span class="comment">/* 如果用户没有重写import_func */</span></span><br><span class="line">    <span class="keyword">if</span> (import_func == PyThreadState_GET()-&gt;interp-&gt;import_func) &#123;</span><br><span class="line">        <span class="keyword">int</span> ilevel = _PyLong_AsInt(level);</span><br><span class="line">        res = PyImport_ImportModuleLevelObject(</span><br><span class="line">                        name,</span><br><span class="line">                        f-&gt;f_globals,</span><br><span class="line">                        f-&gt;f_locals == <span class="literal">NULL</span> ? Py_None : f-&gt;f_locals,</span><br><span class="line">                        fromlist,</span><br><span class="line">                        ilevel);</span><br><span class="line">        <span class="keyword">return</span> res;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static PyObject *
+import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *level)
+{
+    _Py_IDENTIFIER(__import__);
+    PyObject *import_func, *res;
+    PyObject* stack[5];
+    /* 获取builtins模块的__import__函数*/
+    import_func = _PyDict_GetItemId(f-&gt;f_builtins, &amp;PyId___import__);
+    /* 如果用户没有重写import_func */
+    if (import_func == PyThreadState_GET()-&gt;interp-&gt;import_func) {
+        int ilevel = _PyLong_AsInt(level);
+        res = PyImport_ImportModuleLevelObject(
+                        name,
+                        f-&gt;f_globals,
+                        f-&gt;f_locals == NULL ? Py_None : f-&gt;f_locals,
+                        fromlist,
+                        ilevel);
+        return res;
+    }
+}
+</code></pre>
 <p><code>import_name</code>函数首先从全局命名空间<code>builtins</code>(默认就是<code>builtins</code>模块的<code>md_dict</code>)中获取<code>__import__</code>函数。这个函数是对<code>builtin___import__</code>函数指针的包装，虚拟机会检查程序员是否对这个函数进行了重写, 如果没有重写(这里我们只考虑没有重写的情况), 就调用<code>PyImport_ImportModuleLevelObject</code>导入模块. </p>
 <p><code>PyImport_ImportModuleLevelObject</code>函数的实现十分复杂, 这里列出了精简后的代码:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line">PyObject *</span><br><span class="line">PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,</span><br><span class="line">                                 PyObject *locals, PyObject *fromlist,</span><br><span class="line">                                 <span class="keyword">int</span> level)</span><br><span class="line">&#123;</span><br><span class="line">    _Py_IDENTIFIER(_find_and_load);</span><br><span class="line">    _Py_IDENTIFIER(_handle_fromlist);</span><br><span class="line">    PyObject *abs_name = <span class="literal">NULL</span>;</span><br><span class="line">    PyObject *final_mod = <span class="literal">NULL</span>;</span><br><span class="line">    PyObject *mod = <span class="literal">NULL</span>;</span><br><span class="line">    PyObject *package = <span class="literal">NULL</span>;</span><br><span class="line">    PyInterpreterState *interp = PyThreadState_GET()-&gt;interp; <span class="comment">/* 获取进程状态对象 */</span></span><br><span class="line">    <span class="keyword">int</span> has_from;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (level &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        abs_name = resolve_name(name, globals, level); <span class="comment">/* 解析模块的绝对路径 */</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;  <span class="comment">/* level == 0 */</span></span><br><span class="line">        abs_name = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mod = PyDict_GetItem(interp-&gt;modules, abs_name); <span class="comment">/* 尝试从全局的interp-&gt;modules中获取模块 */</span></span><br><span class="line">    <span class="keyword">if</span> (mod != <span class="literal">NULL</span> &amp;&amp; mod != Py_None) &#123;</span><br><span class="line">        _Py_IDENTIFIER(__spec__);</span><br><span class="line">        _Py_IDENTIFIER(_initializing);</span><br><span class="line">        _Py_IDENTIFIER(_lock_unlock_module);</span><br><span class="line">        PyObject *value = <span class="literal">NULL</span>;</span><br><span class="line">        PyObject *spec;</span><br><span class="line">        <span class="keyword">int</span> initializing = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        spec = _PyObject_GetAttrId(mod, &amp;PyId___spec__);</span><br><span class="line">        <span class="keyword">if</span> (spec != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            value = _PyObject_GetAttrId(spec, &amp;PyId__initializing);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (value == <span class="literal">NULL</span>)</span><br><span class="line">            PyErr_Clear();</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            initializing = PyObject_IsTrue(value);</span><br><span class="line">            <span class="keyword">if</span> (initializing == <span class="number">-1</span>)</span><br><span class="line">                PyErr_Clear();</span><br><span class="line">            <span class="keyword">if</span> (initializing &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                value = _PyObject_CallMethodIdObjArgs(interp-&gt;importlib,</span><br><span class="line">                                                &amp;PyId__lock_unlock_module, abs_name,</span><br><span class="line">                                                <span class="literal">NULL</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123; <span class="comment">/* 模块第一次加载 */</span></span><br><span class="line">        mod = _PyObject_CallMethodIdObjArgs(interp-&gt;importlib,</span><br><span class="line">                                            &amp;PyId__find_and_load, abs_name,</span><br><span class="line">                                            interp-&gt;import_func, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* 处理from ... import ... 形式的导入 */</span></span><br><span class="line">    has_from = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (fromlist != <span class="literal">NULL</span> &amp;&amp; fromlist != Py_None) &#123;</span><br><span class="line">        has_from = PyObject_IsTrue(fromlist);</span><br><span class="line">        <span class="keyword">if</span> (has_from &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">goto</span> error;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!has_from) &#123; <span class="comment">/* 不是from ... 格式 */</span></span><br><span class="line">        Py_ssize_t len = PyUnicode_GET_LENGTH(name);</span><br><span class="line">        <span class="keyword">if</span> (level == <span class="number">0</span> || len &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            Py_ssize_t dot;</span><br><span class="line">            <span class="comment">/* 查找是否包含".", 有则返回索引,否则返回-1 */</span></span><br><span class="line">            dot = PyUnicode_FindChar(name, <span class="string">'.'</span>, <span class="number">0</span>, len, <span class="number">1</span>);</span><br><span class="line">            <span class="keyword">if</span> (dot == <span class="number">-1</span>) &#123; <span class="comment">/* */</span></span><br><span class="line">                final_mod = mod;</span><br><span class="line">                <span class="keyword">goto</span> error;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (level == <span class="number">0</span>) &#123;</span><br><span class="line">                PyObject *front = PyUnicode_Substring(name, <span class="number">0</span>, dot);</span><br><span class="line">                <span class="keyword">if</span> (front == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                    <span class="keyword">goto</span> error;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                final_mod = PyImport_ImportModuleLevelObject(front, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                Py_ssize_t cut_off = len - dot;</span><br><span class="line">                Py_ssize_t abs_name_len = PyUnicode_GET_LENGTH(abs_name);</span><br><span class="line">                PyObject *to_return = PyUnicode_Substring(abs_name, <span class="number">0</span>,</span><br><span class="line">                                                        abs_name_len - cut_off);</span><br><span class="line">                <span class="keyword">if</span> (to_return == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                    <span class="keyword">goto</span> error;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                final_mod = PyDict_GetItem(interp-&gt;modules, to_return);</span><br><span class="line">                Py_DECREF(to_return);</span><br><span class="line">                <span class="keyword">if</span> (final_mod == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                    PyErr_Format(PyExc_KeyError,</span><br><span class="line">                                 <span class="string">"%R not in sys.modules as expected"</span>,</span><br><span class="line">                                 to_return);</span><br><span class="line">                    <span class="keyword">goto</span> error;</span><br><span class="line">                &#125;</span><br><span class="line">                Py_INCREF(final_mod);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            final_mod = mod;</span><br><span class="line">            Py_INCREF(mod);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        final_mod = _PyObject_CallMethodIdObjArgs(interp-&gt;importlib,</span><br><span class="line">                                                  &amp;PyId__handle_fromlist, mod,</span><br><span class="line">                                                  fromlist, interp-&gt;import_func,</span><br><span class="line">                                                  <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  error:</span><br><span class="line">    <span class="keyword">if</span> (final_mod == <span class="literal">NULL</span>)</span><br><span class="line">        remove_importlib_frames();</span><br><span class="line">    <span class="keyword">return</span> final_mod;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">PyObject *
+PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
+                                 PyObject *locals, PyObject *fromlist,
+                                 int level)
+{
+    _Py_IDENTIFIER(_find_and_load);
+    _Py_IDENTIFIER(_handle_fromlist);
+    PyObject *abs_name = NULL;
+    PyObject *final_mod = NULL;
+    PyObject *mod = NULL;
+    PyObject *package = NULL;
+    PyInterpreterState *interp = PyThreadState_GET()-&gt;interp; /* 获取进程状态对象 */
+    int has_from;
+
+    if (level &gt; 0) {
+        abs_name = resolve_name(name, globals, level); /* 解析模块的绝对路径 */
+    }
+    else {  /* level == 0 */
+        abs_name = name;
+    }
+
+    mod = PyDict_GetItem(interp-&gt;modules, abs_name); /* 尝试从全局的interp-&gt;modules中获取模块 */
+    if (mod != NULL &amp;&amp; mod != Py_None) {
+        _Py_IDENTIFIER(__spec__);
+        _Py_IDENTIFIER(_initializing);
+        _Py_IDENTIFIER(_lock_unlock_module);
+        PyObject *value = NULL;
+        PyObject *spec;
+        int initializing = 0;
+
+        spec = _PyObject_GetAttrId(mod, &amp;PyId___spec__);
+        if (spec != NULL) {
+            value = _PyObject_GetAttrId(spec, &amp;PyId__initializing);
+        }
+        if (value == NULL)
+            PyErr_Clear();
+        else {
+            initializing = PyObject_IsTrue(value);
+            if (initializing == -1)
+                PyErr_Clear();
+            if (initializing &gt; 0) {
+                value = _PyObject_CallMethodIdObjArgs(interp-&gt;importlib,
+                                                &amp;PyId__lock_unlock_module, abs_name,
+                                                NULL);
+            }
+        }
+    }
+    else { /* 模块第一次加载 */
+        mod = _PyObject_CallMethodIdObjArgs(interp-&gt;importlib,
+                                            &amp;PyId__find_and_load, abs_name,
+                                            interp-&gt;import_func, NULL);
+    }
+    /* 处理from ... import ... 形式的导入 */
+    has_from = 0;
+    if (fromlist != NULL &amp;&amp; fromlist != Py_None) {
+        has_from = PyObject_IsTrue(fromlist);
+        if (has_from &lt; 0)
+            goto error;
+    }
+    if (!has_from) { /* 不是from ... 格式 */
+        Py_ssize_t len = PyUnicode_GET_LENGTH(name);
+        if (level == 0 || len &gt; 0) {
+            Py_ssize_t dot;
+            /* 查找是否包含&quot;.&quot;, 有则返回索引,否则返回-1 */
+            dot = PyUnicode_FindChar(name, &#39;.&#39;, 0, len, 1);
+            if (dot == -1) { /* */
+                final_mod = mod;
+                goto error;
+            }
+
+            if (level == 0) {
+                PyObject *front = PyUnicode_Substring(name, 0, dot);
+                if (front == NULL) {
+                    goto error;
+                }
+
+                final_mod = PyImport_ImportModuleLevelObject(front, NULL, NULL, NULL, 0);
+            }
+            else {
+                Py_ssize_t cut_off = len - dot;
+                Py_ssize_t abs_name_len = PyUnicode_GET_LENGTH(abs_name);
+                PyObject *to_return = PyUnicode_Substring(abs_name, 0,
+                                                        abs_name_len - cut_off);
+                if (to_return == NULL) {
+                    goto error;
+                }
+
+                final_mod = PyDict_GetItem(interp-&gt;modules, to_return);
+                Py_DECREF(to_return);
+                if (final_mod == NULL) {
+                    PyErr_Format(PyExc_KeyError,
+                                 &quot;%R not in sys.modules as expected&quot;,
+                                 to_return);
+                    goto error;
+                }
+                Py_INCREF(final_mod);
+            }
+        }
+        else {
+            final_mod = mod;
+            Py_INCREF(mod);
+        }
+    }
+    else {
+        final_mod = _PyObject_CallMethodIdObjArgs(interp-&gt;importlib,
+                                                  &amp;PyId__handle_fromlist, mod,
+                                                  fromlist, interp-&gt;import_func,
+                                                  NULL);
+    }
+  error:
+    if (final_mod == NULL)
+        remove_importlib_frames();
+    return final_mod;
+}
+</code></pre>
 <p>在导入模块时, Python会先尝试从全局的<code>interp-&gt;modules</code>集合(即<code>sys.modules</code>)中获取模块. 如果模块缓存中存在, Python还会检查模块是否处于初始化状态中, 如果模块正在初始化(其它线程), 那么会调用<code>_lock_unlock_module</code>等待锁的释放(<code>import</code>动作需要加锁). </p>
 <p>我们可以看到Python3中, <code>import</code>的实现是<code>importlib</code>. 比较特殊的是在Python内部, 通过文件<code>_freeze_importlib.c</code>将以Python实现的<code>importlib/_bootstrap.py</code>转换成了字节码序列的形式在内部执行.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">char</span> _Py_M__importlib[] = &#123;</span><br><span class="line">    <span class="number">99</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">4</span>,<span class="number">0</span>,<span class="number">0</span>,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">const unsigned char _Py_M__importlib[] = {
+    99,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,
+    ...
+}
+</code></pre>
 <p>和在<code>sys.modules</code>缓存中找到模块对应, 如果模块是第一次加载, 则会调用<code>_find_and_load</code>导入模块.</p>
 
     
@@ -258,7 +418,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python,源码," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="What is Werkzeug?Werkzeug is a WSGI utility library for Python.">
 <meta name="keywords" content="Python,源码">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/e09df7aa/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="What is Werkzeug?Werkzeug is a WSGI utility library for Python.">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.062Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="werkzeug源码阅读">
@@ -243,15 +249,67 @@
 </ul>
 <h2 id="WSGI服务器"><a href="#WSGI服务器" class="headerlink" title="WSGI服务器"></a>WSGI服务器</h2><p><code>werkzeug</code>实现了一个调试环境下的WSGI服务器，构建在Python的<code>socketserver</code>上。</p>
 <p>使用<code>werkzeug</code>搭建简单的HTTP服务器：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> werkzeug.wrappers <span class="keyword">import</span> Request, Response</span><br><span class="line"></span><br><span class="line"><span class="meta">@Request.application</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">application</span><span class="params">(request)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> Response(<span class="string">'Hello World!'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    <span class="keyword">from</span> werkzeug.serving <span class="keyword">import</span> run_simple</span><br><span class="line">    run_simple(<span class="string">'localhost'</span>, <span class="number">4000</span>, application)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">from werkzeug.wrappers import Request, Response
+
+@Request.application
+def application(request):
+    return Response(&#39;Hello World!&#39;)
+
+if __name__ == &#39;__main__&#39;:
+    from werkzeug.serving import run_simple
+    run_simple(&#39;localhost&#39;, 4000, application)
+</code></pre>
 <p>在这里，我们可以发现这个<code>application</code>函数和<code>WSGI协议</code>标准形式有所不同，这是因为<a href="mailto:`@Request.application" target="_blank" rel="noopener">`@Request.application</a>`。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@classmethod</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">application</span><span class="params">(cls, f)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">application</span><span class="params">(*args)</span>:</span></span><br><span class="line">        request = cls(args[<span class="number">-2</span>])</span><br><span class="line">        <span class="keyword">with</span> request:</span><br><span class="line">            <span class="keyword">return</span> f(*args[:<span class="number">-2</span>] + (request,))(*args[<span class="number">-2</span>:])</span><br><span class="line">    <span class="keyword">return</span> update_wrapper(application, f)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">@classmethod
+def application(cls, f):
+    def application(*args):
+        request = cls(args[-2])
+        with request:
+            return f(*args[:-2] + (request,))(*args[-2:])
+    return update_wrapper(application, f)
+</code></pre>
 <p>装饰器<a href="mailto:`@Request.application" target="_blank" rel="noopener">`@Request.application</a><code>拦截了我们调用函数时的倒数第二个参数，即</code>environ<code>，构建了</code>request<code>对象，并删除后两个参数</code>environ<code>和</code>start_response<code>，并使用这两个参数调用我们定义的函数返回(</code>Response`)对象。</p>
-<p>接下来我们看下<code>run_simple</code>函数，这是整个模块的入口，其中的核心代码是<code>make_server()</code>。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_simple</span><span class="params">(hostname, port, application, use_reloader=False,</span></span></span><br><span class="line"><span class="function"><span class="params">               threaded=False, processes=<span class="number">1</span>, request_handler=None,</span></span></span><br><span class="line"><span class="function"><span class="params">               passthrough_errors=False, ssl_context=None)</span>:</span></span><br><span class="line">    <span class="comment"># 根据入参可能或启用中间件</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">log_startup</span><span class="params">(sock)</span>:</span></span><br><span class="line">        <span class="string">''' 启动日志打印 '''</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">inner</span><span class="params">()</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            fd = int(os.environ[<span class="string">'WERKZEUG_SERVER_FD'</span>])</span><br><span class="line">        <span class="keyword">except</span> (LookupError, ValueError):</span><br><span class="line">            fd = <span class="keyword">None</span></span><br><span class="line">        srv = make_server(hostname, port, application, threaded,</span><br><span class="line">                          processes, request_handler,</span><br><span class="line">                          passthrough_errors, ssl_context,</span><br><span class="line">                          fd=fd)</span><br><span class="line">        <span class="keyword">if</span> fd <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            log_startup(srv.socket)</span><br><span class="line">        srv.serve_forever()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> use_reloader:</span><br><span class="line">        <span class="comment"># 热重启</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        inner()</span><br></pre></td></tr></table></figure></p>
+<p>接下来我们看下<code>run_simple</code>函数，这是整个模块的入口，其中的核心代码是<code>make_server()</code>。</p>
+<pre><code class="python">def run_simple(hostname, port, application, use_reloader=False,
+               threaded=False, processes=1, request_handler=None,
+               passthrough_errors=False, ssl_context=None):
+    # 根据入参可能或启用中间件
+
+    def log_startup(sock):
+        &#39;&#39;&#39; 启动日志打印 &#39;&#39;&#39;
+        pass
+
+    def inner():
+        try:
+            fd = int(os.environ[&#39;WERKZEUG_SERVER_FD&#39;])
+        except (LookupError, ValueError):
+            fd = None
+        srv = make_server(hostname, port, application, threaded,
+                          processes, request_handler,
+                          passthrough_errors, ssl_context,
+                          fd=fd)
+        if fd is None:
+            log_startup(srv.socket)
+        srv.serve_forever()
+
+    if use_reloader:
+        # 热重启
+        pass
+    else:
+        inner()
+</code></pre>
 <p>在这个函数里面根据参数实例化了<code>BaseWSGIServer</code>或<code>ThreadedWSGIServer</code>或<code>ForkingWSGIServer</code>。在这个函数里面还用到了一项特别的技巧：<code>热重启</code>。</p>
 <p>接下来就是<code>BaseWSGIHTTPServer</code>和<code>WSGIRequestHandler</code>的实现，基于<code>socketserver</code>。</p>
 <p><code>BaseWSGIHTTPServer</code>添加了对<code>SSL</code>的支持，通过使用<code>server_forever()</code>启动服务器。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">serve_forever</span><span class="params">(self)</span>:</span></span><br><span class="line">    self.shutdown_signal = <span class="keyword">False</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        HTTPServer.serve_forever(self)</span><br><span class="line">    <span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        self.server_close()</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def serve_forever(self):
+    self.shutdown_signal = False
+    try:
+        HTTPServer.serve_forever(self)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        self.server_close()
+</code></pre>
 <p>具体对请求的处理在<code>WSGIRequestHandler</code>中。在<code>BaseHTTPRequestHandler</code>的官方文档中描述：</p>
 <blockquote>
 <p>The handler will parse the request and the headers, then call a method specific to the request type. The method name is constructed from the request. For example, for the request method SPAM, the do_SPAM() method will be called with no arguments.</p>
@@ -259,11 +317,94 @@
 <p><code>WSGIRequestHandler</code>的处理请求的流程和<code>BaseHTTPRequestHandler</code>是一致的。</p>
 <ul>
 <li>首先调用<code>handle()</code>处理请求。在这步和只是调用父类的<code>handle()</code>方法，在父类中会判断<code>close_connection</code>来启用持久连接，然后调用<code>handle_one_request()</code>。</li>
-<li><p>在<code>handle_one_request()</code>中：从<code>rfile</code>(HTTP报文)中读取数据，然后调用<code>parse_request</code>解析HTTP报文头。和<code>BaseHTTPRequestHandler</code>不同的是，在<code>handle_one_request</code>中没有区分请求方法的处理。所有请求方法的处理都在<code>run_wsgi</code>中。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_one_request</span><span class="params">(self)</span>:</span></span><br><span class="line">    self.raw_requestline = self.rfile.readline()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> self.raw_requestline:</span><br><span class="line">        self.close_connection = <span class="number">1</span></span><br><span class="line">    <span class="keyword">elif</span> self.parse_request():</span><br><span class="line">        <span class="keyword">return</span> self.run_wsgi()</span><br></pre></td></tr></table></figure>
+<li>在<code>handle_one_request()</code>中：从<code>rfile</code>(HTTP报文)中读取数据，然后调用<code>parse_request</code>解析HTTP报文头。和<code>BaseHTTPRequestHandler</code>不同的是，在<code>handle_one_request</code>中没有区分请求方法的处理。所有请求方法的处理都在<code>run_wsgi</code>中。<pre><code class="python">def handle_one_request(self):
+  self.raw_requestline = self.rfile.readline()
+  if not self.raw_requestline:
+      self.close_connection = 1
+  elif self.parse_request():
+      return self.run_wsgi()
+</code></pre>
 </li>
 <li><p><code>run_wsgi()</code>中的处理流程：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_wsgi</span><span class="params">(self)</span>:</span></span><br><span class="line">   <span class="keyword">if</span> self.headers.get(<span class="string">'Expect'</span>, <span class="string">''</span>).lower().strip() == <span class="string">'100-continue'</span>:</span><br><span class="line">       self.wfile.write(<span class="string">b'HTTP/1.1 100 Continue\r\n\r\n'</span>)</span><br><span class="line"></span><br><span class="line">   self.environ = environ = self.make_environ()</span><br><span class="line">   headers_set = []</span><br><span class="line">   headers_sent = []</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">write</span><span class="params">(data)</span>:</span></span><br><span class="line">       <span class="keyword">assert</span> headers_set, <span class="string">'write() before start_response'</span></span><br><span class="line">       <span class="keyword">if</span> <span class="keyword">not</span> headers_sent:</span><br><span class="line">           status, response_headers = headers_sent[:] = headers_set</span><br><span class="line">           <span class="keyword">try</span>:</span><br><span class="line">               code, msg = status.split(<span class="keyword">None</span>, <span class="number">1</span>)</span><br><span class="line">           <span class="keyword">except</span> ValueError:</span><br><span class="line">               code, msg = status, <span class="string">""</span></span><br><span class="line">           self.send_response(int(code), msg)</span><br><span class="line">           header_keys = set()</span><br><span class="line">           <span class="keyword">for</span> key, value <span class="keyword">in</span> response_headers:</span><br><span class="line">               self.send_header(key, value)</span><br><span class="line">               key = key.lower()</span><br><span class="line">               header_keys.add(key)</span><br><span class="line">           <span class="keyword">if</span> <span class="string">'content-length'</span> <span class="keyword">not</span> <span class="keyword">in</span> header_keys:</span><br><span class="line">               self.close_connection = <span class="keyword">True</span></span><br><span class="line">               self.send_header(<span class="string">'Connection'</span>, <span class="string">'close'</span>)</span><br><span class="line">           <span class="keyword">if</span> <span class="string">'server'</span> <span class="keyword">not</span> <span class="keyword">in</span> header_keys:</span><br><span class="line">               self.send_header(<span class="string">'Server'</span>, self.version_string())</span><br><span class="line">           <span class="keyword">if</span> <span class="string">'date'</span> <span class="keyword">not</span> <span class="keyword">in</span> header_keys:</span><br><span class="line">               self.send_header(<span class="string">'Date'</span>, self.date_time_string())</span><br><span class="line">           self.end_headers()</span><br><span class="line"></span><br><span class="line">       <span class="keyword">assert</span> isinstance(data, bytes), <span class="string">'applications must write bytes'</span></span><br><span class="line">       self.wfile.write(data)</span><br><span class="line">       self.wfile.flush()</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">start_response</span><span class="params">(status, response_headers, exc_info=None)</span>:</span></span><br><span class="line">       <span class="keyword">if</span> exc_info:</span><br><span class="line">           <span class="keyword">try</span>:</span><br><span class="line">               <span class="keyword">if</span> headers_sent:</span><br><span class="line">                   reraise(*exc_info)</span><br><span class="line">           <span class="keyword">finally</span>:</span><br><span class="line">               exc_info = <span class="keyword">None</span></span><br><span class="line">       <span class="keyword">elif</span> headers_set:</span><br><span class="line">           <span class="keyword">raise</span> AssertionError(<span class="string">'Headers already set'</span>)</span><br><span class="line">       headers_set[:] = [status, response_headers]</span><br><span class="line">       <span class="keyword">return</span> write</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">execute</span><span class="params">(app)</span>:</span></span><br><span class="line">       application_iter = app(environ, start_response)</span><br><span class="line">       <span class="keyword">try</span>:</span><br><span class="line">           <span class="keyword">for</span> data <span class="keyword">in</span> application_iter:</span><br><span class="line">               write(data)</span><br><span class="line">           <span class="keyword">if</span> <span class="keyword">not</span> headers_sent:</span><br><span class="line">               write(<span class="string">b''</span>)</span><br><span class="line">       <span class="keyword">finally</span>:</span><br><span class="line">           <span class="keyword">if</span> hasattr(application_iter, <span class="string">'close'</span>):</span><br><span class="line">               application_iter.close()</span><br><span class="line">           application_iter = <span class="keyword">None</span></span><br><span class="line"></span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">       execute(self.server.app)</span><br><span class="line">   <span class="keyword">except</span> (socket.error, socket.timeout) <span class="keyword">as</span> e:</span><br><span class="line">       self.connection_dropped(e, environ)</span><br><span class="line">   <span class="keyword">except</span> Exception:</span><br><span class="line">       <span class="keyword">if</span> self.server.passthrough_errors:</span><br><span class="line">           <span class="keyword">raise</span></span><br><span class="line">       <span class="keyword">from</span> werkzeug.debug.tbtools <span class="keyword">import</span> get_current_traceback</span><br><span class="line">       traceback = get_current_traceback(ignore_system_exceptions=<span class="keyword">True</span>)</span><br><span class="line">       <span class="keyword">try</span>:</span><br><span class="line">           <span class="comment"># if we haven't yet sent the headers but they are set</span></span><br><span class="line">           <span class="comment"># we roll back to be able to set them again.</span></span><br><span class="line">           <span class="keyword">if</span> <span class="keyword">not</span> headers_sent:</span><br><span class="line">               <span class="keyword">del</span> headers_set[:]</span><br><span class="line">           execute(InternalServerError())</span><br><span class="line">       <span class="keyword">except</span> Exception:</span><br><span class="line">           <span class="keyword">pass</span></span><br><span class="line">       self.server.log(<span class="string">'error'</span>, <span class="string">'Error on request:\n%s'</span>,</span><br><span class="line">                       traceback.plaintext)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">   def run_wsgi(self):
+      if self.headers.get(&#39;Expect&#39;, &#39;&#39;).lower().strip() == &#39;100-continue&#39;:
+          self.wfile.write(b&#39;HTTP/1.1 100 Continue\r\n\r\n&#39;)
+
+      self.environ = environ = self.make_environ()
+      headers_set = []
+      headers_sent = []
+
+      def write(data):
+          assert headers_set, &#39;write() before start_response&#39;
+          if not headers_sent:
+              status, response_headers = headers_sent[:] = headers_set
+              try:
+                  code, msg = status.split(None, 1)
+              except ValueError:
+                  code, msg = status, &quot;&quot;
+              self.send_response(int(code), msg)
+              header_keys = set()
+              for key, value in response_headers:
+                  self.send_header(key, value)
+                  key = key.lower()
+                  header_keys.add(key)
+              if &#39;content-length&#39; not in header_keys:
+                  self.close_connection = True
+                  self.send_header(&#39;Connection&#39;, &#39;close&#39;)
+              if &#39;server&#39; not in header_keys:
+                  self.send_header(&#39;Server&#39;, self.version_string())
+              if &#39;date&#39; not in header_keys:
+                  self.send_header(&#39;Date&#39;, self.date_time_string())
+              self.end_headers()
+
+          assert isinstance(data, bytes), &#39;applications must write bytes&#39;
+          self.wfile.write(data)
+          self.wfile.flush()
+
+      def start_response(status, response_headers, exc_info=None):
+          if exc_info:
+              try:
+                  if headers_sent:
+                      reraise(*exc_info)
+              finally:
+                  exc_info = None
+          elif headers_set:
+              raise AssertionError(&#39;Headers already set&#39;)
+          headers_set[:] = [status, response_headers]
+          return write
+
+      def execute(app):
+          application_iter = app(environ, start_response)
+          try:
+              for data in application_iter:
+                  write(data)
+              if not headers_sent:
+                  write(b&#39;&#39;)
+          finally:
+              if hasattr(application_iter, &#39;close&#39;):
+                  application_iter.close()
+              application_iter = None
+
+      try:
+          execute(self.server.app)
+      except (socket.error, socket.timeout) as e:
+          self.connection_dropped(e, environ)
+      except Exception:
+          if self.server.passthrough_errors:
+              raise
+          from werkzeug.debug.tbtools import get_current_traceback
+          traceback = get_current_traceback(ignore_system_exceptions=True)
+          try:
+              # if we haven&#39;t yet sent the headers but they are set
+              # we roll back to be able to set them again.
+              if not headers_sent:
+                  del headers_set[:]
+              execute(InternalServerError())
+          except Exception:
+              pass
+          self.server.log(&#39;error&#39;, &#39;Error on request:\n%s&#39;,
+                          traceback.plaintext)
+</code></pre>
 <ul>
 <li>首先是对HTTP头的一个协议版本的判断；</li>
 <li><code>make_environ</code>解析HTTP头，包装城<code>envrion</code>；</li>
@@ -279,70 +420,322 @@
 <!-- ![](/images/werkzeug-server-flow.png) -->
 <h2 id="热重启"><a href="#热重启" class="headerlink" title="热重启"></a>热重启</h2><p><code>auto reload</code>机制的原理很简单：<strong>就是不停的检测目录下的文件更改，比较文件的最近修改时间，如果有更新，就重启服务</strong>。</p>
 <p>在看过<code>werkzeug</code>的热重启实现后，自己也实现了一个简单的<code>auto reload</code>机制：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> Thread</span><br><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"><span class="keyword">from</span> http.server <span class="keyword">import</span> HTTPServer, BaseHTTPRequestHandler</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">serve_forever</span><span class="params">()</span>:</span></span><br><span class="line">    server = HTTPServer((<span class="string">''</span>, <span class="number">8080</span>), BaseHTTPRequestHandler)</span><br><span class="line">    print(<span class="string">'Server started at localhost:8080...'</span>)</span><br><span class="line">    server.serve_forever()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">()</span>:</span></span><br><span class="line">    mtimes = &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="number">1</span>:</span><br><span class="line">        filename = __file__</span><br><span class="line">        mtime = os.stat(filename).st_mtime</span><br><span class="line">        old_time = mtimes.get(filename)</span><br><span class="line">        <span class="keyword">if</span> old_time <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            mtimes[filename] = mtime</span><br><span class="line">        <span class="keyword">elif</span> mtime &gt; old_time:</span><br><span class="line">            print(<span class="string">'* Detected change in &#123;&#125;, reloading'</span>.format(filename))</span><br><span class="line">            sys.exit(<span class="number">3</span>)</span><br><span class="line">        time.sleep(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">restart_with_reloader</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">while</span> <span class="number">1</span>:</span><br><span class="line">        env = os.environ.copy()</span><br><span class="line">        env[<span class="string">'WERKZEUG_RUN_MAIN'</span>] = <span class="string">'true'</span></span><br><span class="line">        exit_code = subprocess.call([sys.executable]+sys.argv, env=env)</span><br><span class="line">        <span class="keyword">if</span> exit_code != <span class="number">3</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_with_reloader</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">if</span> os.environ.get(<span class="string">'WERKZEUG_RUN_MAIN'</span>) == <span class="string">'true'</span>:</span><br><span class="line">        t = Thread(target=serve_forever, args=())</span><br><span class="line">        t.setDaemon(<span class="keyword">True</span>)</span><br><span class="line">        t.start()</span><br><span class="line">        run()</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        sys.exit(restart_with_reloader())</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    run_with_reloader()</span><br></pre></td></tr></table></figure>
+<pre><code class="python">import os
+import sys
+import time
+from threading import Thread
+import subprocess
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+
+def serve_forever():
+    server = HTTPServer((&#39;&#39;, 8080), BaseHTTPRequestHandler)
+    print(&#39;Server started at localhost:8080...&#39;)
+    server.serve_forever()
+
+
+def run():
+    mtimes = {}
+
+    while 1:
+        filename = __file__
+        mtime = os.stat(filename).st_mtime
+        old_time = mtimes.get(filename)
+        if old_time is None:
+            mtimes[filename] = mtime
+        elif mtime &gt; old_time:
+            print(&#39;* Detected change in {}, reloading&#39;.format(filename))
+            sys.exit(3)
+        time.sleep(1)
+
+
+def restart_with_reloader():
+    while 1:
+        env = os.environ.copy()
+        env[&#39;WERKZEUG_RUN_MAIN&#39;] = &#39;true&#39;
+        exit_code = subprocess.call([sys.executable]+sys.argv, env=env)
+        if exit_code != 3:
+            break
+
+
+def run_with_reloader():
+    if os.environ.get(&#39;WERKZEUG_RUN_MAIN&#39;) == &#39;true&#39;:
+        t = Thread(target=serve_forever, args=())
+        t.setDaemon(True)
+        t.start()
+        run()
+    else:
+        sys.exit(restart_with_reloader())
+
+
+if __name__ == &#39;__main__&#39;:
+    run_with_reloader()
+</code></pre>
 <h2 id="路由规则"><a href="#路由规则" class="headerlink" title="路由规则"></a>路由规则</h2><p><code>werkzeug</code>的<code>routing</code>模块主要用来解析和匹配请求信息中的URL，并触发URL对应的视图函数，以生成响应。大致分为三个部分：<code>Rule</code>、<code>Map</code>和<code>MapAdapter</code>。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">url_map = Map([</span><br><span class="line">    Rule(<span class="string">'/'</span>, endpoint=<span class="string">'new_url'</span>),</span><br><span class="line">    Rule(<span class="string">'/&lt;short_id&gt;'</span>, endpoint=<span class="string">'follow_short_link'</span>),</span><br><span class="line">    Rule(<span class="string">'/&lt;short_id&gt;+'</span>, endpoint=<span class="string">'short_link_details'</span>)</span><br><span class="line">])</span><br></pre></td></tr></table></figure>
+<pre><code class="python">url_map = Map([
+    Rule(&#39;/&#39;, endpoint=&#39;new_url&#39;),
+    Rule(&#39;/&lt;short_id&gt;&#39;, endpoint=&#39;follow_short_link&#39;),
+    Rule(&#39;/&lt;short_id&gt;+&#39;, endpoint=&#39;short_link_details&#39;)
+])
+</code></pre>
 <p>首先，我们创建一个包含三个<code>Rule</code>规则的<code>Map</code>对象。</p>
 <h3 id="Rule"><a href="#Rule" class="headerlink" title="Rule"></a>Rule</h3><p>这个类主要用来构造URL地址，以下是它的构造方法签名中有两个重要参数：</p>
 <ul>
 <li><code>string</code>：预先定义的URL地址。</li>
 <li><code>endponit</code>：主要用来反向查询URL。</li>
 </ul>
-<p>在这个类中实现了<code>bind</code>方法，用来和<code>Map</code>进行绑定：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">bind</span><span class="params">(self, map, rebind=False)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> self.map <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span> <span class="keyword">and</span> <span class="keyword">not</span> rebind:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">'url rule %r already bound to map %r'</span> %</span><br><span class="line">                            (self, self.map))</span><br><span class="line">    self.map = map</span><br><span class="line">    <span class="keyword">if</span> self.strict_slashes <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        self.strict_slashes = map.strict_slashes</span><br><span class="line">    <span class="keyword">if</span> self.subdomain <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        self.subdomain = map.default_subdomain</span><br><span class="line">    self.compile()</span><br></pre></td></tr></table></figure></p>
+<p>在这个类中实现了<code>bind</code>方法，用来和<code>Map</code>进行绑定：</p>
+<pre><code class="python">def bind(self, map, rebind=False):
+    if self.map is not None and not rebind:
+        raise RuntimeError(&#39;url rule %r already bound to map %r&#39; %
+                            (self, self.map))
+    self.map = map
+    if self.strict_slashes is None:
+        self.strict_slashes = map.strict_slashes
+    if self.subdomain is None:
+        self.subdomain = map.default_subdomain
+    self.compile()
+</code></pre>
 <p>和<code>Map</code>绑定过后，<code>Rule</code>可以使用<code>Map</code>的属性来完善自己的配置。在这一步还对<code>URL</code>规则进行了<code>预编译</code>，以便加快后期<code>match()</code>的匹配。</p>
 <h3 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h3><p>在该类的实例中，保存了许多的<code>Rule</code>实例，存储所有的<code>URL规则</code>，还有一些配置参数。主要实现以下方法：</p>
 <ul>
-<li><p><code>add()</code>：这个方法在构造Map实例的时候就会调用，它会在所有传入Map类中的Rule实例上调用<code>bind()</code>和该Map实例<code>self</code>进行绑定：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add</span><span class="params">(self, rulefactory)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> rule <span class="keyword">in</span> rulefactory.get_rules(self):</span><br><span class="line">        rule.bind(self)</span><br><span class="line">        self._rules.append(rule)</span><br><span class="line">        self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)</span><br><span class="line">    self._remap = <span class="keyword">True</span></span><br></pre></td></tr></table></figure>
+<li><code>add()</code>：这个方法在构造Map实例的时候就会调用，它会在所有传入Map类中的Rule实例上调用<code>bind()</code>和该Map实例<code>self</code>进行绑定：<pre><code class="python">  def add(self, rulefactory):
+      for rule in rulefactory.get_rules(self):
+          rule.bind(self)
+          self._rules.append(rule)
+          self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
+      self._remap = True
+</code></pre>
 </li>
 <li><p><code>bind()</code>：这个方法会通过传递一些参数来构建一个<code>MapAdapter</code>实例：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">bind</span><span class="params">(self, server_name, script_name=None, subdomain=None,</span></span></span><br><span class="line"><span class="function"><span class="params">            url_scheme=<span class="string">'http'</span>, default_method=<span class="string">'GET'</span>, path_info=None,</span></span></span><br><span class="line"><span class="function"><span class="params">            query_args=None)</span>:</span></span><br><span class="line">    server_name = server_name.lower()</span><br><span class="line">    <span class="keyword">if</span> self.host_matching:</span><br><span class="line">        <span class="keyword">if</span> subdomain <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">'host matching enabled and a '</span></span><br><span class="line">                                <span class="string">'subdomain was provided'</span>)</span><br><span class="line">    <span class="keyword">elif</span> subdomain <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        subdomain = self.default_subdomain</span><br><span class="line">    <span class="keyword">if</span> script_name <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        script_name = <span class="string">'/'</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        server_name = _encode_idna(server_name)</span><br><span class="line">    <span class="keyword">except</span> UnicodeError:</span><br><span class="line">        <span class="keyword">raise</span> BadHost()</span><br><span class="line">    <span class="keyword">return</span> MapAdapter(self, server_name, script_name, subdomain,</span><br><span class="line">                        url_scheme, path_info, default_method, query_args)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">  def bind(self, server_name, script_name=None, subdomain=None,
+              url_scheme=&#39;http&#39;, default_method=&#39;GET&#39;, path_info=None,
+              query_args=None):
+      server_name = server_name.lower()
+      if self.host_matching:
+          if subdomain is not None:
+              raise RuntimeError(&#39;host matching enabled and a &#39;
+                                  &#39;subdomain was provided&#39;)
+      elif subdomain is None:
+          subdomain = self.default_subdomain
+      if script_name is None:
+          script_name = &#39;/&#39;
+      try:
+          server_name = _encode_idna(server_name)
+      except UnicodeError:
+          raise BadHost()
+      return MapAdapter(self, server_name, script_name, subdomain,
+                          url_scheme, path_info, default_method, query_args)
+</code></pre>
 </li>
-<li><p><code>bind_to_environ()</code>：这个方法在内部也是调用<code>bind()</code>，不同的是，它是通过WSGI协议中<code>environ</code>来获取一些URL基本信息。</p>
-</li>
+<li><code>bind_to_environ()</code>：这个方法在内部也是调用<code>bind()</code>，不同的是，它是通过WSGI协议中<code>environ</code>来获取一些URL基本信息。</li>
 </ul>
 <h3 id="MapAdapter"><a href="#MapAdapter" class="headerlink" title="MapAdapter"></a>MapAdapter</h3><p><code>MapAdapter</code>由<code>Map</code>绑定<code>URL路径</code>基本参数后创建，用来做<code>URL匹配</code>，主要有三个方法：</p>
 <ul>
 <li><code>match()</code>：该方法将会进行具体的URL匹配工作。它会将请求中的<code>URL路径</code>和属性<code>map</code>中的所有<code>Rule</code>进行匹配，如果有匹配成功的，则返回该<code>Rule</code>对应的<code>endpoint</code>和一些参数<code>rv</code>：<br>  其中核心代码是<code>rv = rule.match(path, method)</code>，构建<code>path</code>，然后在<code>Rule</code>对象上进行正则匹配。</li>
 <li><code>build()</code>：该方法和<code>match()</code>对应，传入<code>endpoint</code>和对应<code>参数</code>，返回<code>path_info</code>。</li>
 <li><p><code>dispatch()</code>：该方法会使用<code>match()</code>方法找到对应的<code>endpoint</code>和相关<code>参数</code>，然后再把这个<code>endpoint</code>作为参数传入<code>views</code>视图函数，返回一个<code>view_func</code>对象：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> werkzeug.wrappers <span class="keyword">import</span> Request, Response</span><br><span class="line"><span class="keyword">from</span> werkzeug.wsgi <span class="keyword">import</span> responder</span><br><span class="line"><span class="keyword">from</span> werkzeug.routing <span class="keyword">import</span> Map, Rule</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">on_index</span><span class="params">(request)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> Response(<span class="string">'Hello from the index'</span>)</span><br><span class="line"></span><br><span class="line">url_map = Map([Rule(<span class="string">'/'</span>, endpoint=<span class="string">'index'</span>)])</span><br><span class="line">views = &#123;<span class="string">'index'</span>: on_index&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@responder</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">application</span><span class="params">(environ, start_response)</span>:</span></span><br><span class="line">    request = Request(environ)</span><br><span class="line">    urls = url_map.bind_to_environ(environ)</span><br><span class="line">    <span class="keyword">return</span> urls.dispatch(<span class="keyword">lambda</span> e, v: views[e](request, **v),</span><br><span class="line">                            catch_http_exceptions=<span class="keyword">True</span>)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">  from werkzeug.wrappers import Request, Response
+  from werkzeug.wsgi import responder
+  from werkzeug.routing import Map, Rule
+
+  def on_index(request):
+      return Response(&#39;Hello from the index&#39;)
+
+  url_map = Map([Rule(&#39;/&#39;, endpoint=&#39;index&#39;)])
+  views = {&#39;index&#39;: on_index}
+
+  @responder
+  def application(environ, start_response):
+      request = Request(environ)
+      urls = url_map.bind_to_environ(environ)
+      return urls.dispatch(lambda e, v: views[e](request, **v),
+                              catch_http_exceptions=True)
+</code></pre>
 <p>  从这可以看出， <strong><code>werkzeug</code>是不维护<code>endpoint</code>和<code>view_func</code>的映射的。</strong></p>
 </li>
 </ul>
 <p>###　其他</p>
 <h2 id="线程局部变量"><a href="#线程局部变量" class="headerlink" title="线程局部变量"></a>线程局部变量</h2><p>对于传统的WEB框架来说，大多数采用多线程处理请求的方式，“线程安全”就是一个需要关注的问题。</p>
-<p>我们编写应用程序代码的时候，可以采用这种一下这种方式：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_request</span><span class="params">()</span>:</span></span><br><span class="line">    l = <span class="string">'foo'</span>  <span class="comment"># 线程安全的</span></span><br><span class="line">    l  <span class="comment"># 进行引用</span></span><br></pre></td></tr></table></figure></p>
-<p>然而框架或者是多线程共享的对象属性需要一种特殊的机制，来实现“线程安全”。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"></span><br><span class="line">l = threading.local()  <span class="comment"># 线层安全的</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_request</span><span class="params">()</span>:</span></span><br><span class="line">    l  <span class="comment"># 进行引用</span></span><br></pre></td></tr></table></figure></p>
+<p>我们编写应用程序代码的时候，可以采用这种一下这种方式：</p>
+<pre><code class="python">def handle_request():
+    l = &#39;foo&#39;  # 线程安全的
+    l  # 进行引用
+</code></pre>
+<p>然而框架或者是多线程共享的对象属性需要一种特殊的机制，来实现“线程安全”。</p>
+<pre><code class="python">import threading
+
+l = threading.local()  # 线层安全的
+
+def handle_request():
+    l  # 进行引用
+</code></pre>
 <p>在上面的<code>l</code>全局变量是线程隔离的。利用这个原理，我们(框架)可以暴露出一个接口供应用程序调用，而且是“线程安全的”。</p>
-<h3 id="Local"><a href="#Local" class="headerlink" title="Local"></a>Local</h3><p><code>werkzeug</code>的<code>Local</code>类实现了一种数据结构，来保存线程的私有变量。在这一点和<code>threading.local</code>相似，不过<code>Local</code>添加了对与<code>协程</code>的支持。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Local</span><span class="params">(object)</span>:</span></span><br><span class="line">    __slots__ = (<span class="string">'__storage__'</span>, <span class="string">'__ident_func__'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        object.__setattr__(self, <span class="string">'__storage__'</span>, &#123;&#125;)</span><br><span class="line">        object.__setattr__(self, <span class="string">'__ident_func__'</span>, get_ident)</span><br></pre></td></tr></table></figure></p>
+<h3 id="Local"><a href="#Local" class="headerlink" title="Local"></a>Local</h3><p><code>werkzeug</code>的<code>Local</code>类实现了一种数据结构，来保存线程的私有变量。在这一点和<code>threading.local</code>相似，不过<code>Local</code>添加了对与<code>协程</code>的支持。</p>
+<pre><code class="python">class Local(object):
+    __slots__ = (&#39;__storage__&#39;, &#39;__ident_func__&#39;)
+
+    def __init__(self):
+        object.__setattr__(self, &#39;__storage__&#39;, {})
+        object.__setattr__(self, &#39;__ident_func__&#39;, get_ident)
+</code></pre>
 <p>可以看到<code>Local</code>有两个属性：</p>
 <ul>
 <li><code>__storage__</code>：一个字典，用来存储不同线程标识和对应线程中的数据</li>
 <li><code>__ident_func</code>：一个函数，用来标识线程或协程。<code>from greenlet import getcurrent as get_ident</code>支持协程标识。</li>
 </ul>
 <h3 id="LocalStack"><a href="#LocalStack" class="headerlink" title="LocalStack"></a>LocalStack</h3><p><code>LocalStack</code>和<code>Local</code>类似，和<code>Local</code>在使用<code>字典</code>保存当前线程信息不同的是<code>LocalStack</code>实现了<code>栈</code>数据结构。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">    self._local = Local()</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">push</span><span class="params">(self, obj)</span>:</span></span><br><span class="line">    rv = getattr(self._local, <span class="string">'stack'</span>, <span class="keyword">None</span>)</span><br><span class="line">    <span class="keyword">if</span> rv <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        self._local.stack = rv = []</span><br><span class="line">    rv.append(obj)</span><br><span class="line">    <span class="keyword">return</span> rv</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def __init__(self):
+    self._local = Local()
+
+def push(self, obj):
+    rv = getattr(self._local, &#39;stack&#39;, None)
+    if rv is None:
+        self._local.stack = rv = []
+    rv.append(obj)
+    return rv
+</code></pre>
 <p>在初始化的时候，会创建一个<code>Local</code>实例，并在<code>_local</code>属性上通过<code>列表</code>维护一个<code>栈</code>数据结构，实现<code>push</code>、<code>pop</code>和<code>top</code>操作。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_lookup</span><span class="params">()</span>:</span></span><br><span class="line">        rv = self.top</span><br><span class="line">        <span class="keyword">if</span> rv <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">'object unbound'</span>)</span><br><span class="line">        <span class="keyword">return</span> rv</span><br><span class="line">    <span class="keyword">return</span> LocalProxy(_lookup)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">def __call__(self):
+    def _lookup():
+        rv = self.top
+        if rv is None:
+            raise RuntimeError(&#39;object unbound&#39;)
+        return rv
+    return LocalProxy(_lookup)
+</code></pre>
 <p>使用<code>栈</code>，给人的直观感受是：多线程环境下，任一时刻<code>栈</code>里只有一个内容<code>self.top</code>。</p>
 <h3 id="LocalProxy"><a href="#LocalProxy" class="headerlink" title="LocalProxy"></a>LocalProxy</h3><p><code>LocalProxy</code>使用<code>代理模式</code>，用于代理<code>Local</code>或<code>LocalStack</code>对象。我们先看下<code>LocalProxy</code>的用法：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> werkzeug.local <span class="keyword">import</span> Local</span><br><span class="line">l = Local()</span><br><span class="line"></span><br><span class="line"><span class="comment"># these are proxies</span></span><br><span class="line">request = l(<span class="string">'request'</span>)</span><br><span class="line">user = l(<span class="string">'user'</span>)</span><br></pre></td></tr></table></figure>
+<pre><code class="python">from werkzeug.local import Local
+l = Local()
+
+# these are proxies
+request = l(&#39;request&#39;)
+user = l(&#39;user&#39;)
+
+
+
+</code></pre>
 <p>实际上，在<code>Local</code>和<code>LocalStack</code>的<code>__call__()</code>方法，返回的都是一个<code>LocalProxy</code>对象。这种方式和下面这种形式达成的效果是相同的：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">l = Local()</span><br><span class="line">request = LocalProxy(l, <span class="string">'request'</span>)</span><br></pre></td></tr></table></figure>
-<p><strong><code>LocalProxy</code></strong>的实现原理：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@implements_bool</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LocalProxy</span><span class="params">(object)</span>:</span></span><br><span class="line">    __slots__ = (<span class="string">'__local'</span>, <span class="string">'__dict__'</span>, <span class="string">'__name__'</span>, <span class="string">'__wrapped__'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, local, name=None)</span>:</span></span><br><span class="line">        object.__setattr__(self, <span class="string">'_LocalProxy__local'</span>, local)</span><br><span class="line">        object.__setattr__(self, <span class="string">'__name__'</span>, name)</span><br><span class="line">        <span class="keyword">if</span> callable(local) <span class="keyword">and</span> <span class="keyword">not</span> hasattr(local, <span class="string">'__release_local__'</span>):</span><br><span class="line">            <span class="comment"># "local" is a callable that is not an instance of Local or</span></span><br><span class="line">            <span class="comment"># LocalManager: mark it as a wrapped function.</span></span><br><span class="line">            object.__setattr__(self, <span class="string">'__wrapped__'</span>, local)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_get_current_object</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> hasattr(self.__local, <span class="string">'__release_local__'</span>):</span><br><span class="line">            <span class="keyword">return</span> self.__local()</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> getattr(self.__local, self.__name__)</span><br><span class="line">        <span class="keyword">except</span> AttributeError:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">'no object bound to %s'</span> % self.__name__)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__dict__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> self._get_current_object().__dict__</span><br><span class="line">        <span class="keyword">except</span> RuntimeError:</span><br><span class="line">            <span class="keyword">raise</span> AttributeError(<span class="string">'__dict__'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__repr__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            obj = self._get_current_object()</span><br><span class="line">        <span class="keyword">except</span> RuntimeError:</span><br><span class="line">            <span class="keyword">return</span> <span class="string">'&lt;%s unbound&gt;'</span> % self.__class__.__name__</span><br><span class="line">        <span class="keyword">return</span> repr(obj)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__bool__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> bool(self._get_current_object())</span><br><span class="line">        <span class="keyword">except</span> RuntimeError:</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">False</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__unicode__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> unicode(self._get_current_object())  <span class="comment"># noqa</span></span><br><span class="line">        <span class="keyword">except</span> RuntimeError:</span><br><span class="line">            <span class="keyword">return</span> repr(self)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__dir__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> dir(self._get_current_object())</span><br><span class="line">        <span class="keyword">except</span> RuntimeError:</span><br><span class="line">            <span class="keyword">return</span> []</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, name)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> name == <span class="string">'__members__'</span>:</span><br><span class="line">            <span class="keyword">return</span> dir(self._get_current_object())</span><br><span class="line">        <span class="keyword">return</span> getattr(self._get_current_object(), name)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__setitem__</span><span class="params">(self, key, value)</span>:</span></span><br><span class="line">        self._get_current_object()[key] = value</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__delitem__</span><span class="params">(self, key)</span>:</span></span><br><span class="line">        <span class="keyword">del</span> self._get_current_object()[key]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> PY2:</span><br><span class="line">        __getslice__ = <span class="keyword">lambda</span> x, i, j: x._get_current_object()[i:j]</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">__setslice__</span><span class="params">(self, i, j, seq)</span>:</span></span><br><span class="line">            self._get_current_object()[i:j] = seq</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">__delslice__</span><span class="params">(self, i, j)</span>:</span></span><br><span class="line">            <span class="keyword">del</span> self._get_current_object()[i:j]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 其他部分的Magic Method代理实现</span></span><br><span class="line">    __setattr__ = <span class="keyword">lambda</span> x, n, v: setattr(x._get_current_object(), n, v)</span><br></pre></td></tr></table></figure></p>
+<pre><code class="python">l = Local()
+request = LocalProxy(l, &#39;request&#39;)
+</code></pre>
+<p><strong><code>LocalProxy</code></strong>的实现原理：</p>
+<pre><code class="python">@implements_bool
+class LocalProxy(object):
+    __slots__ = (&#39;__local&#39;, &#39;__dict__&#39;, &#39;__name__&#39;, &#39;__wrapped__&#39;)
+
+    def __init__(self, local, name=None):
+        object.__setattr__(self, &#39;_LocalProxy__local&#39;, local)
+        object.__setattr__(self, &#39;__name__&#39;, name)
+        if callable(local) and not hasattr(local, &#39;__release_local__&#39;):
+            # &quot;local&quot; is a callable that is not an instance of Local or
+            # LocalManager: mark it as a wrapped function.
+            object.__setattr__(self, &#39;__wrapped__&#39;, local)
+
+    def _get_current_object(self):
+        if not hasattr(self.__local, &#39;__release_local__&#39;):
+            return self.__local()
+        try:
+            return getattr(self.__local, self.__name__)
+        except AttributeError:
+            raise RuntimeError(&#39;no object bound to %s&#39; % self.__name__)
+
+    @property
+    def __dict__(self):
+        try:
+            return self._get_current_object().__dict__
+        except RuntimeError:
+            raise AttributeError(&#39;__dict__&#39;)
+
+    def __repr__(self):
+        try:
+            obj = self._get_current_object()
+        except RuntimeError:
+            return &#39;&lt;%s unbound&gt;&#39; % self.__class__.__name__
+        return repr(obj)
+
+    def __bool__(self):
+        try:
+            return bool(self._get_current_object())
+        except RuntimeError:
+            return False
+
+    def __unicode__(self):
+        try:
+            return unicode(self._get_current_object())  # noqa
+        except RuntimeError:
+            return repr(self)
+
+    def __dir__(self):
+        try:
+            return dir(self._get_current_object())
+        except RuntimeError:
+            return []
+
+    def __getattr__(self, name):
+        if name == &#39;__members__&#39;:
+            return dir(self._get_current_object())
+        return getattr(self._get_current_object(), name)
+
+    def __setitem__(self, key, value):
+        self._get_current_object()[key] = value
+
+    def __delitem__(self, key):
+        del self._get_current_object()[key]
+
+    if PY2:
+        __getslice__ = lambda x, i, j: x._get_current_object()[i:j]
+
+        def __setslice__(self, i, j, seq):
+            self._get_current_object()[i:j] = seq
+
+        def __delslice__(self, i, j):
+            del self._get_current_object()[i:j]
+
+    # 其他部分的Magic Method代理实现
+    __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
+</code></pre>
 <ul>
 <li>在<code>LocalProxy</code>的<code>__init__</code>方法中，参数<code>local</code>绑定在<code>_LocalProxy__local</code>属性上，可以通过<code>self.__local</code>进行访问(这是因为<code>__foo</code>会被解释器替换为<code>_classname__foo</code>的形式进行访问)</li>
 <li><p><code>LocalProxy</code>通过<code>_get_current_object</code>来获取代理对象。在这里分两种情况：</p>
 <ul>
 <li><p>若<code>self.__local</code>是<code>Local</code>，即在<code>Local</code>类<code>call</code>方法的返回<code>return LocalProxy(self, name)</code>。重载的其他操作相当于在<code>Local</code>对象上的相应操作：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> werkzeug.local <span class="keyword">import</span> Local</span><br><span class="line">l = Local()</span><br><span class="line">l.request = <span class="string">'this is a request'</span></span><br><span class="line"></span><br><span class="line">request_1 = l.request</span><br><span class="line"><span class="comment"># request_2 和 request_3 通过代理获取值</span></span><br><span class="line">request_2 = l(<span class="string">'request'</span>)</span><br><span class="line">request_3 = LocalProxy(l, <span class="string">'request'</span>)</span><br><span class="line">print(request_1)</span><br><span class="line">print(request_2)</span><br><span class="line">print(request_3)</span><br><span class="line"><span class="comment"># 三者等价</span></span><br><span class="line"><span class="comment"># 输出</span></span><br><span class="line"><span class="comment"># this is a request</span></span><br><span class="line"><span class="comment"># this is a request</span></span><br><span class="line"><span class="comment"># this is a request</span></span><br></pre></td></tr></table></figure>
+<pre><code class="python">  from werkzeug.local import Local
+  l = Local()
+  l.request = &#39;this is a request&#39;
+
+  request_1 = l.request
+  # request_2 和 request_3 通过代理获取值
+  request_2 = l(&#39;request&#39;)
+  request_3 = LocalProxy(l, &#39;request&#39;)
+  print(request_1)
+  print(request_2)
+  print(request_3)
+  # 三者等价
+  # 输出
+  # this is a request
+  # this is a request
+  # this is a request
+</code></pre>
 </li>
-<li><p>若<code>self.__local</code>是<code>LocalStack</code>，即在<code>LocalStack</code>类<code>call</code>方法的返回<code>return LocalProxy(_lookup)</code>。相当于获取<code>LocalStack</code>的栈顶对象：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> werkzeug.local <span class="keyword">import</span> LocalStack</span><br><span class="line">_response_local = LocalStack()</span><br><span class="line">_response_local.push(<span class="string">'this is a request'</span>)</span><br><span class="line">reponse_1 = _response_local.top</span><br><span class="line"><span class="comment"># 通过代理获取栈顶对象</span></span><br><span class="line">response_2 = _response_local()</span><br><span class="line">response_3 = LocalProxy(<span class="keyword">lambda</span>: _response_local.top)</span><br><span class="line">print(response_1)</span><br><span class="line">print(response_2)</span><br><span class="line">print(response_3)</span><br><span class="line"><span class="comment"># 三者等价，输出</span></span><br><span class="line"><span class="comment"># this is a response</span></span><br><span class="line"><span class="comment"># this is a response</span></span><br><span class="line"><span class="comment"># this is a response</span></span><br></pre></td></tr></table></figure>
+<li>若<code>self.__local</code>是<code>LocalStack</code>，即在<code>LocalStack</code>类<code>call</code>方法的返回<code>return LocalProxy(_lookup)</code>。相当于获取<code>LocalStack</code>的栈顶对象：<pre><code class="python">  from werkzeug.local import LocalStack
+  _response_local = LocalStack()
+  _response_local.push(&#39;this is a request&#39;)
+  reponse_1 = _response_local.top
+  # 通过代理获取栈顶对象
+  response_2 = _response_local()
+  response_3 = LocalProxy(lambda: _response_local.top)
+  print(response_1)
+  print(response_2)
+  print(response_3)
+  # 三者等价，输出
+  # this is a response
+  # this is a response
+  # this is a response
+</code></pre>
 </li>
-<li><p>否则调用<code>self.__local</code>来获取当前对象,<code>LocalStack</code>的就是通过这种机制实现获取栈顶元素。</p>
-</li>
+<li>否则调用<code>self.__local</code>来获取当前对象,<code>LocalStack</code>的就是通过这种机制实现获取栈顶元素。</li>
 </ul>
 </li>
 <li>重载操作符的时候，都是通过<code>_get_current_object</code>获取被代理的对象，再在对象上进行操作。</li>
@@ -361,7 +754,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">

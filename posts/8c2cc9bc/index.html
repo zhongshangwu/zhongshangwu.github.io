@@ -14,6 +14,11 @@
   
     <meta name="keywords" content="Python,源码," />
   
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.12.0/styles/atom-one-light.min.css">
+  <script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad();
+  </script>
 
   <meta name="description" content="Become a better Pythoner最近在整理Python知识体系的时候，发现还是有许多的迷惑。 于是准备从源码的角度去了解Python。参考《Python源码剖析》，这书是根据Python2写的。 &amp;gt;&amp;gt;&amp;gt; Python3.6.4源码 + 『Python源码剖析』 + 几乎为零的C水平 这篇博客主要分析的是Python的对象机制。">
 <meta name="keywords" content="Python,源码">
@@ -22,6 +27,7 @@
 <meta property="og:url" content="http://shawnz.me/posts/8c2cc9bc/index.html">
 <meta property="og:site_name" content="Shawn&#39;s Blog">
 <meta property="og:description" content="Become a better Pythoner最近在整理Python知识体系的时候，发现还是有许多的迷惑。 于是准备从源码的角度去了解Python。参考《Python源码剖析》，这书是根据Python2写的。 &amp;gt;&amp;gt;&amp;gt; Python3.6.4源码 + 『Python源码剖析』 + 几乎为零的C水平 这篇博客主要分析的是Python的对象机制。">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2018-03-10T06:20:54.086Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Python源码学习-对象">
@@ -235,20 +241,48 @@
 <p><code>&gt;&gt;&gt;</code> Python3.6.4源码 + 『Python源码剖析』 + 几乎为零的C水平</p>
 <p>这篇博客主要分析的是Python的对象机制。</p>
 <a id="more"></a>
-<h2 id="PyObject"><a href="#PyObject" class="headerlink" title="PyObject"></a>PyObject</h2><p>在Python中所有东西都是对象，而所有的对象都有一些相同的东西，这部分定义在<code>PyObject</code>中，它是整个Python对象机制的核心。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">object</span> &#123;</span></span><br><span class="line">    _PyObject_HEAD_EXTRA</span><br><span class="line">    Py_ssize_t ob_refcnt;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">typeobject</span> *<span class="title">ob_type</span>;</span></span><br><span class="line">&#125; PyObject;</span><br></pre></td></tr></table></figure></p>
+<h2 id="PyObject"><a href="#PyObject" class="headerlink" title="PyObject"></a>PyObject</h2><p>在Python中所有东西都是对象，而所有的对象都有一些相同的东西，这部分定义在<code>PyObject</code>中，它是整个Python对象机制的核心。</p>
+<pre><code class="c">/* object.h */
+typedef struct _object {
+    _PyObject_HEAD_EXTRA
+    Py_ssize_t ob_refcnt;
+    struct _typeobject *ob_type;
+} PyObject;
+</code></pre>
 <p><code>PyObject</code>里面很简单，只包括一个<code>_PyObject_HEAD_EXTRA</code>，和两个额外的两个成员变量：</p>
 <ul>
 <li><code>ob_refcnt</code>：维护一个引用计数的计数器。</li>
 <li><code>ob_type</code>：一个指向对象类型对象的指针。</li>
 </ul>
-<p>另外，Python使用<code>PyVarObject</code>表示 <strong>变长对象</strong> ：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    PyObject ob_base;</span><br><span class="line">    Py_ssize_t ob_size; <span class="comment">/* Number of items in variable part */</span></span><br><span class="line">&#125; PyVarObject;</span><br></pre></td></tr></table></figure></p>
+<p>另外，Python使用<code>PyVarObject</code>表示 <strong>变长对象</strong> ：</p>
+<pre><code class="c">/* object.h */
+typedef struct {
+    PyObject ob_base;
+    Py_ssize_t ob_size; /* Number of items in variable part */
+} PyVarObject;
+</code></pre>
 <p>可以看到<code>PyVarObject</code>和<code>PyObject</code>相比，只增加了一个新的数据成员：</p>
 <ul>
 <li><code>ob_size</code>：表示变长对象容纳了多少个元素。</li>
 </ul>
-<p>另外<code>_PyObject_HEAD_EXTRA</code>是一个宏定义，它维护<code>next</code>和<code>prev</code>指针，用来支持双链表把堆中所有对象串起来：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _PyObject_HEAD_EXTRA            \</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">object</span> *_<span class="title">ob_next</span>;</span>           \</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">object</span> *_<span class="title">ob_prev</span>;</span></span><br></pre></td></tr></table></figure></p>
+<p>另外<code>_PyObject_HEAD_EXTRA</code>是一个宏定义，它维护<code>next</code>和<code>prev</code>指针，用来支持双链表把堆中所有对象串起来：</p>
+<pre><code class="c">#define _PyObject_HEAD_EXTRA            \
+    struct _object *_ob_next;           \
+    struct _object *_ob_prev;
+</code></pre>
 <p><strong>C指针指向的是对象边界，而所有对象都有相同的头部定义<code>PyObject</code>，即只需要一个泛型指针<code>PyObject*</code>就可以引用任何一个对象。</strong></p>
-<h2 id="类型对象"><a href="#类型对象" class="headerlink" title="类型对象"></a>类型对象</h2><p><code>PyObject</code>中的指针<code>*ob_type</code>指向对象的类型，在<code>object.h</code>中找到定义处：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*  object.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">typeobject</span> &#123;</span></span><br><span class="line">    PyObject_VAR_HEAD  <span class="comment">/* 表示这是一个变长对象 */</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span> *tp_name; <span class="comment">/* For printing, in format "&lt;module&gt;.&lt;name&gt;" */</span></span><br><span class="line">    Py_ssize_t tp_basicsize, tp_itemsize; <span class="comment">/* For allocation */</span></span><br><span class="line">    <span class="comment">/* 一大堆函数指针 */</span></span><br><span class="line">    destructor tp_dealloc;</span><br><span class="line">    printfunc tp_print;</span><br><span class="line">    ...    </span><br><span class="line">&#125; PyTypeObject;</span><br></pre></td></tr></table></figure></p>
+<h2 id="类型对象"><a href="#类型对象" class="headerlink" title="类型对象"></a>类型对象</h2><p><code>PyObject</code>中的指针<code>*ob_type</code>指向对象的类型，在<code>object.h</code>中找到定义处：</p>
+<pre><code class="c">/*  object.h */
+typedef struct _typeobject {
+    PyObject_VAR_HEAD  /* 表示这是一个变长对象 */
+    const char *tp_name; /* For printing, in format &quot;&lt;module&gt;.&lt;name&gt;&quot; */
+    Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
+    /* 一大堆函数指针 */
+    destructor tp_dealloc;
+    printfunc tp_print;
+    ...    
+} PyTypeObject;
+</code></pre>
 <p><code>PyTypeObject</code>中包含了许多的信息，主要分为4类：</p>
 <ul>
 <li>类型名，<code>*tp_name</code>，主要是Python内部以及调试使用；</li>
@@ -258,14 +292,34 @@
 </ul>
 <p>一个<code>PyTypeObject</code>结构体变量就相当于Python中“类”这个概念的实现，称之为”类型对象“。例如<code>PyLong_Type</code>就是整数对象的类型对象，<code>PyList_Type</code>是列表对象的类型对象。</p>
 <p>在<code>PyTypeObject</code>头部，我们还发现了<code>PyObject_VAR_HEAD</code>，这意味着 <strong>Python中的类型也是一种对象。</strong> <br><br>既然Python对象可以通过<code>*ob_type</code>找到对象的类型，那么类型对象的<code>*ob_type</code>是什么呢？<br><br>答案是：<code>PyType_Type</code>，它相当于Python中的<code>type</code>类型：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Objects/typeobject.c */</span></span><br><span class="line">PyTypeObject PyType_Type = &#123;</span><br><span class="line">    PyVarObject_HEAD_INIT(&amp;PyType_Type, <span class="number">0</span>)      <span class="comment">/* 它的ob_type指向本身 */</span></span><br><span class="line">    <span class="string">"type"</span>,                                     <span class="comment">/* tp_name */</span></span><br><span class="line">    <span class="keyword">sizeof</span>(PyHeapTypeObject),                   <span class="comment">/* tp_basicsize */</span></span><br><span class="line">    <span class="keyword">sizeof</span>(PyMemberDef),                        <span class="comment">/* tp_itemsize */</span></span><br><span class="line">    (destructor)type_dealloc,                   <span class="comment">/* tp_dealloc */</span></span><br><span class="line">    <span class="number">0</span>,                                          <span class="comment">/* tp_print */</span></span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">/* Objects/typeobject.c */
+PyTypeObject PyType_Type = {
+    PyVarObject_HEAD_INIT(&amp;PyType_Type, 0)      /* 它的ob_type指向本身 */
+    &quot;type&quot;,                                     /* tp_name */
+    sizeof(PyHeapTypeObject),                   /* tp_basicsize */
+    sizeof(PyMemberDef),                        /* tp_itemsize */
+    (destructor)type_dealloc,                   /* tp_dealloc */
+    0,                                          /* tp_print */
+    ...
+};
+</code></pre>
 <p>以整数对象为例：</p>
 <ul>
 <li>整数对象的类型为<code>PyLong_Type</code>；</li>
 <li><code>PyLong_Type</code>是类型对象，其类型是<code>PyType_Type</code>；</li>
 <li><code>PyType_Type</code>也是类型对象，其类型是它本身。</li>
 </ul>
-<p>这样以来就很好地理解了 <strong>Python“类型的类型”默认是<code>type</code>，这个类称为元类(<code>metaclass</code>)，它的类型为它本身。</strong> <br><br>一个简单的例子：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">A</span><span class="params">(object)</span>:</span></span><br><span class="line"><span class="meta">... </span>   <span class="keyword">pass</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>A.__class__</span><br><span class="line">&lt;type <span class="string">'type'</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>A.__class__.__class__</span><br><span class="line">&lt;type <span class="string">'type'</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>type.__class__</span><br><span class="line">&lt;type <span class="string">'type'</span>&gt;</span><br></pre></td></tr></table></figure></p>
+<p>这样以来就很好地理解了 <strong>Python“类型的类型”默认是<code>type</code>，这个类称为元类(<code>metaclass</code>)，它的类型为它本身。</strong> <br><br>一个简单的例子：</p>
+<pre><code class="python">&gt;&gt;&gt; class A(object):
+...    pass
+...
+&gt;&gt;&gt; A.__class__
+&lt;type &#39;type&#39;&gt;
+&gt;&gt;&gt; A.__class__.__class__
+&lt;type &#39;type&#39;&gt;
+&gt;&gt;&gt; type.__class__
+&lt;type &#39;type&#39;&gt;
+</code></pre>
 <h2 id="对象的创建"><a href="#对象的创建" class="headerlink" title="对象的创建"></a>对象的创建</h2><p>Python的对象创建有两种方式：</p>
 <ul>
 <li><p>通过Python的C API，而这些API又分为两种：</p>
@@ -276,10 +330,19 @@
 </li>
 <li>使用类型对象创建。</li>
 </ul>
-<p>在Python中，<code>int(10)</code>来创建一个<code>int</code>对象，实际是因为Python完成环境初始化后，符号<code>int</code>对应着內建类型对象<code>PyLong_Type</code>，所以我们可以使用它创建对象。例如：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>int_type = __builtins__.dict[<span class="string">'int'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = int_type(<span class="number">10</span>)  <span class="comment"># 获取內建的int类型对象来创建一个int对象</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a</span><br><span class="line"><span class="number">10</span></span><br></pre></td></tr></table></figure></p>
+<p>在Python中，<code>int(10)</code>来创建一个<code>int</code>对象，实际是因为Python完成环境初始化后，符号<code>int</code>对应着內建类型对象<code>PyLong_Type</code>，所以我们可以使用它创建对象。例如：</p>
+<pre><code class="python">&gt;&gt;&gt; int_type = __builtins__.dict[&#39;int&#39;]
+&gt;&gt;&gt; a = int_type(10)  # 获取內建的int类型对象来创建一个int对象
+&gt;&gt;&gt; a
+10
+</code></pre>
 <p>那么<code>PyLong_Type</code>又是怎么创建<code>int</code>对象的呢？</p>
 <p>我们知道对象创建需要经历<code>__new__</code>和<code>__init__</code>方法的调用。在结构体类型<code>PyTypeObject</code>中定义了许多的函数指针，这些指针可以视为类型对象中所定义的操作。其中两个特殊的函数指针：<code>newfunc tp_new;</code>和<code>initproc tp_init;</code>与Python中的<code>__new__</code>和<code>__init__</code>相对应。</p>
-<h2 id="多态性"><a href="#多态性" class="headerlink" title="多态性"></a>多态性</h2><p>在Python中创建一个对象时，会分配内存，进行初始化。然后在Python内部会用一个<code>PyObject*</code>变量来保存和维护指针，这个对象是什么类型需要通过<code>ob_type</code>进行解析得到，正是这个域实现了Python的多态机制。例如，一个<code>Print</code>函数：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Print</span><span class="params">(PyObject* object)</span> </span>&#123;</span><br><span class="line">    object-&gt;ob_type-&gt;tp_print(object)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="多态性"><a href="#多态性" class="headerlink" title="多态性"></a>多态性</h2><p>在Python中创建一个对象时，会分配内存，进行初始化。然后在Python内部会用一个<code>PyObject*</code>变量来保存和维护指针，这个对象是什么类型需要通过<code>ob_type</code>进行解析得到，正是这个域实现了Python的多态机制。例如，一个<code>Print</code>函数：</p>
+<pre><code class="c">void Print(PyObject* object) {
+    object-&gt;ob_type-&gt;tp_print(object)
+}
+</code></pre>
 <p>如果传给<code>Print</code>的指针<code>PyObject</code> 是<code>PyLongObject</code>对象，那么就会调用<code>PyLong_Type</code>中定义的<code>tp_print</code>；<br><br>如果传给<code>Print</code>的指针<code>PyObject</code> 是<code>PyStringObject</code>对象，那么就会调用<code>PyString_Type</code>中定义的<code>tp_print</code>；<br></p>
 <h2 id="引用计数"><a href="#引用计数" class="headerlink" title="引用计数"></a>引用计数</h2><p>Python的垃圾收集机制是通过引用计数实现的。</p>
 <p>在所有对象的头部都维护着一个变量<code>ob_refcnt</code>作为引用计数器。</p>
@@ -299,7 +362,6 @@
   
 
 </article>
-
 
    
   <div class="text-center donation">
