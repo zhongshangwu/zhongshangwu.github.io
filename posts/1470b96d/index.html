@@ -12,11 +12,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   
-    <meta name="keywords" content="Python,Django,源码," />
+    <meta name="keywords" content="Python,源码,Django," />
   
 
   <meta name="description" content="服务器启动在上一节中，我们知道了runserver命令的实现在django.core.management.commands下，这里面的Command类重写了handle()方法：">
-<meta name="keywords" content="Python,Django,源码">
+<meta name="keywords" content="Python,源码,Django">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Django源码阅读:整体流程">
 <meta property="og:url" content="http://shawnz.me/posts/1470b96d/index.html">
@@ -537,5 +537,20 @@
   }
 </script>
 
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 </body>
 </html>

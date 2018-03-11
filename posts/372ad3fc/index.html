@@ -12,11 +12,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   
-    <meta name="keywords" content="Python,Django,源码," />
+    <meta name="keywords" content="Python,源码,Django," />
   
 
   <meta name="description" content="创建一个项目Django 使用django-admin startproject [projectname]创建项目，并会在项目根目录下生成manage.py文件。从现在开始，我们有了两个Django命令行入口：">
-<meta name="keywords" content="Python,Django,源码">
+<meta name="keywords" content="Python,源码,Django">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Django源码阅读:命令行工具集">
 <meta property="og:url" content="http://shawnz.me/posts/372ad3fc/index.html">
@@ -485,5 +485,20 @@
   }
 </script>
 
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 </body>
 </html>
